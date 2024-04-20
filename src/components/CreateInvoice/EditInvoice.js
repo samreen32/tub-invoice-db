@@ -24,24 +24,37 @@ function EditInvoice() {
     adEstimateAvaiableDatePicker, setAdEstimateAvaiableDatePicker } = UserLogin();
   const [visibleBillToFields, setVisibleBillToFields] = useState(3);
   const [focusedField, setFocusedField] = useState(null);
+  const createDefaultUpdateItems = (numItems = 15) => {
+    return Array.from({ length: numItems }, () => ({
+      lot_no: "",
+      description: "",
+      quantity: 0,
+      price_each: 0,
+      total_amount: 0,
+    }));
+  };
 
-  /* Input field validation */
+  useEffect(() => {
+    setFormUpdateData((prevData) => ({
+      ...prevData,
+      items: createDefaultUpdateItems()
+    }));
+  }, []);
+
+  const inputRefs = useRef([]);
+
   const handleInputChange = (index, e) => {
-    const { name, value } = e?.target || {};
-
+    const { name, value } = e.target;
     setFormUpdateData((prevData) => {
       if (index !== undefined) {
-        const updatedItems = [...prevData.items];
-        updatedItems[index] = {
-          ...updatedItems[index],
-          [name]: value,
-        };
+        const updatedItems = prevData.items.map((item, idx) => {
+          if (idx === index) {
+            return { ...item, [name]: value };
+          }
+          return item;
+        });
 
-        const totalAmount = updatedItems.reduce(
-          (total, item) =>
-            total + (item.quantity || 0) * (item.price_each || 0),
-          0
-        );
+        const totalAmount = updatedItems.reduce((acc, curr) => acc + (curr.quantity * curr.price_each), 0);
 
         return {
           ...prevData,
@@ -49,28 +62,41 @@ function EditInvoice() {
           total_amount: totalAmount,
         };
       } else {
-        if (
-          name === "bill_to_1" ||
-          name === "bill_to_2" ||
-          name === "bill_to_3"
-        ) {
-          const updatedBillTo = [...prevData.bill_to];
-          const fieldIndex = Number(name.split("_")[2]);
-          updatedBillTo[fieldIndex - 1] = value;
-
-          return {
-            ...prevData,
-            bill_to: updatedBillTo,
-          };
-        } else {
-          return {
-            ...prevData,
-            [name]: value,
-          };
-        }
+        return {
+          ...prevData,
+          [name]: value,
+        };
       }
     });
   };
+
+  const handleAddItem = () => {
+    const newItems = Array.from({ length: 15 }, () => ({
+      lot_no: "",
+      description: "",
+      quantity: 0,
+      price_each: 0,
+      total_amount: 0,
+    }));
+    setFormUpdateData(prevData => ({
+      ...prevData,
+      items: [...prevData.items, ...newItems]
+    }));
+  };
+
+  const handleLotNoKeyPress = (e, index) => {
+    if (e.key === 'Enter' && index === formUpdateData.items.length - 1) {
+      handleAddItem();
+      e.preventDefault();
+    }
+  };
+
+  useEffect(() => {
+    const lastIndex = formUpdateData.items.length - 1;
+    if (inputRefs.current[lastIndex]) {
+      inputRefs.current[lastIndex].focus();
+    }
+  }, [formUpdateData.items.length]);
 
   /* Endpoint integration */
   useEffect(() => {
@@ -150,20 +176,23 @@ function EditInvoice() {
     }
   };
 
-  const handleAddItem = () => {
-    setFormUpdateData((prevData) => ({
-      ...prevData,
-      items: [
-        ...prevData.items,
-        {
-          description: "",
-          quantity: 0,
-          price_each: 0,
-          total_amount: 0,
-        },
-      ],
-    }));
-  };
+  // const handleAddItem = (e) => {
+  //   if (e.key === 'Enter') {
+  //     setFormUpdateData((prevData) => ({
+  //       ...prevData,
+  //       items: [
+  //         ...prevData.items,
+  //         {
+  //           description: "",
+  //           quantity: 0,
+  //           price_each: 0,
+  //           total_amount: 0,
+  //         },
+  //       ],
+  //     }));
+  //     e.preventDefault();
+  //   }
+  // };
 
   /* Press enter key to add new field as well as key focus */
   const handleBillToEnterKey = (e, fieldIndex) => {
@@ -291,6 +320,31 @@ function EditInvoice() {
     return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`;
   };
 
+  const baseInvoiceSectionStyle = {
+    marginTop: "190px",
+    border: "2px solid white",
+    // height: "1200px"
+  };
+
+  // Helper function to generate initial items
+  // const generateInitialItems = (count) => {
+  //   return Array.from({ length: count }, () => ({
+  //     lot_no: "",
+  //     description: "",
+  //     quantity: 0,
+  //     price_each: 0
+  //   }));
+  // };
+
+  // // Inside your useEffect where you fetch or initialize formUpdateData
+  // useEffect(() => {
+  //   const initialItems = generateInitialItems(15);
+  //   setFormUpdateData((prevData) => ({
+  //     ...prevData,
+  //     items: [...initialItems, ...prevData.items]
+  //   }));
+  // }, []);
+
 
   return (
     <div id="invoice-generated">
@@ -349,7 +403,7 @@ function EditInvoice() {
                 <span style={{ fontSize: "22px" }}>
                   PO Box 30596 <br />
                   Las Vegas, NV. 89173 <br />
-                  Office: (702)445-6232 <br />
+                  Office: (702) 445-6232 <br />
                   Fax: (702) 445-6241
                 </span>
               </address>
@@ -395,11 +449,13 @@ function EditInvoice() {
                                 {...params}
                                 variant="standard"
                                 onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
-                                style={{ marginTop: "-20px", width: "50%" }}
+                                style={{ marginTop: "-20px", width: "50%", marginBottom: "15px" }}
+                              // InputProps={{
+                              //   disableUnderline: true
+                              // }}
                               />
                             )}
                           />
-                          <br />
                         </React.Fragment>
                       )
                   )}
@@ -415,6 +471,9 @@ function EditInvoice() {
                     name="installer"
                     value={formUpdateData.installer}
                     onChange={(e) => handleInputChange(undefined, e)}
+                    InputProps={{
+                      disableUnderline: true
+                    }}
                   />
                 </p>
               </div>
@@ -425,18 +484,22 @@ function EditInvoice() {
                 <div className="col-md-1 ">
                   <b>PO No.</b>
                   <br />
-                  <TextField
+                  <input
                     id="po_num"
                     type="text"
-                    variant="standard"
-                    InputProps={{ disableUnderline: true }}
-                    // inputProps={{
-                    //   style: { textAlign: 'center' }
-                    // }}
                     name="PO_number"
                     value={formUpdateData.PO_number}
                     onChange={(e) => handleInputChange(undefined, e)}
-                    style={{ marginTop: "12px", width: "100%" }}
+                    style={{
+                      marginTop: "12px",
+                      width: "100%",
+                      border: "none",
+                      textAlign: "center",
+                      outline: "none",
+
+                    }}
+                    onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                    onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
                   />
                 </div>
                 <div className="col-md-2 text-center">
@@ -448,7 +511,7 @@ function EditInvoice() {
                     variant="standard"
                     placeholder="mm/dd/yyyy"
                     type="text"
-                    style={{ width: "80%", marginTop: "12px", }}
+                    style={{ width: "75%", marginTop: "23px", }}
                     InputProps={{
                       endAdornment: (
                         <img
@@ -479,71 +542,94 @@ function EditInvoice() {
                 <div className="col-md-2" style={{ textAlign: "center" }}>
                   <b>Type of Work</b>
                   <br />
-                  <TextField
+                  <input
                     id="type_of_work"
                     type="text"
-                    variant="standard"
-                    InputProps={{
-                      disableUnderline: true,
-                    }}
                     name="type_of_work"
                     value={formUpdateData.type_of_work}
                     onChange={(e) => handleInputChange(undefined, e)}
-                    style={{ marginTop: "12px", width: "100%", marginLeft: '16%' }}
+                    style={{
+                      marginTop: "12px",
+                      width: "100%",
+                      border: "none",
+                      textAlign: "center",
+                      outline: "none",
+
+                    }}
+                    onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                    onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
                   />
                 </div>
                 <div className="col-md-2 text-center">
                   <b>Job Site No.</b>
                   <br />
-                  <TextField
+                  <input
                     id="job_site_no"
                     type="text"
-                    variant="standard"
-                    InputProps={{
-                      disableUnderline: true,
-                    }}
                     name="job_site_num"
                     value={formUpdateData.job_site_num}
                     onChange={(e) => handleInputChange(undefined, e)}
-                    style={{ marginTop: "12px", width: "100%", marginLeft: '30%' }}
+                    style={{
+                      marginTop: "12px",
+                      width: "100%",
+                      border: "none",
+                      textAlign: "center",
+                      outline: "none",
+
+                    }}
+                    onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                    onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
                   />
                 </div>
                 <div className="col-md-2 text-center">
-                  <b>Job Name</b>
+                  <span style={{ marginLeft: "50px", fontWeight: "bold" }}>Job Name</span>
                   <br />
-                  <TextField
+                  <input
                     id="job_site_name"
                     type="text"
-                    variant="standard"
-                    InputProps={{
-                      disableUnderline: true,
-                    }}
                     name="job_site_name"
                     value={formUpdateData.job_site_name}
                     onChange={(e) => handleInputChange(undefined, e)}
-                    style={{ marginTop: "12px", width: "100%", marginLeft: '16%' }}
+                    style={{
+                      marginTop: "12px",
+                      width: "130%",
+                      border: "none",
+                      textAlign: "center",
+                      outline: "none",
+
+                    }}
+                    onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                    onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
                   />
                 </div>
                 <div className="col-md-3 text-center">
                   <b>Job Location</b>
                   <br />
-                  <TextField
+                  <input
                     id="job_location"
                     type="text"
-                    variant="standard"
-                    InputProps={{ disableUnderline: true }}
                     name="job_location"
                     value={formUpdateData.job_location}
                     onChange={(e) => handleInputChange(undefined, e)}
-                    style={{ marginTop: "12px", width: "100%", marginLeft: '16%' }}
+                    style={{
+                      marginTop: "12px",
+                      width: "100%",
+                      border: "none",
+                      textAlign: "center",
+                      outline: "none",
+
+                    }}
+                    onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                    onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
                   />
+
                 </div>
               </div>
 
               <div className="line"></div>
-              <div className="row item_details_div px-3">
+              <div className="row item_details_div px-3 mt-3">
                 <span className="plus-icon" onClick={handleAddItem}>
-                  <i className="fas fa-plus-circle"></i>
+                  {/* <i className="fas fa-plus-circle"></i> */}
                 </span>
                 &nbsp;
                 <div className="col-md-2">
@@ -560,220 +646,263 @@ function EditInvoice() {
                 {formUpdateData.items.map((item, index) => (
                   <>
                     {(index + 1) % 16 === 0 && (
-                      <div style={{ marginTop: "160px" }}>
-                        <div className="row" >
-                          <div className="invoice-first-div col-9 px-5" >
-                            <img src={logo} alt="logo tub" />
-                            <address className="mt-3 px-3">
-                              <b style={{ fontSize: "28px" }}>Tub Pro's, Inc. </b>
-                              <br />
-                              <span style={{ fontSize: "22px" }}>
-                                PO Box 30596 <br />
-                                Las Vegas, NV. 89173 <br />
-                                Office: (702)445-6232 <br />
-                                Fax: (702) 445-6241
-                              </span>
-                            </address>
-                          </div>
-                          <div className="col-3">
-                            <p className="invoice-details">
-                              <b>Estimate</b>
-                            </p>
-                            <p>
-                              Number &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                              {formUpdateData.invoice_num}
-                            </p>
+                      <>
+                        <h5 className="text-center"
+                          style={{
+                            fontSize: "25px",
+                            fontWeight: "600",
+                            // marginBottom: "-20px"
+                          }}
+                        >
+                          Thank You! We truly appreciate your business!
+                        </h5>
+                        <div style={baseInvoiceSectionStyle}>
+                          <div className="row" >
+                            <div className="invoice-first-div col-9 px-5" >
+                              <img src={logo} alt="logo tub" />
+                              <address className="mt-3 px-3">
+                                <b style={{ fontSize: "28px" }}>Tub Pro's, Inc. </b>
+                                <br />
+                                <span style={{ fontSize: "22px" }}>
+                                  PO Box 30596 <br />
+                                  Las Vegas, NV. 89173 <br />
+                                  Office: (702) 445-6232 <br />
+                                  Fax: (702) 445-6241
+                                </span>
+                              </address>
+                            </div>
+                            <div className="col-3">
+                              <p className="invoice-details">
+                                <b>Estimate</b>
+                              </p>
+                              <p>
+                                Number &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                {formUpdateData.invoice_num}
+                              </p>
 
-                            <p>
-                              Date
-                              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                              {formatDate(formUpdateData.date)}
-                            </p>
+                              <p>
+                                Date
+                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                {formatDate(formUpdateData.date)}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="row bill_to_div " style={{ border: "2px solid white" }}>
-                          <div className="col-md-9">
-                            <p>
-                              <b>Bill To</b> <br /><br />
-                              {[1, 2, 3].map(
-                                (fieldIndex) =>
-                                  fieldIndex <= visibleBillToFields && (
-                                    <React.Fragment key={`bill_to_${fieldIndex}`}>
-                                      <Autocomplete
-                                        freeSolo
-                                        options={addresses}
-                                        value={formUpdateData.bill_to[fieldIndex - 1] || ''}
-                                        onChange={(event, newValue) => {
-                                          updateBillToField(fieldIndex - 1, newValue);
-                                        }}
-                                        onInputChange={(event, newInputValue) => {
-                                          updateBillToField(fieldIndex - 1, newInputValue);
-                                        }}
-                                        renderInput={(params) => (
-                                          <TextField
-                                            {...params}
-                                            variant="standard"
-                                            onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
-                                            style={{ marginTop: "-20px", width: "55%" }}
-                                          />
-                                        )}
-                                      />
-                                      <br />
-                                    </React.Fragment>
-                                  )
-                              )}
-                            </p>
-                          </div>
-                          <div className="col-md-3">
-                            <p>
-                              <b>Installer</b> <br />
-                              <TextField
-                                id="installer"
-                                type="text"
-                                variant="standard"
-                                name="installer"
-                                value={formUpdateData.installer}
-                                onChange={(e) => handleInputChange(undefined, e)}
-                              />
-                            </p>
-                          </div>
-                        </div>
-                        <div className="row po_details_div">
-                          <div className="col-md-1 ">
-                            <b>PO No.</b>
-                            <br />
-                            <TextField
-                              id="po_num"
-                              type="text"
-                              variant="standard"
-                              InputProps={{ disableUnderline: true }}
-                              // inputProps={{
-                              //   style: { textAlign: 'center' }
-                              // }}
-                              name="PO_number"
-                              value={formUpdateData.PO_number}
-                              onChange={(e) => handleInputChange(undefined, e)}
-                              style={{ marginTop: "12px", width: "100%" }}
-                            />
-                          </div>
-                          <div className="col-md-2 text-center">
-                            <b>PO Date</b>
-                            <br />
-                            <TextField
-                              readOnly
-                              id="PO_date"
-                              variant="standard"
-                              placeholder="mm/dd/yyyy"
-                              type="text"
-                              style={{ width: "80%", marginTop: "12px", }}
-                              InputProps={{
-                                endAdornment: (
-                                  <img
-                                    src={calenderImg}
-                                    alt='calendar'
-                                    onClick={() => setAdEstimateAvaiableDatePicker(true)}
-                                    style={{ cursor: 'pointer', }}
-                                  />
-                                ),
-                                disableUnderline: true
-                              }}
-                              value={formatDate(formUpdateData.PO_date)}
-                            />
-                            {adEstimateAvaiableDatePicker && (
-                              <div style={{ position: 'absolute', zIndex: 1000 }}>
-                                <DatePicker
-                                  selected={formUpdateData.PO_date}
-                                  onChange={(date) => {
-                                    setFormUpdateData({ ...formUpdateData, PO_date: date });
-                                    setAdEstimateAvaiableDatePicker(false);
+                          <div className="row bill_to_div " style={{ border: "2px solid white" }}>
+                            <div className="col-md-9">
+                              <p>
+                                <b>Bill To</b> <br /><br />
+                                {[1, 2, 3].map(
+                                  (fieldIndex) =>
+                                    fieldIndex <= visibleBillToFields && (
+                                      <React.Fragment key={`bill_to_${fieldIndex}`}>
+                                        <Autocomplete
+                                          freeSolo
+                                          options={addresses}
+                                          value={formUpdateData.bill_to[fieldIndex - 1] || ''}
+                                          onChange={(event, newValue) => {
+                                            updateBillToField(fieldIndex - 1, newValue);
+                                          }}
+                                          onInputChange={(event, newInputValue) => {
+                                            updateBillToField(fieldIndex - 1, newInputValue);
+                                          }}
+                                          renderInput={(params) => (
+                                            <TextField
+                                              {...params}
+                                              variant="standard"
+                                              onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
+                                              style={{ marginTop: "-20px", width: "55%", marginBottom: "15px" }}
+                                              InputProps={{
+                                                disableUnderline: true
+                                              }}
+                                            />
+                                          )}
+                                        />
+                                      </React.Fragment>
+                                    )
+                                )}
+                              </p>
+                            </div>
+                            <div className="col-md-3">
+                              <p>
+                                <b>Installer</b> <br />
+                                <TextField
+                                  id="installer"
+                                  type="text"
+                                  variant="standard"
+                                  name="installer"
+                                  value={formUpdateData.installer}
+                                  onChange={(e) => handleInputChange(undefined, e)}
+                                  InputProps={{
+                                    disableUnderline: true
                                   }}
-                                  dateFormat="MM/dd/yyyy"
-                                  inline
                                 />
-                              </div>
-                            )}
+                              </p>
+                            </div>
                           </div>
-                          <div className="col-md-2" style={{ textAlign: "center" }}>
-                            <b>Type of Work</b>
-                            <br />
-                            <TextField
-                              id="type_of_work"
-                              type="text"
-                              variant="standard"
-                              InputProps={{
-                                disableUnderline: true,
-                              }}
-                              name="type_of_work"
-                              value={formUpdateData.type_of_work}
-                              onChange={(e) => handleInputChange(undefined, e)}
-                              style={{ marginTop: "12px", width: "100%", marginLeft: '16%' }}
-                            />
-                          </div>
-                          <div className="col-md-2 text-center">
-                            <b>Job Site No.</b>
-                            <br />
-                            <TextField
-                              id="job_site_no"
-                              type="text"
-                              variant="standard"
-                              InputProps={{
-                                disableUnderline: true,
-                              }}
-                              name="job_site_num"
-                              value={formUpdateData.job_site_num}
-                              onChange={(e) => handleInputChange(undefined, e)}
-                              style={{ marginTop: "12px", width: "100%", marginLeft: '30%' }}
-                            />
-                          </div>
-                          <div className="col-md-2 text-center">
-                            <b>Job Name</b>
-                            <br />
-                            <TextField
-                              id="job_site_name"
-                              type="text"
-                              variant="standard"
-                              InputProps={{
-                                disableUnderline: true,
-                              }}
-                              name="job_site_name"
-                              value={formUpdateData.job_site_name}
-                              onChange={(e) => handleInputChange(undefined, e)}
-                              style={{ marginTop: "12px", width: "100%", marginLeft: '16%' }}
-                            />
-                          </div>
-                          <div className="col-md-3 text-center">
-                            <b>Job Location</b>
-                            <br />
-                            <TextField
-                              id="job_location"
-                              type="text"
-                              variant="standard"
-                              InputProps={{ disableUnderline: true }}
-                              name="job_location"
-                              value={formUpdateData.job_location}
-                              onChange={(e) => handleInputChange(undefined, e)}
-                              style={{ marginTop: "12px", width: "100%", marginLeft: '16%' }}
-                            />
-                          </div>
-                        </div>
+                          <div className="row po_details_div px-3">
+                            <div className="col-md-1 ">
+                              <b>PO No.</b>
+                              <br />
+                              <input
+                                id="po_num"
+                                type="text"
+                                name="PO_number"
+                                value={formUpdateData.PO_number}
+                                onChange={(e) => handleInputChange(undefined, e)}
+                                style={{
+                                  marginTop: "12px",
+                                  width: "100%",
+                                  border: "none",
+                                  textAlign: "center",
+                                  outline: "none",
 
-                        <div className="line"></div>
-                        <div className="row item_details_div ">
-                          <span className="plus-icon" onClick={handleAddItem}>
-                            <i className="fas fa-plus-circle"></i>
-                          </span>
-                          &nbsp;
-                          <div className="col-md-2">
-                            <b>Lot No.</b>
+                                }}
+                                onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                                onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                              />
+                            </div>
+                            <div className="col-md-2 text-center">
+                              <b>PO Date</b>
+                              <br />
+                              <TextField
+                                readOnly
+                                id="PO_date"
+                                variant="standard"
+                                placeholder="mm/dd/yyyy"
+                                type="text"
+                                style={{ width: "75%", marginTop: "23px", }}
+                                InputProps={{
+                                  endAdornment: (
+                                    <img
+                                      src={calenderImg}
+                                      alt='calendar'
+                                      onClick={() => setAdEstimateAvaiableDatePicker(true)}
+                                      style={{ cursor: 'pointer', }}
+                                    />
+                                  ),
+                                  disableUnderline: true
+                                }}
+                                value={formatDate(formUpdateData.PO_date)}
+                              />
+                              {adEstimateAvaiableDatePicker && (
+                                <div style={{ position: 'absolute', zIndex: 1000 }}>
+                                  <DatePicker
+                                    selected={formUpdateData.PO_date}
+                                    onChange={(date) => {
+                                      setFormUpdateData({ ...formUpdateData, PO_date: date });
+                                      setAdEstimateAvaiableDatePicker(false);
+                                    }}
+                                    dateFormat="MM/dd/yyyy"
+                                    inline
+                                  />
+                                </div>
+                              )}
+                            </div>
+                            <div className="col-md-2" style={{ textAlign: "center" }}>
+                              <b>Type of Work</b>
+                              <br />
+                              <input
+                                id="type_of_work"
+                                type="text"
+                                name="type_of_work"
+                                value={formUpdateData.type_of_work}
+                                onChange={(e) => handleInputChange(undefined, e)}
+                                style={{
+                                  marginTop: "12px",
+                                  width: "100%",
+                                  border: "none",
+                                  textAlign: "center",
+                                  outline: "none",
+
+                                }}
+                                onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                                onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                              />
+                            </div>
+                            <div className="col-md-2 text-center">
+                              <b>Job Site No.</b>
+                              <br />
+                              <input
+                                id="job_site_no"
+                                type="text"
+                                name="job_site_num"
+                                value={formUpdateData.job_site_num}
+                                onChange={(e) => handleInputChange(undefined, e)}
+                                style={{
+                                  marginTop: "12px",
+                                  width: "100%",
+                                  border: "none",
+                                  textAlign: "center",
+                                  outline: "none",
+
+                                }}
+                                onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                                onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                              />
+                            </div>
+                            <div className="col-md-2 text-center">
+                              <span style={{ marginLeft: "50px", fontWeight: "bold" }}>Job Name</span>
+                              <br />
+                              <input
+                                id="job_site_name"
+                                type="text"
+                                name="job_site_name"
+                                value={formUpdateData.job_site_name}
+                                onChange={(e) => handleInputChange(undefined, e)}
+                                style={{
+                                  marginTop: "12px",
+                                  width: "130%",
+                                  border: "none",
+                                  textAlign: "center",
+                                  outline: "none",
+
+                                }}
+                                onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                                onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                              />
+                            </div>
+                            <div className="col-md-3 text-center">
+                              <b>Job Location</b>
+                              <br />
+                              <input
+                                id="job_location"
+                                type="text"
+                                name="job_location"
+                                value={formUpdateData.job_location}
+                                onChange={(e) => handleInputChange(undefined, e)}
+                                style={{
+                                  marginTop: "12px",
+                                  width: "100%",
+                                  border: "none",
+                                  textAlign: "center",
+                                  outline: "none",
+
+                                }}
+                                onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                                onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                              />
+
+                            </div>
                           </div>
-                          <div className="col-md-6 text-center">
-                            <b>Description</b>
+
+                          <div className="line"></div>
+                          <div className="row item_details_div ">
+                            <span className="plus-icon" onClick={handleAddItem}>
+                              {/* <i className="fas fa-plus-circle"></i> */}
+                            </span>
+                            &nbsp;
+                            <div className="col-md-2">
+                              <b>Lot No.</b>
+                            </div>
+                            <div className="col-md-6 text-center">
+                              <b>Description</b>
+                            </div>
+                            <div className="col-md-1" style={{ marginLeft: "-2px" }}><b>Quantity</b></div>
+                            <div className="col-md-2" style={{ marginLeft: "20px" }}><b>Price Each</b></div>
+                            <div className="col-md-1" style={{ marginLeft: "-75px" }}> <b>Amount</b></div>
                           </div>
-                          <div className="col-md-1" style={{ marginLeft: "-2px" }}><b>Quantity</b></div>
-                          <div className="col-md-2" style={{ marginLeft: "20px" }}><b>Price Each</b></div>
-                          <div className="col-md-1" style={{ marginLeft: "-75px" }}> <b>Amount</b></div>
                         </div>
-                      </div>
+                      </>
                     )}
                     <div
                       className="row"
@@ -781,16 +910,20 @@ function EditInvoice() {
                     >
                       <div className="col-md-2">
                         <TextField
-                          id="lot_no"
+                          key={index}
+                          ref={el => inputRefs.current[index] = el}
                           variant="standard"
                           type="text"
                           name="lot_no"
                           value={item.lot_no}
                           onChange={(e) => handleInputChange(index, e)}
-                          inputProps={{ style: { width: '100%', maxWidth: '100%' } }}
+                          onKeyPress={(e) => handleLotNoKeyPress(e, index)}
                           style={{
                             marginTop: '8px',
                             width: `${Math.max(30, Math.min(10 + ((item.lot_no ? item?.lot_no?.length : 0) * 8), 100))}%`
+                          }}
+                          InputProps={{
+                            disableUnderline: true
                           }}
                         />
                       </div>
@@ -823,9 +956,13 @@ function EditInvoice() {
                               {...params}
                               variant="standard"
                               style={{
-                                marginTop: index === 0 ? '6px' : '5px',
-                                width: `${Math.min(10 + (item?.description?.length * 2), 100)}%`
+                                marginTop: index === 0 ? '-5px' : '-5px',
+                                width: "100%"
                               }}
+                              // InputProps={{
+                              //   disableUnderline: true
+                              // }}
+                              onKeyPress={handleLotNoKeyPress}
                             />
                           )}
                         />
@@ -869,7 +1006,7 @@ function EditInvoice() {
                           marginLeft: "-50px", width: "150px", textAlign: "center"
                         }}
                       >
-                        <p style={{ marginTop: "26px" }}>
+                        <p style={{ marginTop: "20px" }}>
                           {`$${((item.quantity || 0) * (item.price_each || 0)).toFixed(2)}`}
                         </p>
                       </div>
@@ -882,25 +1019,34 @@ function EditInvoice() {
                 className="invoice-last-div px-3"
                 style={{
                   marginTop: formUpdateData.items.length === 2
-                    ? "800px"
+                    ? "1000px"
                     : formUpdateData.items.length >= 3 && formUpdateData.items.length <= 5
-                      ? "560px"
+                      ? "600px"
                       : formUpdateData.items.length >= 6 && formUpdateData.items.length <= 8
-                        ? "320px"
+                        ? "500px"
                         : formUpdateData.items.length >= 9 && formUpdateData.items.length <= 11
-                          ? "130px"
+                          ? "220px"
                           : formUpdateData.items.length >= 12 && formUpdateData.items.length <= 14
-                            ? "0px"
-                            : formUpdateData.items.length > 16
-                              ? "70px"
-                              : "50px"
+                            ? "6px"
+                            : formUpdateData.items.length >= 15 && formUpdateData.items.length <= 16
+                              ? "60px"
+                              : formUpdateData.items.length > 17
+                                ? "0px"
+                                : "50px"
                 }}
-
               >
-                <p style={{ marginRight: "70px" }}>
+                <p style={{
+                  marginRight: "70px",
+                  // marginTop: formUpdateData.items.length > 17 ? "30%" : "0px"
+                  marginTop: "30px"
+                }}>
                   Total Due: {`$${formUpdateData?.total_amount?.toFixed(2) || ""}`}
                 </p>
-                <h5 style={{ fontSize: "25px", fontWeight: "600" }}>
+                <h5 style={{
+                  fontSize: "25px",
+                  fontWeight: "600",
+                  marginTop: "-20px"
+                }}>
                   Thank You! We truly appreciate your business!
                 </h5>
               </div>

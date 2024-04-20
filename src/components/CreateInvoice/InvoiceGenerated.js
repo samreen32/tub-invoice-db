@@ -5,11 +5,10 @@ import { useNavigate } from "react-router";
 import generatePDF from "react-to-pdf";
 import TextField from "@mui/material/TextField";
 import InputAdornment from '@mui/material/InputAdornment';
-import Autocomplete from '@mui/material/Autocomplete';
 
 function InvoiceGenerated() {
   let navigate = useNavigate();
-  const { formData, setFormData, addresses } = UserLogin();
+  const { formData, setFormData } = UserLogin();
   const targetRef = useRef();
   const [visibleBillToFields, setVisibleBillToFields] = useState(3);
   const [focusedField, setFocusedField] = useState(null);
@@ -60,14 +59,7 @@ function InvoiceGenerated() {
     }
   }, [focusedField]);
 
-  const updateBillToField = (index, value) => {
-    setFormData((prevData) => {
-      const updatedBillTo = [...prevData.bill_to];
-      updatedBillTo[index] = value || '';
-      return { ...prevData, bill_to: updatedBillTo };
-    });
-  };
- 
+
   function formatDate(dateString) {
     const date = new Date(dateString);
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -78,6 +70,12 @@ function InvoiceGenerated() {
 
   const formatPrice = (price) => {
     return parseFloat(price).toFixed(2);
+  };
+
+  const baseInvoiceSectionStyle = {
+    marginTop: "190px",
+    border: "2px solid white",
+    // height: "1200px"
   };
 
   return (
@@ -128,7 +126,7 @@ function InvoiceGenerated() {
                 <span style={{ fontSize: "22px" }}>
                   PO Box 30596 <br />
                   Las Vegas, NV. 89173 <br />
-                  Office: (702)445-6232 <br />
+                  Office: (702) 445-6232 <br />
                   Fax: (702) 445-6241
                 </span>
 
@@ -166,8 +164,11 @@ function InvoiceGenerated() {
                         variant="standard"
                         value={formData.bill_to[fieldIndex - 1]}
                         onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
-                        style={{ marginTop: "20px" }}
+                        style={{ marginTop: "2px" }}
                         readOnly
+                        InputProps={{
+                          disableUnderline: true
+                        }}
                       />
                     </React.Fragment>
                   )
@@ -225,7 +226,7 @@ function InvoiceGenerated() {
             <div className="line my-3"></div>
             <div className="row item_details_div px-3">
               <span className="plus-icon">
-                <i className="fas fa-plus-circle"></i>
+                {/* <i className="fas fa-plus-circle"></i> */}
               </span>
               &nbsp;
               <div className="col-md-2">
@@ -242,127 +243,140 @@ function InvoiceGenerated() {
               {formData.items.map((item, index) => (
                 <>
                   {(index + 1) % 16 === 0 && (
-                    <div style={{ marginTop: "160px" }}>
-                      {/* <hr /> */}
-                      <div className="row">
-                        <div className="invoice-first-div col-9 ">
-                          <img src={logo} alt="logo tub" />
-                          <address className="mt-3 px-3">
-                            <b style={{ fontSize: "28px" }}>Tub Pro's, Inc. </b>
+                    <>
+                      <h5 className="text-center"
+                        style={{
+                          fontSize: "25px",
+                          fontWeight: "600",
+                          marginBottom: "-40px"
+                        }}
+                      >
+                        Thank You! We truly appreciate your business!
+                      </h5>
+                      <div style={baseInvoiceSectionStyle}>
+                        <div className="row">
+                          <div className="invoice-first-div col-9 ">
+                            <img src={logo} alt="logo tub" />
+                            <address className="mt-3 px-3">
+                              <b style={{ fontSize: "28px" }}>Tub Pro's, Inc. </b>
+                              <br />
+                              <span style={{ fontSize: "22px" }}>
+                                PO Box 30596 <br />
+                                Las Vegas, NV. 89173 <br />
+                                Office: (702) 445-6232 <br />
+                                Fax: (702) 445-6241
+                              </span>
+
+                            </address>
+                          </div>
+                          <div className="col-3">
+                            <p className="invoice-details">
+                              <b>Estimate</b>
+                            </p>
+                            <p>
+                              Number &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                              {formData.invoice && formData.invoice.invoice_num
+                                ? formData.invoice.invoice_num
+                                : ""}
+                            </p>
+
+                            <p>
+                              Date
+                              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                              {formData.invoice && formData.invoice.date
+                                ? new Date(formData.invoice.date).toLocaleDateString()
+                                : ""}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="row bill_to_div " style={{ width: "50%", border: "2px solid white" }}>
+                          <div className="col-md-9">
+                            <p>
+                              <b>Bill To</b> <br />
+                              {[1, 2, 3].map((fieldIndex) => (
+                                fieldIndex <= visibleBillToFields && (
+                                  <React.Fragment key={`bill_to_${fieldIndex}`}>
+                                    <TextField
+                                      variant="standard"
+                                      value={formData.bill_to[fieldIndex - 1]}
+                                      onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
+                                      style={{ marginTop: "2px" }}
+                                      readOnly
+                                      InputProps={{
+                                        disableUnderline: true
+                                      }}
+                                    />
+                                  </React.Fragment>
+                                )
+                              ))}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="row po_details_div">
+                          <div className="col-md-1 text-center">
+                            <b>PO No.</b>
                             <br />
-                            <span style={{ fontSize: "22px" }}>
-                              PO Box 30596 <br />
-                              Las Vegas, NV. 89173 <br />
-                              Office: (702)445-6232 <br />
-                              Fax: (702) 445-6241
-                            </span>
-
-                          </address>
+                            <div className="my-2">
+                              {formData.PO_number}
+                            </div>
+                          </div>
+                          <div className="col-md-2 text-center">
+                            <b>PO Date</b>
+                            <br />
+                            <div className="mt-3">
+                              {formatDate(formData.PO_date)}
+                            </div>
+                          </div>
+                          <div className="col-md-2 text-center">
+                            <b>Type of Work</b>
+                            <br />
+                            <div className="mt-3">
+                              {formData.type_of_work}
+                            </div>
+                          </div>
+                          <div className="col-md-2 text-center">
+                            <b>Job Site No.</b>
+                            <br />
+                            <div className="mt-3">
+                              {formData.job_site_num}
+                            </div>
+                          </div>
+                          <div className="col-md-2 text-center">
+                            <b>Job Name</b>
+                            <br />
+                            <div className="mt-3">
+                              {formData.job_site_name}
+                            </div>
+                          </div>
+                          <div className="col-md-3 text-center">
+                            <b>Job Location</b>
+                            <br />
+                            <div className="mt-3">
+                              {formData.job_location}
+                            </div>
+                          </div>
                         </div>
-                        <div className="col-3">
-                          <p className="invoice-details">
-                            <b>Estimate</b>
-                          </p>
-                          <p>
-                            Number &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                            {formData.invoice && formData.invoice.invoice_num
-                              ? formData.invoice.invoice_num
-                              : ""}
-                          </p>
 
-                          <p>
-                            Date
-                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                            {formData.invoice && formData.invoice.date
-                              ? new Date(formData.invoice.date).toLocaleDateString()
-                              : ""}
-                          </p>
+                        <div className="line"></div>
+                        <div className="row item_details_div">
+                          <span className="plus-icon">
+                            {/* <i className="fas fa-plus-circle"></i> */}
+                          </span>
+                          &nbsp;
+                          <div className="col-md-2">
+                            <b>Lot No.</b>
+                          </div>
+                          <div className="col-md-6 text-center">
+                            <b>Description</b>
+                          </div>
+                          <div className="col-md-1" style={{ marginLeft: "-2px" }}><b>Quantity</b></div>
+                          <div className="col-md-2" style={{ marginLeft: "20px" }}><b>Price Each</b></div>
+                          <div className="col-md-1" style={{ marginLeft: "-75px" }}> <b>Amount</b></div>
                         </div>
                       </div>
-
-                      <div className="row bill_to_div " style={{ width: "50%", border: "2px solid white" }}>
-                        <div className="col-md-9">
-                          <p>
-                            <b>Bill To</b> <br />
-                            {[1, 2, 3].map((fieldIndex) => (
-                              fieldIndex <= visibleBillToFields && (
-                                <React.Fragment key={`bill_to_${fieldIndex}`}>
-                                  <TextField
-                                    variant="standard"
-                                    value={formData.bill_to[fieldIndex - 1]}
-                                    onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
-                                    style={{ marginTop: "20px" }}
-                                    readOnly
-                                  />
-                                </React.Fragment>
-                              )
-                            ))}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="row po_details_div">
-                        <div className="col-md-1 text-center">
-                          <b>PO No.</b>
-                          <br />
-                          <div className="my-2">
-                            {formData.PO_number}
-                          </div>
-                        </div>
-                        <div className="col-md-2 text-center">
-                          <b>PO Date</b>
-                          <br />
-                          <div className="mt-3">
-                            {formatDate(formData.PO_date)}
-                          </div>
-                        </div>
-                        <div className="col-md-2 text-center">
-                          <b>Type of Work</b>
-                          <br />
-                          <div className="mt-3">
-                            {formData.type_of_work}
-                          </div>
-                        </div>
-                        <div className="col-md-2 text-center">
-                          <b>Job Site No.</b>
-                          <br />
-                          <div className="mt-3">
-                            {formData.job_site_num}
-                          </div>
-                        </div>
-                        <div className="col-md-2 text-center">
-                          <b>Job Name</b>
-                          <br />
-                          <div className="mt-3">
-                            {formData.job_site_name}
-                          </div>
-                        </div>
-                        <div className="col-md-3 text-center">
-                          <b>Job Location</b>
-                          <br />
-                          <div className="mt-3">
-                            {formData.job_location}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="line"></div>
-                      <div className="row item_details_div">
-                        <span className="plus-icon">
-                          <i className="fas fa-plus-circle"></i>
-                        </span>
-                        &nbsp;
-                        <div className="col-md-2">
-                          <b>Lot No.</b>
-                        </div>
-                        <div className="col-md-6 text-center">
-                          <b>Description</b>
-                        </div>
-                        <div className="col-md-1" style={{ marginLeft: "-2px" }}><b>Quantity</b></div>
-                        <div className="col-md-2" style={{ marginLeft: "20px" }}><b>Price Each</b></div>
-                        <div className="col-md-1" style={{ marginLeft: "-75px" }}> <b>Amount</b></div>
-                      </div>
-                    </div>
+                    </>
                   )}
                   <div
                     className="row"
@@ -378,6 +392,9 @@ function InvoiceGenerated() {
                         // inputProps={{ style: { width: '100%', maxWidth: '100%' } }}
                         style={{ marginTop: '0px', width: `${Math.min((item?.lot_no?.length * 5) + 10, 100)}%` }}
                         aria-readonly
+                        InputProps={{
+                          disableUnderline: true
+                        }}
                       />
                     </div>
                     <div className="col-md-6">
@@ -390,7 +407,9 @@ function InvoiceGenerated() {
                         aria-readonly
                         inputProps={{ style: { width: '100%', maxWidth: '100%' } }}
                         style={{ marginTop: '-8px', width: `${Math.min(10 + (item?.description?.length * 2), 100)}%` }}
-
+                        InputProps={{
+                          disableUnderline: true
+                        }}
                       />
                     </div>
                     <div className="col-md-1 text-center">
@@ -438,94 +457,39 @@ function InvoiceGenerated() {
                 </>
               ))}
             </div>
-            {/* <div className="row item_details_div px-3">
-              <div className="col-md-2">
-                <b>Lot No.</b>
-                <br />
-                <div className="mt-3">
-                  {formData.items.map((item, index) => (
-                    <span key={index}>
-                      {item.lot_no}
-                      {index < formData.items.length - 1 && <br />}
-                    </span>
-                  ))}
 
-                </div>
-              </div>
-              <div className="col-md-5 text-center">
-                <b>Description</b>
-                <br />
-                <div className="mt-3">
-                  {formData.items.map((item, index) => (
-                    <span key={index}>
-                      {item.description}
-                      {index < formData.items.length - 1 && <br />}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="col-md-1 text-center">
-                <b>Quantity</b>
-                <br />
-                <div className="mt-3">
-                  {formData.items.map((item, index) => (
-                    <span key={index}>
-                      {item.quantity}
-                      {index < formData.items.length - 1 && <br />}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="col-md-2 text-center">
-                <b>Price Each</b>
-                <br />
-                <div className="mt-3">
-                  {formData.items.map((item, index) => (
-                    <span key={index}>
-                      $ {item.price_each}
-                      {index < formData.items.length - 1 && <br />}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="col-md-1">
-                <b>Amount</b>
-                <br />
-                <div className="mt-3">
-                  {formData.items.map((item, index) => (
-                    <span key={index} style={{ width: "150px" }}>
-                      {`$${((item.quantity || 0) * (item.price_each || 0)).toFixed(2)}`}
-                      <br />
-                    </span>
-                  ))}
-                </div>
-
-              </div>
-            </div> */}
-
-            <div className="invoice-last-div px-3"
+            <div
+              className="invoice-last-div px-3"
               style={{
                 marginTop: formData.items.length === 2
-                  ? "800px"
+                  ? "1000px"
                   : formData.items.length >= 3 && formData.items.length <= 5
-                    ? "560px"
+                    ? "600px"
                     : formData.items.length >= 6 && formData.items.length <= 8
-                      ? "320px"
+                      ? "500px"
                       : formData.items.length >= 9 && formData.items.length <= 11
-                        ? "130px"
+                        ? "220px"
                         : formData.items.length >= 12 && formData.items.length <= 14
-                          ? "0px"
-
-                          : formData.items.length > 16
-                            ? "70px"
-                            : "50px"
+                          ? "6px"
+                          : formData.items.length >= 15 && formData.items.length <= 16
+                            ? "0px"
+                            : formData.items.length > 17
+                              ? "0px"
+                              : "50px"
               }}
             >
-              <p style={{ marginRight: "70px" }}>
-                Total Due: ${formData.invoice?.total_amount?.toFixed(2)}
+              <p style={{
+                marginRight: "70px",
+                // marginTop: formData.items.length > 17 ? "30%" : "0px"
+                marginTop: "30px"
+              }}>
+                Total Due: {`$${formData?.total_amount?.toFixed(2) || ""}`}
               </p>
-              <h5 style={{ fontSize: "25px", fontWeight: "600" }}>
+              <h5 style={{
+                fontSize: "25px",
+                fontWeight: "600",
+                marginTop: "-50px"
+              }}>
                 Thank You! We truly appreciate your business!
               </h5>
             </div>

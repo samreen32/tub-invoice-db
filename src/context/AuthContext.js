@@ -10,9 +10,24 @@ const AuthProvider = ({ children }) => {
   const [descriptions, setDescriptions] = useState([]);
   const [adAvaiableDatePicker, setAdAvaiableDatePicker] = useState(false);
   const [adEstimateAvaiableDatePicker, setAdEstimateAvaiableDatePicker] = useState(false);
+
+  const createDefaultItems = () => {
+    const items = [];
+    for (let i = 1; i <= 15; i++) {
+      items.push({
+        lot_no: "",
+        description: "",
+        quantity: 0,
+        price_each: 0,
+        total_amount: 0,
+      });
+    }
+    return items;
+  };
+
+  // Set the initial state with 15 default items
   const [formData, setFormData] = useState({
     bill_to: [""],
-    installer: "",
     PO_number: "",
     PO_date: "",
     PO_Invoice_date: "",
@@ -20,20 +35,27 @@ const AuthProvider = ({ children }) => {
     job_site_num: "",
     job_site_name: "",
     job_location: "",
-    items: [
-      {
-        lot_no: "",
-        description: "",
-        quantity: "",
-        price_each: "",
-      },
-    ],
+    items: createDefaultItems(),  
     invoice: {
       invoice_num: null,
       date: null,
       total_amount: null,
     },
   });
+
+  const createDefaultUpdateItems = () => {
+    const items = [];
+    for (let i = 1; i <= 16; i++) {
+      items.push({
+        lot_no: "",
+        description: "",
+        quantity: 0,
+        price_each: 0,
+        total_amount: 0,
+      });
+    }
+    return items;
+  };
 
   const [formUpdateData, setFormUpdateData] = useState({
     bill_to: ["", "", ""],
@@ -45,14 +67,7 @@ const AuthProvider = ({ children }) => {
     job_site_num: "",
     job_site_name: "",
     job_location: "",
-    items: [
-      {
-        lot_no: "",
-        description: "",
-        quantity: "",
-        price_each: "",
-      },
-    ],
+    items: createDefaultUpdateItems(), 
     invoice: {
       invoice_num: null,
       date: null,
