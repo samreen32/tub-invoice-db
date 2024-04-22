@@ -1162,3 +1162,13 @@ input {
 .css-12rx5qu::after {
   border-bottom: 1px solid white !important;
 }
+
+.centeredInput::before {
+  content: '$';  /* Adding the dollar symbol */
+  position: absolute;
+  left: 50%;  /* Center the symbol */
+  transform: translateX(-50%);  /* Ensure it's perfectly centered */
+  color: black;
+  font-size: 1.4rem;
+  pointer-events: none;  /* Prevent the symbol from blocking input */
+}

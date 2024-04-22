@@ -8,15 +8,12 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import InputAdornment from '@mui/material/InputAdornment';
 import Autocomplete from '@mui/material/Autocomplete';
-import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import calenderImg from "../../assets/img/ad_calender.png"
 
 function InvoiceForm() {
   let navigate = useNavigate();
   const { formData, setFormData, addresses, descriptions } = UserLogin();
   const [visibleBillToFields, setVisibleBillToFields] = useState(1);
-  const [focusedField, setFocusedField] = useState(null);
   const createDefaultItems = (numItems = 15) => {
     return Array.from({ length: numItems }, () => ({
       lot_no: "",
@@ -63,7 +60,6 @@ function InvoiceForm() {
           total_amount: totalAmount, // Update the total amount based on item calculations
         };
       } else {
-        // Handle updates to fields outside of the items array
         return {
           ...prevData,
           [name]: value,
@@ -71,22 +67,6 @@ function InvoiceForm() {
       }
     });
   };
-
-
-  // const handleInputChange = (index, event) => {
-  //   const { name, value } = event.target;
-  //   setFormData(prevData => ({
-  //     ...prevData,
-  //     [name]: value
-  //   }));
-  //   const newItems = formData.items.map((item, idx) => {
-  //     if (idx === index) {
-  //       return { ...item, [event.target.name]: event.target.value };
-  //     }
-  //     return item;
-  //   });
-  //   setFormData({ ...formData, items: newItems });
-  // };
 
   const handleAddItem = () => {
     const newItems = Array.from({ length: 15 }, () => ({
@@ -110,12 +90,43 @@ function InvoiceForm() {
   };
 
   useEffect(() => {
-    // Setting focus to the new last `lot_no` field after items are added
     const lastIndex = formData.items.length - 1;
     if (inputRefs.current[lastIndex]) {
       inputRefs.current[lastIndex].focus();
     }
   }, [formData.items.length]);
+
+  const fieldRefs = useRef([]);
+
+  /* Press enter key to add new field as well as key focus */
+  const handleBillToEnterKey = (e, index) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const newFieldIndex = index + 1;
+      if (newFieldIndex >= formData.bill_to.length) {
+        setFormData({
+          ...formData,
+          bill_to: [...formData.bill_to, '']
+        });
+        setVisibleBillToFields(newFieldIndex + 1);
+      }
+      setTimeout(() => {
+        fieldRefs.current[newFieldIndex] && fieldRefs.current[newFieldIndex].focus();
+      }, 0);
+    }
+  };
+
+  useEffect(() => {
+    fieldRefs.current = fieldRefs.current.slice(0, formData.bill_to.length);
+  }, [formData.bill_to]);
+
+  const updateBillToField = (index, value) => {
+    setFormData((prevData) => {
+      const updatedBillTo = [...prevData.bill_to];
+      updatedBillTo[index] = value || '';
+      return { ...prevData, bill_to: updatedBillTo };
+    });
+  };
 
   /* Endpoint integration */
   const handleCreateInvoice = async () => {
@@ -150,25 +161,6 @@ function InvoiceForm() {
     }
   };
 
-  /* Press enter key to add new field as well as key focus */
-  const handleBillToEnterKey = (e, fieldIndex) => {
-    if (e.key === "Enter") {
-      const nextVisibleFields = Math.min(visibleBillToFields + 1, 3);
-      setVisibleBillToFields(nextVisibleFields);
-      setFocusedField(nextVisibleFields - 1);
-      e.preventDefault();
-    }
-  };
-
-  useEffect(() => {
-    if (focusedField !== null) {
-      const inputRef = document.getElementById(`bill_to_${focusedField + 1}`);
-      if (inputRef) {
-        inputRef.focus();
-      }
-    }
-  }, [focusedField]);
-
   const handleGenerateNew = () => {
     setFormData({
       bill_to: [""],
@@ -196,14 +188,6 @@ function InvoiceForm() {
     navigate("/main");
   };
 
-  const updateBillToField = (index, value) => {
-    setFormData((prevData) => {
-      const updatedBillTo = [...prevData.bill_to];
-      updatedBillTo[index] = value || '';
-      return { ...prevData, bill_to: updatedBillTo };
-    });
-  };
-
   const formatPrice = (price) => {
     const priceString = typeof price === 'string' ? price : String(price);
     const [integerPart, decimalPart] = priceString.split('.');
@@ -226,317 +210,46 @@ function InvoiceForm() {
   const baseInvoiceSectionStyle = {
     marginTop: "126px",
     border: "2px solid white",
-    // height: "1200px"
+  };
+
+  const handleEnterKeyPress = (event, currentField, currentIndex) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+
+      let nextFieldId;
+      let nextIndex = currentIndex;
+
+      // Determining the next field based on the current field
+      switch (currentField) {
+        case "lot_no":
+          nextFieldId = `description_${currentIndex}`; // Move to 'Description' of same item
+          break;
+        case "description":
+          nextFieldId = `quantity_${currentIndex}`; // Move to 'Quantity' of same item
+          break;
+        case "quantity":
+          nextFieldId = `price_each_${currentIndex}`; // Move to 'Price Each' of same item
+          break;
+        case "price_each":
+          nextIndex = currentIndex + 1; // Move to next item's 'Lot No'
+          if (nextIndex >= formData.items.length) {
+            nextIndex = 0; // Optionally, wrap to the first item
+          }
+          nextFieldId = `lot_no_${nextIndex}`;
+          break;
+        default:
+          // Default case to handle any unexpected fields
+          return; // Do nothing if it's not one of the expected fields
+      }
+
+      const nextFieldElement = document.getElementById(nextFieldId);
+      if (nextFieldElement) {
+        nextFieldElement.focus();
+      }
+    }
   };
 
   return (
-    // <div id="invoice-generated">
-    //   <div style={{ display: "flex", marginBottom: "50px" }}>
-    //     <h2>
-    //       <span
-    //         onClick={handleGenerateNew}
-    //         style={{ cursor: "pointer", marginLeft: "-40%" }}
-    //       >
-    //         <i class="fa fa-chevron-left fa-1x" aria-hidden="true"></i>
-    //       </span>
-    //       <span style={{ cursor: "pointer", marginLeft: "40%" }}>
-    //         <b>Please enter your details</b>
-    //       </span>
-    //     </h2>
-    //   </div>
-    //   <div className="container px-5 py-3" style={{ width: "100%", marginTop: "-50px" }}>
-    //     <div id="pdf">
-    //       <div className="row">
-    //         <div className="invoice-first-div col-8 px-5">
-    //           <img src={logo} alt="logo tub" />
-    //           <address className="mt-3 px-3">
-    //             <b style={{ fontSize: "28px" }}>Tub Pro's, Inc. </b>
-    //             <br />
-    //             <span style={{ fontSize: "22px" }}>
-    //               PO Box 30596 <br />
-    //               Las Vegas, NV. 89173 <br />
-    //               Office: (702)445-6232 <br />
-    //               Fax: (702) 445-6241
-    //             </span>
-    //           </address>
-    //         </div>
-    //         <div className="col-4">
-    //           <span
-    //             onClick={handleCreateInvoice}
-    //             style={{ float: "right", cursor: "pointer" }}
-    //           >
-    //             <button className="mt-4 px-3 py-2"
-    //               style={{ background: "green", color: "white", border: "none" }}
-    //             >Generate</button>
-    //             {/* <i class="fa fa-chevron-right fa-lg" aria-hidden="true"></i> */}
-    //           </span>
-    //         </div>
-    //       </div>
-
-    //       <form>
-    //         <div className="row bill_to_div px-3" style={{ border: "2px solid white" }}>
-    //           <>
-    //             <div className="col-md-9">
-    //               <p>
-    //                 <b>Bill To </b> <br />
-    //                 {[1, 2, 3].map(
-    //                   (fieldIndex) =>
-    //                     fieldIndex <= visibleBillToFields && (
-    //                       <React.Fragment key={`bill_to_${fieldIndex}`}>
-    //                         <Autocomplete
-    //                           freeSolo
-    //                           options={addresses}
-    //                           value={formData.bill_to[fieldIndex - 1] || ''}
-    //                           onChange={(event, newValue) => {
-    //                             updateBillToField(fieldIndex - 1, newValue);
-    //                           }}
-    //                           onInputChange={(event, newInputValue) => {
-    //                             updateBillToField(fieldIndex - 1, newInputValue);
-    //                           }}
-    //                           renderInput={(params) => (
-    //                             <TextField
-    //                               {...params}
-    //                               variant="standard"
-    //                               onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
-    //                               style={{ marginTop: "-20px", width: "80%" }}
-    //                             />
-    //                           )}
-    //                         />
-    //                         <br />
-    //                       </React.Fragment>
-    //                     )
-    //                 )}
-    //               </p>
-    //             </div>
-
-    //             <div className="col-md-3">
-    //               <p>
-    //                 <b>Installer</b>  <br />
-    //                 <TextField
-    //                   id="installer"
-    //                   type="text"
-    //                   variant="standard"
-    //                   name="installer"
-    //                   value={formData.installer}
-    //                   onChange={(e) => handleInputChange(undefined, e)}
-    //                 />
-    //               </p>
-    //             </div>
-    //           </>
-    //         </div>
-
-    //         <div className="last-row mt-2">
-    //           <div className="row po_details_div px-3">
-    //             <div className="col-md-1">
-    //               <b>PO No.</b>
-    //               <br />
-    //               <TextField
-    //                 id="po_num"
-    //                 type="text"
-    //                 variant="standard"
-    //                 InputProps={{ disableUnderline: true }}
-    //                 name="PO_number"
-    //                 value={formData.PO_number}
-    //                 onChange={(e) => handleInputChange(undefined, e)}
-    //                 style={{ marginTop: "12px", width: "100%" }}
-    //               />
-    //             </div>
-    //             <div className="col-md-2">
-    //               <b>PO Date</b>
-    //               <br />
-    //               <TextField
-    //                 id="po_date"
-    //                 type="date"
-    //                 variant="standard"
-    //                 InputProps={{ disableUnderline: true }}
-    //                 name="PO_date"
-    //                 value={formData.PO_date}
-    //                 onChange={(e) => handleInputChange(undefined, e)}
-    //                 style={{ marginTop: "12px", width: "80%" }}
-    //               />
-    //             </div>
-    //             <div className="col-md-2">
-    //               <b>Job Site No.</b>
-    //               <br />
-    //               <TextField
-    //                 id="job_site_no"
-    //                 type="text"
-    //                 variant="standard"
-    //                 InputProps={{ disableUnderline: true }}
-    //                 name="job_site_num"
-    //                 value={formData.job_site_num}
-    //                 onChange={(e) => handleInputChange(undefined, e)}
-    //                 style={{ marginTop: "12px", width: "100%" }}
-    //               />
-    //             </div>
-    //             <div className="col-md-2">
-    //               <b>Type of Work</b>
-    //               <br />
-    //               <TextField
-    //                 id="type_of_work"
-    //                 type="text"
-    //                 variant="standard"
-    //                 InputProps={{ disableUnderline: true }}
-    //                 name="type_of_work"
-    //                 value={formData.type_of_work}
-    //                 onChange={(e) => handleInputChange(undefined, e)}
-    //                 style={{ marginTop: "12px", width: "100%" }}
-    //               />
-    //             </div>
-    //             <div className="col-md-2">
-    //               <b>Job Name</b>
-    //               <br />
-    //               <TextField
-    //                 id="job_site_name"
-    //                 type="text"
-    //                 variant="standard"
-    //                 InputProps={{ disableUnderline: true }}
-    //                 name="job_site_name"
-    //                 value={formData.job_site_name}
-    //                 onChange={(e) => handleInputChange(undefined, e)}
-    //                 style={{ marginTop: "12px", width: "100%" }}
-    //               />
-    //             </div>
-    //             <div className="col-md-3">
-    //               <b>Job Location</b>
-    //               <br />
-    //               <TextField
-    //                 id="job_location"
-    //                 type="text"
-    //                 variant="standard"
-    //                 InputProps={{ disableUnderline: true }}
-    //                 name="job_location"
-    //                 value={formData.job_location}
-    //                 onChange={(e) => handleInputChange(undefined, e)}
-    //                 style={{ marginTop: "12px", width: "100%" }}
-    //               />
-    //             </div>
-    //           </div>
-
-    //           <div className="line"></div>
-
-    //           <div className="row item_details_div px-3">
-    //             <span className="plus-icon" onClick={handleAddItem}>
-    //               {/* <i className="fas fa-plus-circle"></i> */}
-    //             </span>&nbsp;
-    //             <div className="col-md-2">
-    //               <b>Lot No.</b>
-    //             </div>
-    //             <div className="col-md-6">
-    //               &nbsp;<b>Description</b>
-    //             </div>
-    //             <div className="col-md-1" style={{ marginLeft: "-40px" }}><b>Quantity</b></div>
-    //             <div className="col-md-2" style={{ marginLeft: "12px" }}><b>Price Each</b></div>
-    //             <div className="col-md-1" style={{ marginLeft: "-65px" }}> <b>Amount</b></div>
-    //           </div>
-    //           {/* <div style={{ overflowY: 'auto', overflowX: "hidden", height: '400px' }}> */}
-    //           <div className="row item_details_div px-3" style={{ marginTop: "-65px" }}>
-    //             {formData.items.map((item, index) => (
-    //               <div
-    //                 className="row"
-    //                 style={{ marginTop: index === 0 ? "6%" : "0px" }}
-    //               >
-    //                 <div className="col-md-2">
-    //                   <TextField
-    //                     key={index}
-    //                     variant="standard"
-    //                     name="lot_no"
-    //                     value={item.lot_no}
-    //                     onChange={(e) => setFormData({
-    //                       ...formData,
-    //                       items: formData.items.map((item, idx) => idx === index ? { ...item, [e.target.name]: e.target.value } : item)
-    //                     })}
-    //                     onKeyPress={(e) => handleLotNoKeyPress(e, index)}
-    //                     style={{ width: "100%", marginTop: "8px" }}
-    //                     InputProps={{ disableUnderline: true }}
-    //                   />
-    //                 </div>
-    //                 <div className="col-md-6">
-    //                   <Autocomplete
-    //                     freeSolo
-    //                     options={descriptions}
-    //                     value={item.description || ''}
-    //                     onChange={(event, newValue) => {
-    //                       handleInputChange(index, {
-    //                         target: {
-    //                           name: 'description',
-    //                           value: newValue,
-    //                         },
-    //                       });
-    //                     }}
-    //                     onInputChange={(event, newInputValue, reason) => {
-    //                       if (reason === 'input') {
-    //                         handleInputChange(index, {
-    //                           target: {
-    //                             name: 'description',
-    //                             value: newInputValue,
-    //                           },
-    //                         });
-    //                       }
-    //                     }}
-    //                     renderInput={(params) => (
-    //                       <TextField
-    //                         {...params}
-    //                         variant="standard"
-    //                         style={{ width: "100%", marginTop: "-6px" }}
-    //                       />
-    //                     )}
-    //                   />
-    //                 </div>
-
-    //                 <div className="col-md-1">
-    //                   <TextField
-    //                     id="quantity"
-    //                     variant="standard"
-    //                     type="number"
-    //                     name="quantity"
-    //                     value={item.quantity}
-    //                     onChange={(e) => handleInputChange(index, e)}
-    //                     style={{ width: "100%", marginTop: "8px" }}
-    //                   />
-    //                 </div>
-    //                 <div className="col-md-2">
-    //                   <TextField
-    //                     id="price_each"
-    //                     variant="standard"
-    //                     type="number"
-    //                     name="price_each"
-    //                     value={formatPrice(item.price_each)}
-    //                     onChange={(e) => handleInputChange(index, e)}
-    //                     style={{ width: "50%", marginTop: "8px" }}
-    //                     InputProps={{
-    //                       startAdornment: (
-    //                         <InputAdornment position="start">
-    //                           <span style={{ fontSize: '1.4rem', color: "black" }}>$</span>
-    //                         </InputAdornment>
-    //                       ),
-    //                     }}
-    //                   />
-    //                 </div>
-    //                 <div className="col-md-1" style={{ marginLeft: "-50px", width: "150px" }}>
-    //                   <p style={{ marginTop: "26px" }}>
-    //                     {`$ ${((item.quantity || 0) * (item.price_each || 0)).toFixed(2)}`}
-    //                   </p>
-    //                 </div>
-
-    //               </div>
-    //             ))}
-
-    //           </div>
-    //           {/* </div> */}
-
-    //           <div className="invoice-last-div ">
-    //             <p style={{ marginRight: "100px", marginTop: "30px" }}>
-    //               <span>Total Due: </span>
-    //               {`$${formData?.total_amount?.toFixed(2) || ""}`}
-    //             </p>
-    //           </div>
-    //         </div>
-    //       </form>
-    //     </div>
-    //   </div>
-    // </div>
-
     <div id="invoice-generated">
       <div style={{ display: "flex", marginBottom: "50px" }}>
         <h2>
@@ -567,7 +280,7 @@ function InvoiceForm() {
                 <span style={{ fontSize: "22px" }}>
                   PO Box 30596 <br />
                   Las Vegas, NV. 89173 <br />
-                  Office: (702)445-6232 <br />
+                  Office: (702) 445-6232 <br />
                   Fax: (702) 445-6241
                 </span>
               </address>
@@ -607,7 +320,8 @@ function InvoiceForm() {
                             <TextField
                               {...params}
                               variant="standard"
-                              onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
+                              inputRef={el => fieldRefs.current[fieldIndex] = el}
+                              onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
                               style={{ marginTop: "-20px", width: "50%", marginBottom: "15px" }}
                             // InputProps={{
                             //   disableUnderline: true
@@ -840,7 +554,8 @@ function InvoiceForm() {
                                           <TextField
                                             {...params}
                                             variant="standard"
-                                            onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
+                                            inputRef={el => fieldRefs.current[fieldIndex] = el}
+                                            onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
                                             style={{ marginTop: "-20px", width: `55%`, marginBottom: "15px" }}
                                           />
                                         )}
@@ -1004,6 +719,7 @@ function InvoiceForm() {
                     >
                       <div className="col-md-2">
                         <TextField
+                          id={`lot_no_${index}`}
                           key={index}
                           ref={el => inputRefs.current[index] = el}
                           variant="standard"
@@ -1019,10 +735,14 @@ function InvoiceForm() {
                           InputProps={{
                             disableUnderline: true
                           }}
+                        // onKeyDown={(event) =>
+                        //   handleEnterKeyPress(event, "lot_no", index)
+                        // }
                         />
                       </div>
                       <div className="col-md-6">
                         <Autocomplete
+                          id={`description_${index}`}
                           freeSolo
                           options={descriptions}
                           value={item.description || ''}
@@ -1052,43 +772,60 @@ function InvoiceForm() {
                                 marginTop: index === 0 ? '-5px' : '-5px',
                                 width: "100%"
                               }}
-                              onKeyPress={handleLotNoKeyPress}
+                              onKeyDown={(event) =>
+                                handleEnterKeyPress(event, "description", index)
+                              }
                             />
                           )}
                         />
                       </div>
-
                       <div className="col-md-1 text-center">
                         <TextField
-                          id="quantity"
+                          id={`quantity_${index}`}
                           variant="standard"
-                          type="number"
+                          type="text"
                           name="quantity"
                           value={item.quantity}
                           onChange={(e) => handleInputChange(index, e)}
                           inputProps={{
                             style: { textAlign: 'center' }
                           }}
+                          onKeyDown={(event) =>
+                            handleEnterKeyPress(event, "quantity", index)
+                          }
                           style={{ width: "100%", marginTop: "8px", marginLeft: "30px" }}
                         />
                       </div>
                       <div className="col-md-2 text-center" style={{ position: "relative" }}>
                         <TextField
-                          id="price_each"
+                          id={`price_each_${index}`}
                           variant="standard"
-                          type="number"
+                          type="text"
                           name="price_each"
                           value={formatPrice(item.price_each)}
                           onChange={(e) => handleInputChange(index, e)}
-                          style={{ width: "45%", marginTop: "8px" }}
+                          onKeyDown={(event) => handleEnterKeyPress(event, "price_each", index)}
+                          style={{ width: "55%", marginTop: "8px" }}
                           InputProps={{
                             startAdornment: (
-                              <InputAdornment position="start">
-                                <span style={{ fontSize: '1.4rem', color: "black" }}>$</span>
+                              <InputAdornment position="center">
+                                <span
+                                  style={{
+                                    marginRight: 'auto', marginLeft: '10px',
+                                    fontSize: '1.4rem', color: "black"
+                                  }}
+                                >
+                                  $
+                                </span>
                               </InputAdornment>
                             ),
+                            style: { justifyContent: 'center' }
+                          }}
+                          inputProps={{
+                            style: { textAlign: 'center' }
                           }}
                         />
+
                       </div>
                       <div className="col-md-1" style={{
                         marginLeft: "-50px", width: "150px", textAlign: "center"

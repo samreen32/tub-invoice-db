@@ -75,13 +75,51 @@ function EditSecondInvoice() {
   };
 
   useEffect(() => {
-    const lastIndex = formUpdateData.items.length - 15; 
+    const lastIndex = formUpdateData.items.length - 15;
     if (inputRefs.current[lastIndex]) {
       inputRefs.current[lastIndex].focus();
     }
   }, [formUpdateData.items.length]);
 
 
+  useEffect(() => {
+    const lastIndex = formUpdateData.items.length - 1;
+    if (inputRefs.current[lastIndex]) {
+      inputRefs.current[lastIndex].focus();
+    }
+  }, [formUpdateData.items.length]);
+
+  const fieldRefs = useRef([]);
+
+  /* Press enter key to add new field as well as key focus */
+  const handleBillToEnterKey = (e, index) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const newFieldIndex = index + 1;
+      if (newFieldIndex >= formUpdateData.bill_to.length) {
+        setFormUpdateData({
+          ...formUpdateData,
+          bill_to: [...formUpdateData.bill_to, '']
+        });
+        setVisibleBillToFields(newFieldIndex + 1);
+      }
+      setTimeout(() => {
+        fieldRefs.current[newFieldIndex] && fieldRefs.current[newFieldIndex].focus();
+      }, 0);
+    }
+  };
+
+  useEffect(() => {
+    fieldRefs.current = fieldRefs.current.slice(0, formUpdateData.bill_to.length);
+  }, [formUpdateData.bill_to]);
+
+  const updateBillToField = (index, value) => {
+    setFormUpdateData((prevData) => {
+      const updatedBillTo = [...prevData.bill_to];
+      updatedBillTo[index] = value || '';
+      return { ...prevData, bill_to: updatedBillTo };
+    });
+  };
 
   /* Endpoint integration */
   useEffect(() => {
@@ -162,43 +200,6 @@ function EditSecondInvoice() {
     }
   };
 
-  // const handleAddItem = (e) => {
-  //   if (e.key === 'Enter') {
-  //     setFormUpdateData((prevData) => ({
-  //       ...prevData,
-  //       items: [
-  //         ...prevData.items,
-  //         {
-  //           description: "",
-  //           quantity: 0,
-  //           price_each: 0,
-  //           total_amount: 0,
-  //         },
-  //       ],
-  //     }));
-  //     e.preventDefault();
-  //   }
-  // };
-
-  /* Press enter key to add new field as well as key focus */
-  const handleBillToEnterKey = (e, fieldIndex) => {
-    if (e.key === "Enter") {
-      const nextVisibleFields = Math.min(visibleBillToFields + 1, 3);
-      setVisibleBillToFields(nextVisibleFields);
-      setFocusedField(nextVisibleFields - 1);
-      e.preventDefault();
-    }
-  };
-
-  useEffect(() => {
-    if (focusedField !== null) {
-      const inputRef = document.getElementById(`bill_to_${focusedField + 1}`);
-      if (inputRef) {
-        inputRef.focus();
-      }
-    }
-  }, [focusedField]);
-
   const handleGenerateNew = () => {
     setFormUpdateData({
       bill_to: [""],
@@ -235,14 +236,6 @@ function EditSecondInvoice() {
     return `${month}/${day}/${year}`;
   };
 
-  const updateBillToField = (index, value) => {
-    setFormUpdateData((prevData) => {
-      const updatedBillTo = [...prevData.bill_to];
-      updatedBillTo[index] = value || '';
-      return { ...prevData, bill_to: updatedBillTo };
-    });
-  };
-
   const formatPrice = (price) => {
     const priceString = typeof price === 'string' ? price : String(price);
     const [integerPart, decimalPart] = priceString.split('.');
@@ -268,29 +261,45 @@ function EditSecondInvoice() {
   };
 
   const baseInvoiceSectionStyle = {
-    marginTop: "190px",
+    marginTop: "200px",
     border: "2px solid white",
     // height: "1200px"
   };
 
-  // Helper function to generate initial items
-  // const generateInitialItems = (count) => {
-  //   return Array.from({ length: count }, () => ({
-  //     lot_no: "",
-  //     description: "",
-  //     quantity: 0,
-  //     price_each: 0
-  //   }));
-  // };
+  const handleEnterKeyPress = (event, currentField, currentIndex) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
 
-  // // Inside your useEffect where you fetch or initialize formUpdateData
-  // useEffect(() => {
-  //   const initialItems = generateInitialItems(15);
-  //   setFormUpdateData((prevData) => ({
-  //     ...prevData,
-  //     items: [...initialItems, ...prevData.items]
-  //   }));
-  // }, []);
+      let nextFieldId;
+      let nextIndex = currentIndex;
+      switch (currentField) {
+        case "lot_no":
+          nextFieldId = `description_${currentIndex}`;
+          break;
+        case "description":
+          nextFieldId = `quantity_${currentIndex}`; // Move to 'Quantity' of same item
+          break;
+        case "quantity":
+          nextFieldId = `price_each_${currentIndex}`; // Move to 'Price Each' of same item
+          break;
+        case "price_each":
+          nextIndex = currentIndex + 1; // Move to next item's 'Lot No'
+          if (nextIndex >= formUpdateData.items.length) {
+            nextIndex = 0; // Optionally, wrap to the first item
+          }
+          nextFieldId = `lot_no_${nextIndex}`;
+          break;
+        default:
+          // Default case to handle any unexpected fields
+          return; // Do nothing if it's not one of the expected fields
+      }
+
+      const nextFieldElement = document.getElementById(nextFieldId);
+      if (nextFieldElement) {
+        nextFieldElement.focus();
+      }
+    }
+  };
 
   return (
     <div id="invoice-generated">
@@ -392,7 +401,8 @@ function EditSecondInvoice() {
                             <TextField
                               {...params}
                               variant="standard"
-                              onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
+                              inputRef={el => fieldRefs.current[fieldIndex] = el}
+                              onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
                               style={{ marginTop: "-20px", width: "50%", marginBottom: "15px" }}
                             // InputProps={{
                             //   disableUnderline: true
@@ -639,7 +649,8 @@ function EditSecondInvoice() {
                                           <TextField
                                             {...params}
                                             variant="standard"
-                                            onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
+                                            inputRef={el => fieldRefs.current[fieldIndex] = el}
+                                            onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
                                             style={{ marginTop: "-20px", width: `55%`, marginBottom: "15px" }}
                                           />
                                         )}
@@ -823,6 +834,7 @@ function EditSecondInvoice() {
                     >
                       <div className="col-md-2">
                         <TextField
+                          id={`lot_no_${index}`}
                           key={index}
                           ref={el => inputRefs.current[index] = el}
                           variant="standard"
@@ -842,6 +854,7 @@ function EditSecondInvoice() {
                       </div>
                       <div className="col-md-6">
                         <Autocomplete
+                          id={`description_${index}`}
                           freeSolo
                           options={descriptions}
                           value={item.description || ''}
@@ -871,7 +884,9 @@ function EditSecondInvoice() {
                                 marginTop: index === 0 ? '-5px' : '-5px',
                                 width: "100%"
                               }}
-                              onKeyPress={handleLotNoKeyPress}
+                              onKeyDown={(event) =>
+                                handleEnterKeyPress(event, "description", index)
+                              }
                             />
                           )}
                         />
@@ -879,9 +894,9 @@ function EditSecondInvoice() {
 
                       <div className="col-md-1 text-center">
                         <TextField
-                          id="quantity"
+                          id={`quantity_${index}`}
                           variant="standard"
-                          type="number"
+                          type="text"
                           name="quantity"
                           value={item.quantity}
                           onChange={(e) => handleInputChange(index, e)}
@@ -889,17 +904,21 @@ function EditSecondInvoice() {
                             style: { textAlign: 'center' }
                           }}
                           style={{ width: "100%", marginTop: "8px", marginLeft: "30px" }}
+                          onKeyDown={(event) =>
+                            handleEnterKeyPress(event, "quantity", index)
+                          }
                         />
                       </div>
                       <div className="col-md-2 text-center" style={{ position: "relative" }}>
                         <TextField
-                          id="price_each"
+                          id={`price_each_${index}`}
                           variant="standard"
-                          type="number"
+                          type="text"
                           name="price_each"
                           value={formatPrice(item.price_each)}
                           onChange={(e) => handleInputChange(index, e)}
-                          style={{ width: "45%", marginTop: "8px" }}
+                          onKeyDown={(event) => handleEnterKeyPress(event, "price_each", index)}
+                          style={{ width: "55%", marginTop: "8px" }}
                           InputProps={{
                             startAdornment: (
                               <InputAdornment position="start">

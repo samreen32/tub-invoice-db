@@ -78,14 +78,39 @@ function InvoiceGenerated() {
     // height: "1200px"
   };
 
+  const handleNavigateMain = () => {
+    setFormData({
+      bill_to: [""],
+      PO_number: "",
+      PO_date: "",
+      PO_Invoice_date: "",
+      type_of_work: "",
+      job_site_num: "",
+      job_site_name: "",
+      job_location: "",
+      items: [
+        {
+          lot_no: "",
+          description: "",
+          quantity: "",
+          price_each: "",
+        },
+      ],
+      invoice: {
+        invoice_num: null,
+        date: null,
+        total_amount: null,
+      },
+    });
+    navigate("/main");
+  };
+
   return (
     <div id="invoice-generated">
       <div className="row">
         <div className="col-3" style={{ marginTop: "40px" }}>
           <div className="add-container">
-            <span onClick={() => {
-              navigate("/main")
-            }}
+            <span onClick={handleNavigateMain}
               className="new-invoice-btn" style={{ marginRight: "20px", background: "grey" }}
             >
               <i class="fas fa-home fa-1x"></i>
@@ -423,7 +448,7 @@ function InvoiceGenerated() {
                         inputProps={{
                           style: { textAlign: 'center' }
                         }}
-                        style={{ width: "100%", marginTop: "8px", marginLeft: "30px" }}
+                        style={{ width: "100%", marginTop: "16px", marginLeft: "30px" }}
                       />
                     </div>
                     <div className="col-md-2 text-center">
@@ -434,7 +459,7 @@ function InvoiceGenerated() {
                         name="price_each"
                         value={formatPrice(item.price_each)}
                         aria-readonly
-                        style={{ width: "50%", marginTop: "8px" }}
+                        style={{ width: "50%", marginTop: "16px" }}
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
