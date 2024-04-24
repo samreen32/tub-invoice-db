@@ -92,8 +92,8 @@ function InvoiceGenerated() {
         {
           lot_no: "",
           description: "",
-          quantity: "",
-          price_each: "",
+          quantity: 0,
+          price_each: 0,
         },
       ],
       invoice: {
@@ -181,7 +181,7 @@ function InvoiceGenerated() {
           <div className="row bill_to_div px-3" style={{ width: "50%", border: "2px solid white" }}>
             <div className="col-md-9">
               <p>
-                <b>Bill To</b> <br />
+                <p style={{ fontWeight: "800" }}>Bill To</p>
                 {[1, 2, 3].map((fieldIndex) => (
                   fieldIndex <= visibleBillToFields && (
                     <React.Fragment key={`bill_to_${fieldIndex}`}>
@@ -189,7 +189,7 @@ function InvoiceGenerated() {
                         variant="standard"
                         value={formData.bill_to[fieldIndex - 1]}
                         onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
-                        style={{ marginTop: "2px" }}
+                        // style={{ marginTop: "2px" }}
                         readOnly
                         InputProps={{
                           disableUnderline: true
@@ -206,49 +206,43 @@ function InvoiceGenerated() {
             <div className="row po_details_div px-3">
               <div className="col-md-1 text-center">
                 <b>PO No.</b>
-                <br />
-                <div className="my-2">
+                <div className="mt-2">
                   {formData.PO_number}
                 </div>
               </div>
               <div className="col-md-2 text-center">
                 <b>PO Date</b>
-                <br />
-                <div className="mt-3">
+                <div className="mt-2">
                   {formatDate(formData.PO_date)}
                 </div>
               </div>
               <div className="col-md-2 text-center">
                 <b>Type of Work</b>
-                <br />
-                <div className="mt-3">
+                <div className="mt-2">
                   {formData.type_of_work}
                 </div>
               </div>
               <div className="col-md-2 text-center">
                 <b>Job Site No.</b>
-                <br />
-                <div className="mt-3">
+                <div className="mt-2">
                   {formData.job_site_num}
                 </div>
               </div>
               <div className="col-md-2 text-center">
                 <b>Job Name</b>
-                <br />
-                <div className="mt-3">
+                <div className="mt-2">
                   {formData.job_site_name}
                 </div>
               </div>
               <div className="col-md-3 text-center">
                 <b>Job Location</b>
-                <br />
-                <div className="mt-3">
+                <div className="mt-2">
                   {formData.job_location}
                 </div>
               </div>
             </div>
 
-            <div className="line my-3"></div>
+            <div className="line my-2"></div>
             <div className="row item_details_div px-3">
               <span className="plus-icon">
                 {/* <i className="fas fa-plus-circle"></i> */}
@@ -267,7 +261,7 @@ function InvoiceGenerated() {
             <div className="row item_details_div px-3" style={{ marginTop: "-65px" }}>
               {formData.items.map((item, index) => (
                 <>
-                  {(index + 1) % 16 === 0 && (
+                  {(index + 1) % 24 === 0 && (
                     <>
                       <h5 className="text-center"
                         style={{
@@ -318,7 +312,7 @@ function InvoiceGenerated() {
                         <div className="row bill_to_div " style={{ width: "50%", border: "2px solid white" }}>
                           <div className="col-md-9">
                             <p>
-                              <b>Bill To</b> <br />
+                              <p style={{ fontWeight: "800" }}>Bill To</p>
                               {[1, 2, 3].map((fieldIndex) => (
                                 fieldIndex <= visibleBillToFields && (
                                   <React.Fragment key={`bill_to_${fieldIndex}`}>
@@ -326,7 +320,7 @@ function InvoiceGenerated() {
                                       variant="standard"
                                       value={formData.bill_to[fieldIndex - 1]}
                                       onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
-                                      style={{ marginTop: "2px" }}
+                                      // style={{ marginTop: "2px" }}
                                       readOnly
                                       InputProps={{
                                         disableUnderline: true
@@ -339,46 +333,40 @@ function InvoiceGenerated() {
                           </div>
                         </div>
 
-                        <div className="row po_details_div">
+                        <div className="row po_details_div px-3">
                           <div className="col-md-1 text-center">
                             <b>PO No.</b>
-                            <br />
-                            <div className="my-2">
+                            <div className="mt-2">
                               {formData.PO_number}
                             </div>
                           </div>
                           <div className="col-md-2 text-center">
                             <b>PO Date</b>
-                            <br />
-                            <div className="mt-3">
+                            <div className="mt-2">
                               {formatDate(formData.PO_date)}
                             </div>
                           </div>
                           <div className="col-md-2 text-center">
                             <b>Type of Work</b>
-                            <br />
-                            <div className="mt-3">
+                            <div className="mt-2">
                               {formData.type_of_work}
                             </div>
                           </div>
                           <div className="col-md-2 text-center">
                             <b>Job Site No.</b>
-                            <br />
-                            <div className="mt-3">
+                            <div className="mt-2">
                               {formData.job_site_num}
                             </div>
                           </div>
                           <div className="col-md-2 text-center">
                             <b>Job Name</b>
-                            <br />
-                            <div className="mt-3">
+                            <div className="mt-2">
                               {formData.job_site_name}
                             </div>
                           </div>
                           <div className="col-md-3 text-center">
                             <b>Job Location</b>
-                            <br />
-                            <div className="mt-3">
+                            <div className="mt-2">
                               {formData.job_location}
                             </div>
                           </div>
@@ -430,7 +418,7 @@ function InvoiceGenerated() {
                         name="description"
                         value={item.description}
                         aria-readonly
-                        inputProps={{ style: { width: '100%', maxWidth: '100%' } }}
+                        inputProps={{ style: { width: '100%', maxWidth: '100%' }, }}
                         style={{ marginTop: '-8px', width: `${Math.min(10 + (item?.description?.length * 2), 100)}%` }}
                         InputProps={{
                           disableUnderline: true
@@ -446,9 +434,12 @@ function InvoiceGenerated() {
                         value={item.quantity}
                         aria-readonly
                         inputProps={{
-                          style: { textAlign: 'center' }
+                          style: { textAlign: 'center' },
                         }}
-                        style={{ width: "100%", marginTop: "16px", marginLeft: "30px" }}
+                        InputProps={{
+                          disableUnderline: true
+                        }}
+                        style={{ width: "100%", marginLeft: "30px" }}
                       />
                     </div>
                     <div className="col-md-2 text-center">
@@ -459,14 +450,16 @@ function InvoiceGenerated() {
                         name="price_each"
                         value={formatPrice(item.price_each)}
                         aria-readonly
-                        style={{ width: "50%", marginTop: "16px" }}
+                        style={{ width: "50%" }}
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
                               <span style={{ fontSize: '1.4rem', color: "black" }}>$</span>
                             </InputAdornment>
                           ),
+                          disableUnderline: true
                         }}
+
                       />
                     </div>
                     <div className="col-md-1"
@@ -474,7 +467,7 @@ function InvoiceGenerated() {
                         marginLeft: "-50px", width: "150px", textAlign: "center"
                       }}
                     >
-                      <p style={{ marginTop: "26px" }}>
+                      <p style={{ marginTop: "0px" }}>
                         {`$${((item.quantity || 0) * (item.price_each || 0)).toFixed(2)}`}
                       </p>
                     </div>
@@ -498,9 +491,15 @@ function InvoiceGenerated() {
                           ? "6px"
                           : formData.items.length >= 15 && formData.items.length <= 16
                             ? "0px"
-                            : formData.items.length > 17
-                              ? "0px"
-                              : "50px"
+                            : formData.items.length >= 17 && formData.items.length <= 18
+                              ? "2px"
+                              : formData.items.length >= 19 && formData.items.length <= 20
+                              ? "2px"
+                              : formData.items.length >= 21 && formData.items.length <= 22
+                              ? "2px"
+                              : formData.items.length > 23
+                                ? "0px"
+                                : "0px"
               }}
             >
               <p style={{

@@ -58,6 +58,7 @@ export default function JobSiteReport() {
                 });
 
                 setInvoices(searchedInvoices);
+                console.log(searchedInvoices, "hdasjh")
 
                 const totalSum = searchedInvoices.reduce(
                     (sum, invoice) => sum + invoice.total_amount,
@@ -75,7 +76,7 @@ export default function JobSiteReport() {
     const columns = [
         { id: "invoice_num", label: "Invoice No.", minWidth: 100 },
         { id: "job_location", label: "Job Site Location", minWidth: 100 },
-        { id: "lot_no", label: "Lot No.", minWidth: 100 },
+        // { id: "lot_no", label: "Lot No.", minWidth: 100 },
         { id: "total_amount", label: "Amount", minWidth: 100 },
 
     ];
@@ -154,7 +155,7 @@ export default function JobSiteReport() {
                     </>
 
                     <div ref={targetRef} style={{ padding: "0 20px" }}>
-                        <br/>     <br/><br/> 
+                        <br />     <br /><br />
                         <span style={{ cursor: "pointer", marginLeft: "40%" }}>
                             <h2 style={{ padding: "5px" }}>Job Site Name Report</h2>
                         </span><br />

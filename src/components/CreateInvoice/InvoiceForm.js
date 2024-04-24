@@ -14,12 +14,12 @@ function InvoiceForm() {
   let navigate = useNavigate();
   const { formData, setFormData, addresses, descriptions } = UserLogin();
   const [visibleBillToFields, setVisibleBillToFields] = useState(1);
-  const createDefaultItems = (numItems = 15) => {
+  const createDefaultItems = (numItems = 23) => {
     return Array.from({ length: numItems }, () => ({
       lot_no: "",
       description: "",
       quantity: 0,
-      price_each: 0,
+      price_each: "0.00",
       total_amount: 0,
     }));
   };
@@ -35,45 +35,52 @@ function InvoiceForm() {
 
   const handleInputChange = (index, e) => {
     const { name, value } = e.target;
+    const formatPriceEach = (value) => {
+      let numericValue = String(value);
+      numericValue = numericValue.replace(/[^0-9.]/g, '');
+      const dotIndex = numericValue.indexOf('.');
+      if (dotIndex === -1 && numericValue.length > 2) {
+        numericValue = numericValue.slice(0, 2) + '.' + numericValue.slice(2);
+      }
 
+      return numericValue;
+    };
+
+    const formattedValue = name === 'price_each' ? formatPriceEach(value) : value;
     setFormData((prevData) => {
-      // Check if an index is provided, indicating an update to the items array
       if (index !== undefined) {
-        // Copy items to a new array for immutability
         const updatedItems = prevData.items.map((item, idx) => {
-          // Update the item at the specified index
           if (idx === index) {
-            return { ...item, [name]: value };
+            return { ...item, [name]: formattedValue };
           }
-          return item; // Return unchanged items
+          return item;
         });
 
-        // Calculate the new total amount based on changes in items
         const totalAmount = updatedItems.reduce((total, item) => {
-          return total + (parseFloat(item.quantity || 0) * parseFloat(item.price_each || 0));
+          const priceEach = String(item.price_each).replace('.', '');
+          return total + (parseFloat(item.quantity || 0) * parseFloat(priceEach || 0));
         }, 0);
 
-        // Return the updated formData object with the new items and total amount
         return {
           ...prevData,
           items: updatedItems,
-          total_amount: totalAmount, // Update the total amount based on item calculations
+          total_amount: totalAmount,
         };
       } else {
         return {
           ...prevData,
-          [name]: value,
+          [name]: formattedValue,
         };
       }
     });
   };
 
   const handleAddItem = () => {
-    const newItems = Array.from({ length: 15 }, () => ({
+    const newItems = Array.from({ length: 23 }, () => ({
       lot_no: "",
       description: "",
       quantity: 0,
-      price_each: 0,
+      price_each: "0.00",
       total_amount: 0,
     }));
     setFormData(prevData => ({
@@ -175,8 +182,8 @@ function InvoiceForm() {
         {
           lot_no: "",
           description: "",
-          quantity: "",
-          price_each: "",
+          quantity: 0,
+          price_each: "0.00",
         },
       ],
       invoice: {
@@ -302,7 +309,7 @@ function InvoiceForm() {
             <div className="row bill_to_div px-3" style={{ border: "2px solid white" }}>
               <div className="col-md-9">
                 <p>
-                  <b>Bill To</b> <br /><br />
+                  <p style={{ fontWeight: "800" }}>Bill To</p>
                   {[1, 2, 3].map((fieldIndex) => (
                     fieldIndex <= visibleBillToFields && (
                       <React.Fragment key={`bill_to_${fieldIndex}`}>
@@ -322,7 +329,7 @@ function InvoiceForm() {
                               variant="standard"
                               inputRef={el => fieldRefs.current[fieldIndex] = el}
                               onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
-                              style={{ marginTop: "-20px", width: "50%", marginBottom: "15px" }}
+                              style={{ marginTop: "-20px", width: "50%", }}
                             // InputProps={{
                             //   disableUnderline: true
                             // }}
@@ -356,7 +363,7 @@ function InvoiceForm() {
               <div className="row po_details_div px-3">
                 <div className="col-md-1 ">
                   <b>PO No.</b>
-                  <br />
+                  {/* <br /> */}
                   <input
                     id="po_num"
                     type="text"
@@ -364,7 +371,7 @@ function InvoiceForm() {
                     value={formData.PO_number}
                     onChange={(e) => handleInputChange(undefined, e)}
                     style={{
-                      marginTop: "12px",
+                      // marginTop: "12px",
                       width: "100%",
                       border: "none",
                       textAlign: "center",
@@ -377,14 +384,13 @@ function InvoiceForm() {
                 </div>
                 <div className="col-md-2 text-center">
                   <b>PO Date</b>
-                  <br />
                   <TextField
                     id="PO_date"
                     name="PO_date"
                     type="date"
                     variant="standard"
                     placeholder="mm/dd/yyyy"
-                    style={{ width: "75%", marginTop: "30px" }}
+                    style={{ width: "75%", marginTop: "10px" }}
                     InputProps={{
                       disableUnderline: true
                     }}
@@ -396,7 +402,6 @@ function InvoiceForm() {
                 </div>
                 <div className="col-md-2" style={{ textAlign: "center" }}>
                   <b>Type of Work</b>
-                  <br />
                   <input
                     id="type_of_work"
                     type="text"
@@ -404,7 +409,7 @@ function InvoiceForm() {
                     value={formData.type_of_work}
                     onChange={(e) => handleInputChange(undefined, e)}
                     style={{
-                      marginTop: "12px",
+                      // marginTop: "12px",
                       width: "100%",
                       border: "none",
                       textAlign: "center",
@@ -417,7 +422,6 @@ function InvoiceForm() {
                 </div>
                 <div className="col-md-2 text-center">
                   <b>Job Site No.</b>
-                  <br />
                   <input
                     id="job_site_no"
                     type="text"
@@ -425,7 +429,7 @@ function InvoiceForm() {
                     value={formData.job_site_num}
                     onChange={(e) => handleInputChange(undefined, e)}
                     style={{
-                      marginTop: "12px",
+                      // marginTop: "12px",
                       width: "100%",
                       border: "none",
                       textAlign: "center",
@@ -438,7 +442,6 @@ function InvoiceForm() {
                 </div>
                 <div className="col-md-2 text-center">
                   <span style={{ marginLeft: "50px", fontWeight: "bold" }}>Job Name</span>
-                  <br />
                   <input
                     id="job_site_name"
                     type="text"
@@ -446,7 +449,7 @@ function InvoiceForm() {
                     value={formData.job_site_name}
                     onChange={(e) => handleInputChange(undefined, e)}
                     style={{
-                      marginTop: "12px",
+                      // marginTop: "12px",
                       width: "130%",
                       border: "none",
                       textAlign: "center",
@@ -460,7 +463,6 @@ function InvoiceForm() {
                 </div>
                 <div className="col-md-3 text-center">
                   <b>Job Location</b>
-                  <br />
                   <input
                     id="job_location"
                     type="text"
@@ -468,7 +470,7 @@ function InvoiceForm() {
                     value={formData.job_location}
                     onChange={(e) => handleInputChange(undefined, e)}
                     style={{
-                      marginTop: "12px",
+                      // marginTop: "12px",
                       width: "100%",
                       border: "none",
                       textAlign: "center",
@@ -502,7 +504,7 @@ function InvoiceForm() {
               <div className="row item_details_div px-3" style={{ marginTop: "-65px" }}>
                 {formData.items.map((item, index) => (
                   <>
-                    {(index + 1) % 16 === 0 && (
+                    {(index + 1) % 24 === 0 && (
                       <>
                         <h5 className="text-center"
                           style={{
@@ -536,7 +538,7 @@ function InvoiceForm() {
                           <div className="row bill_to_div" style={{ border: "2px solid white" }}>
                             <div className="col-md-9">
                               <p>
-                                <b>Bill To</b> <br /><br />
+                                <p style={{ fontWeight: "800" }}>Bill To</p>
                                 {[1, 2, 3].map((fieldIndex) => (
                                   fieldIndex <= visibleBillToFields && (
                                     <React.Fragment key={`bill_to_${fieldIndex}`}>
@@ -556,7 +558,7 @@ function InvoiceForm() {
                                             variant="standard"
                                             inputRef={el => fieldRefs.current[fieldIndex] = el}
                                             onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
-                                            style={{ marginTop: "-20px", width: `55%`, marginBottom: "15px" }}
+                                            style={{ marginTop: "-20px", width: `55%` }}
                                           />
                                         )}
                                       />
@@ -570,7 +572,7 @@ function InvoiceForm() {
                           <div className="row po_details_div">
                             <div className="col-md-1 ">
                               <b>PO No.</b>
-                              <br />
+                              {/* <br /> */}
                               <input
                                 id="po_num"
                                 type="text"
@@ -578,7 +580,7 @@ function InvoiceForm() {
                                 value={formData.PO_number}
                                 onChange={(e) => handleInputChange(undefined, e)}
                                 style={{
-                                  marginTop: "12px",
+                                  // marginTop: "12px",
                                   width: "100%",
                                   border: "none",
                                   textAlign: "center",
@@ -729,7 +731,7 @@ function InvoiceForm() {
                           onChange={(e) => handleInputChange(index, e)}
                           onKeyPress={(e) => handleLotNoKeyPress(e, index)}
                           style={{
-                            marginTop: '8px',
+                            // marginTop: '8px',
                             width: `${Math.max(30, Math.min(10 + ((item.lot_no ? item?.lot_no?.length : 0) * 8), 100))}%`
                           }}
                           InputProps={{
@@ -769,7 +771,7 @@ function InvoiceForm() {
                               {...params}
                               variant="standard"
                               style={{
-                                marginTop: index === 0 ? '-5px' : '-5px',
+                                marginTop: index === 0 ? '-10px' : '-10px',
                                 width: "100%"
                               }}
                               onKeyDown={(event) =>
@@ -793,7 +795,10 @@ function InvoiceForm() {
                           onKeyDown={(event) =>
                             handleEnterKeyPress(event, "quantity", index)
                           }
-                          style={{ width: "100%", marginTop: "8px", marginLeft: "30px" }}
+                          style={{ width: "100%", marginLeft: "30px" }}
+                          InputProps={{
+                            disableUnderline: true
+                          }}
                         />
                       </div>
                       <div className="col-md-2 text-center" style={{ position: "relative" }}>
@@ -802,35 +807,34 @@ function InvoiceForm() {
                           variant="standard"
                           type="text"
                           name="price_each"
-                          value={formatPrice(item.price_each)}
+                          // value={item.price_each > 0 ? formatPrice(item.price_each) : ""}
+                          value={(item.price_each)}
                           onChange={(e) => handleInputChange(index, e)}
                           onKeyDown={(event) => handleEnterKeyPress(event, "price_each", index)}
-                          style={{ width: "55%", marginTop: "8px" }}
+                          style={{ width: "55%", }}
                           InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="center">
-                                <span
-                                  style={{
-                                    marginRight: 'auto', marginLeft: '10px',
-                                    fontSize: '1.4rem', color: "black"
-                                  }}
-                                >
-                                  $
-                                </span>
-                              </InputAdornment>
-                            ),
+                            startAdornment: item.price_each.length > 0 ? <InputAdornment position="start">
+                              <span
+                                style={{
+                                  marginRight: 'auto', marginLeft: '10px',
+                                  fontSize: '1.4rem', color: "black"
+                                }}
+                              >
+                                $
+                              </span>
+                            </InputAdornment> : null,
+                            disableUnderline: true,
                             style: { justifyContent: 'center' }
                           }}
                           inputProps={{
                             style: { textAlign: 'center' }
                           }}
                         />
-
                       </div>
                       <div className="col-md-1" style={{
                         marginLeft: "-50px", width: "150px", textAlign: "center"
                       }}>
-                        <p style={{ marginTop: "20px" }}>
+                        <p style={{ marginTop: "0px" }}>
                           {`$${((item.quantity || 0) * (item.price_each || 0)).toFixed(2)}`}
                         </p>
                       </div>
@@ -854,9 +858,15 @@ function InvoiceForm() {
                             ? "6px"
                             : formData.items.length >= 15 && formData.items.length <= 16
                               ? "2px"
-                              : formData.items.length > 17
-                                ? "0px"
-                                : "50px"
+                              : formData.items.length >= 17 && formData.items.length <= 18
+                                ? "2px"
+                                : formData.items.length >= 19 && formData.items.length <= 20
+                                  ? "2px"
+                                  : formData.items.length >= 21 && formData.items.length <= 22
+                                    ? "2px"
+                                    : formData.items.length > 23
+                                      ? "0px"
+                                      : "0px"
                 }}
               >
                 <p style={{

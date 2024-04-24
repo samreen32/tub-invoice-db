@@ -23,12 +23,13 @@ function EditInvoice() {
   const { formUpdateData, setFormUpdateData, addresses, descriptions,
     adEstimateAvaiableDatePicker, setAdEstimateAvaiableDatePicker } = UserLogin();
   const [visibleBillToFields, setVisibleBillToFields] = useState(3);
-  const createDefaultUpdateItems = (numItems = 15) => {
+
+  const createDefaultUpdateItems = (numItems = 23) => {
     return Array.from({ length: numItems }, () => ({
       lot_no: "",
       description: "",
       quantity: 0,
-      price_each: 0,
+      price_each: "0.00",
       total_amount: 0,
     }));
   };
@@ -44,16 +45,31 @@ function EditInvoice() {
 
   const handleInputChange = (index, e) => {
     const { name, value } = e.target;
+    const formatPriceEach = (value) => {
+      let numericValue = String(value);
+      numericValue = numericValue.replace(/[^0-9.]/g, '');
+      const dotIndex = numericValue.indexOf('.');
+      if (dotIndex === -1 && numericValue.length > 2) {
+        numericValue = numericValue.slice(0, 2) + '.' + numericValue.slice(2);
+      }
+
+      return numericValue;
+    };
+
+    const formattedValue = name === 'price_each' ? formatPriceEach(value) : value;
     setFormUpdateData((prevData) => {
       if (index !== undefined) {
         const updatedItems = prevData.items.map((item, idx) => {
           if (idx === index) {
-            return { ...item, [name]: value };
+            return { ...item, [name]: formattedValue };
           }
           return item;
         });
 
-        const totalAmount = updatedItems.reduce((acc, curr) => acc + (curr.quantity * curr.price_each), 0);
+        const totalAmount = updatedItems.reduce((total, item) => {
+          const priceEach = String(item.price_each).replace('.', '');
+          return total + (parseFloat(item.quantity || 0) * parseFloat(priceEach || 0));
+        }, 0);
 
         return {
           ...prevData,
@@ -63,18 +79,18 @@ function EditInvoice() {
       } else {
         return {
           ...prevData,
-          [name]: value,
+          [name]: formattedValue,
         };
       }
     });
   };
 
   const handleAddItem = () => {
-    const newItems = Array.from({ length: 15 }, () => ({
+    const newItems = Array.from({ length: 23 }, () => ({
       lot_no: "",
       description: "",
       quantity: 0,
-      price_each: 0,
+      price_each: "0.00",
       total_amount: 0,
     }));
     setFormUpdateData(prevData => ({
@@ -129,7 +145,6 @@ function EditInvoice() {
     });
   };
 
-
   /* Endpoint integration */
   useEffect(() => {
     const fetchInvoiceDetails = async () => {
@@ -152,7 +167,7 @@ function EditInvoice() {
       }
     };
     fetchInvoiceDetails();
-  }, [invoiceNum, setFormUpdateData]);
+  }, [invoiceNum]);
 
   /* Update Endpoint integration */
   const handleUpdateInvoice = async () => {
@@ -181,8 +196,8 @@ function EditInvoice() {
             {
               lot_no: "",
               description: "",
-              quantity: "",
-              price_each: "",
+              quantity: 0,
+              price_each: "0.00",
             },
           ],
           invoice: {
@@ -208,7 +223,6 @@ function EditInvoice() {
     }
   };
 
-
   const handleGenerateNew = () => {
     setFormUpdateData({
       bill_to: [""],
@@ -223,8 +237,8 @@ function EditInvoice() {
         {
           lot_no: "",
           description: "",
-          quantity: "",
-          price_each: "",
+          quantity: 0,
+          price_each: "0.00",
         },
       ],
       invoice: {
@@ -236,81 +250,13 @@ function EditInvoice() {
     navigate("/estimate_report");
   };
 
-
-  const handleUpdateInvoiceAndGeneratePDF = async () => {
-    const input = document.getElementById('pdf');
-    const canvas = await html2canvas(input, { scrollY: -window.scrollY, windowHeight: document.documentElement.offsetHeight });
-    const imgData = canvas.toDataURL('image/png');
-
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfPageWidth = pdf.internal.pageSize.getWidth();
-    const pdfPageHeight = pdf.internal.pageSize.getHeight();
-
-    // Define your padding here
-    const paddingTopBottom = 0; // 10mm padding for the top and bottom
-    const paddingLeftRight = 20; // 20mm padding for the left and right
-    const effectivePageWidth = pdfPageWidth - (2 * paddingLeftRight); // Effective page width after subtracting padding
-    const pdfWidth = effectivePageWidth;
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width; // Auto calculate the height depending on the width
-    const effectivePageHeight = pdfPageHeight - (2 * paddingTopBottom);
-
-    // Adjusted height and width calculation to account for padding
-    let heightLeft = pdfHeight + paddingTopBottom; // Start with padding at the top
-    let positionX = paddingLeftRight; // Start X position with padding from the left
-    let positionY = -paddingTopBottom; // Start Y position drawing the image paddingTopBottom mm higher
-
-    // Add the initial image section with padding
-    pdf.addImage(imgData, 'PNG', positionX, positionY, pdfWidth, pdfHeight);
-    heightLeft -= effectivePageHeight;
-
-    // Adding new pages if the content overflows
-    while (heightLeft >= 0) {
-      positionY = heightLeft - pdfHeight - paddingTopBottom; // Adjust position for padding
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', positionX, positionY, pdfWidth, pdfHeight);
-      heightLeft -= effectivePageHeight;
-    }
-
-    // Adding page numbers in the footer, adjusted for padding
-    // Adding page numbers in the footer, adjusted for padding
-    for (let i = 1; i <= pdf.internal.getNumberOfPages(); i++) {
-      pdf.setPage(i);
-      pdf.setFontSize(10);
-      // Increase the Y position margin for the footer to avoid overlapping with content
-      const footerMarginBottom = 10; // Adjust this value as needed for adequate spacing
-      pdf.text(i + ' of ' + pdf.internal.getNumberOfPages(), pdfPageWidth - 25, pdfPageHeight - footerMarginBottom);
-    }
-
-
-    pdf.save('invoice.pdf');
-  };
-
-  const formatPrice = (price) => {
-    const priceString = typeof price === 'string' ? price : String(price);
-    const [integerPart, decimalPart] = priceString.split('.');
-
-    let formattedDecimalPart = '';
-    if (decimalPart) {
-      formattedDecimalPart = decimalPart.replace(/0+$/, '');
-      if (formattedDecimalPart === '') {
-        formattedDecimalPart = '00';
-      } else {
-        formattedDecimalPart = formattedDecimalPart.padEnd(2, '0');
-      }
-    } else {
-      formattedDecimalPart = '00';
-    }
-
-    return `${integerPart}.${formattedDecimalPart}`;
-  };
-
   const formatDate = (date) => {
     if (!date || !(date instanceof Date)) return '';
     return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`;
   };
 
   const baseInvoiceSectionStyle = {
-    marginTop: "190px",
+    marginTop: "170px",
     border: "2px solid white",
     // height: "1200px"
   };
@@ -326,21 +272,20 @@ function EditInvoice() {
           nextFieldId = `description_${currentIndex}`;
           break;
         case "description":
-          nextFieldId = `quantity_${currentIndex}`; // Move to 'Quantity' of same item
+          nextFieldId = `quantity_${currentIndex}`;
           break;
         case "quantity":
-          nextFieldId = `price_each_${currentIndex}`; // Move to 'Price Each' of same item
+          nextFieldId = `price_each_${currentIndex}`;
           break;
         case "price_each":
-          nextIndex = currentIndex + 1; // Move to next item's 'Lot No'
+          nextIndex = currentIndex + 1;
           if (nextIndex >= formUpdateData.items.length) {
-            nextIndex = 0; // Optionally, wrap to the first item
+            nextIndex = 0;
           }
           nextFieldId = `lot_no_${nextIndex}`;
           break;
         default:
-          // Default case to handle any unexpected fields
-          return; // Do nothing if it's not one of the expected fields
+          return;
       }
 
       const nextFieldElement = document.getElementById(nextFieldId);
@@ -433,7 +378,7 @@ function EditInvoice() {
             <div className="row bill_to_div px-3" style={{ border: "2px solid white" }}>
               <div className="col-md-9">
                 <p>
-                  <b>Bill To</b> <br /><br />
+                  <p style={{ fontWeight: "800" }}>Bill To</p>
                   {[1, 2, 3].map(
                     (fieldIndex) =>
                       fieldIndex <= visibleBillToFields && (
@@ -454,7 +399,7 @@ function EditInvoice() {
                                 variant="standard"
                                 inputRef={el => fieldRefs.current[fieldIndex] = el}
                                 onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
-                                style={{ marginTop: "-20px", width: "50%", marginBottom: "15px" }}
+                                style={{ marginTop: "-20px", width: "50%" }}
                               // InputProps={{
                               //   disableUnderline: true
                               // }}
@@ -488,7 +433,6 @@ function EditInvoice() {
               <div className="row po_details_div px-3">
                 <div className="col-md-1 ">
                   <b>PO No.</b>
-                  <br />
                   <input
                     id="po_num"
                     type="text"
@@ -496,7 +440,7 @@ function EditInvoice() {
                     value={formUpdateData.PO_number}
                     onChange={(e) => handleInputChange(undefined, e)}
                     style={{
-                      marginTop: "12px",
+                      // marginTop: "12px",
                       width: "100%",
                       border: "none",
                       textAlign: "center",
@@ -509,14 +453,13 @@ function EditInvoice() {
                 </div>
                 <div className="col-md-2 text-center">
                   <b>PO Date</b>
-                  <br />
                   <TextField
                     readOnly
                     id="PO_date"
                     variant="standard"
                     placeholder="mm/dd/yyyy"
                     type="text"
-                    style={{ width: "75%", marginTop: "23px", }}
+                    style={{ width: "75%", marginTop: "10px", }}
                     InputProps={{
                       endAdornment: (
                         <img
@@ -546,7 +489,6 @@ function EditInvoice() {
                 </div>
                 <div className="col-md-2" style={{ textAlign: "center" }}>
                   <b>Type of Work</b>
-                  <br />
                   <input
                     id="type_of_work"
                     type="text"
@@ -554,7 +496,7 @@ function EditInvoice() {
                     value={formUpdateData.type_of_work}
                     onChange={(e) => handleInputChange(undefined, e)}
                     style={{
-                      marginTop: "12px",
+                      // marginTop: "12px",
                       width: "100%",
                       border: "none",
                       textAlign: "center",
@@ -567,7 +509,6 @@ function EditInvoice() {
                 </div>
                 <div className="col-md-2 text-center">
                   <b>Job Site No.</b>
-                  <br />
                   <input
                     id="job_site_no"
                     type="text"
@@ -575,7 +516,7 @@ function EditInvoice() {
                     value={formUpdateData.job_site_num}
                     onChange={(e) => handleInputChange(undefined, e)}
                     style={{
-                      marginTop: "12px",
+                      // marginTop: "12px",
                       width: "100%",
                       border: "none",
                       textAlign: "center",
@@ -588,7 +529,6 @@ function EditInvoice() {
                 </div>
                 <div className="col-md-2 text-center">
                   <span style={{ marginLeft: "50px", fontWeight: "bold" }}>Job Name</span>
-                  <br />
                   <input
                     id="job_site_name"
                     type="text"
@@ -596,7 +536,7 @@ function EditInvoice() {
                     value={formUpdateData.job_site_name}
                     onChange={(e) => handleInputChange(undefined, e)}
                     style={{
-                      marginTop: "12px",
+                      // marginTop: "12px",
                       width: "130%",
                       border: "none",
                       textAlign: "center",
@@ -609,7 +549,6 @@ function EditInvoice() {
                 </div>
                 <div className="col-md-3 text-center">
                   <b>Job Location</b>
-                  <br />
                   <input
                     id="job_location"
                     type="text"
@@ -617,7 +556,7 @@ function EditInvoice() {
                     value={formUpdateData.job_location}
                     onChange={(e) => handleInputChange(undefined, e)}
                     style={{
-                      marginTop: "12px",
+                      // marginTop: "12px",
                       width: "100%",
                       border: "none",
                       textAlign: "center",
@@ -632,7 +571,7 @@ function EditInvoice() {
               </div>
 
               <div className="line"></div>
-              <div className="row item_details_div px-3 mt-3">
+              <div className="row item_details_div px-3">
                 <span className="plus-icon" onClick={handleAddItem}>
                   {/* <i className="fas fa-plus-circle"></i> */}
                 </span>
@@ -650,7 +589,7 @@ function EditInvoice() {
               <div className="row item_details_div px-3" style={{ marginTop: "-65px" }}>
                 {formUpdateData.items.map((item, index) => (
                   <>
-                    {(index + 1) % 16 === 0 && (
+                    {(index + 1) % 24 === 0 && (
                       <>
                         <h5 className="text-center"
                           style={{
@@ -695,7 +634,7 @@ function EditInvoice() {
                           <div className="row bill_to_div " style={{ border: "2px solid white" }}>
                             <div className="col-md-9">
                               <p>
-                                <b>Bill To</b> <br /><br />
+                                <p style={{ fontWeight: "800" }}>Bill To</p>
                                 {[1, 2, 3].map(
                                   (fieldIndex) =>
                                     fieldIndex <= visibleBillToFields && (
@@ -716,7 +655,7 @@ function EditInvoice() {
                                               variant="standard"
                                               inputRef={el => fieldRefs.current[fieldIndex] = el}
                                               onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
-                                              style={{ marginTop: "-20px", width: "55%", marginBottom: "15px" }}
+                                              style={{ marginTop: "-20px", width: "55%" }}
                                               InputProps={{
                                                 disableUnderline: true
                                               }}
@@ -748,7 +687,6 @@ function EditInvoice() {
                           <div className="row po_details_div px-3">
                             <div className="col-md-1 ">
                               <b>PO No.</b>
-                              <br />
                               <input
                                 id="po_num"
                                 type="text"
@@ -756,7 +694,7 @@ function EditInvoice() {
                                 value={formUpdateData.PO_number}
                                 onChange={(e) => handleInputChange(undefined, e)}
                                 style={{
-                                  marginTop: "12px",
+                                  // marginTop: "12px",
                                   width: "100%",
                                   border: "none",
                                   textAlign: "center",
@@ -769,14 +707,13 @@ function EditInvoice() {
                             </div>
                             <div className="col-md-2 text-center">
                               <b>PO Date</b>
-                              <br />
                               <TextField
                                 readOnly
                                 id="PO_date"
                                 variant="standard"
                                 placeholder="mm/dd/yyyy"
                                 type="text"
-                                style={{ width: "75%", marginTop: "23px", }}
+                                style={{ width: "75%", marginTop: "10px", }}
                                 InputProps={{
                                   endAdornment: (
                                     <img
@@ -806,7 +743,6 @@ function EditInvoice() {
                             </div>
                             <div className="col-md-2" style={{ textAlign: "center" }}>
                               <b>Type of Work</b>
-                              <br />
                               <input
                                 id="type_of_work"
                                 type="text"
@@ -814,7 +750,7 @@ function EditInvoice() {
                                 value={formUpdateData.type_of_work}
                                 onChange={(e) => handleInputChange(undefined, e)}
                                 style={{
-                                  marginTop: "12px",
+                                  // marginTop: "12px",
                                   width: "100%",
                                   border: "none",
                                   textAlign: "center",
@@ -827,7 +763,6 @@ function EditInvoice() {
                             </div>
                             <div className="col-md-2 text-center">
                               <b>Job Site No.</b>
-                              <br />
                               <input
                                 id="job_site_no"
                                 type="text"
@@ -835,7 +770,7 @@ function EditInvoice() {
                                 value={formUpdateData.job_site_num}
                                 onChange={(e) => handleInputChange(undefined, e)}
                                 style={{
-                                  marginTop: "12px",
+                                  // marginTop: "12px",
                                   width: "100%",
                                   border: "none",
                                   textAlign: "center",
@@ -848,7 +783,6 @@ function EditInvoice() {
                             </div>
                             <div className="col-md-2 text-center">
                               <span style={{ marginLeft: "50px", fontWeight: "bold" }}>Job Name</span>
-                              <br />
                               <input
                                 id="job_site_name"
                                 type="text"
@@ -856,7 +790,7 @@ function EditInvoice() {
                                 value={formUpdateData.job_site_name}
                                 onChange={(e) => handleInputChange(undefined, e)}
                                 style={{
-                                  marginTop: "12px",
+                                  // marginTop: "12px",
                                   width: "130%",
                                   border: "none",
                                   textAlign: "center",
@@ -869,7 +803,6 @@ function EditInvoice() {
                             </div>
                             <div className="col-md-3 text-center">
                               <b>Job Location</b>
-                              <br />
                               <input
                                 id="job_location"
                                 type="text"
@@ -877,7 +810,7 @@ function EditInvoice() {
                                 value={formUpdateData.job_location}
                                 onChange={(e) => handleInputChange(undefined, e)}
                                 style={{
-                                  marginTop: "12px",
+                                  // marginTop: "12px",
                                   width: "100%",
                                   border: "none",
                                   textAlign: "center",
@@ -929,7 +862,7 @@ function EditInvoice() {
                           //   handleEnterKeyPress(event, "lot_no", index)
                           // }
                           style={{
-                            marginTop: '8px',
+                            // marginTop: '8px',
                             width: `${Math.max(30, Math.min(10 + ((item.lot_no ? item?.lot_no?.length : 0) * 8), 100))}%`
                           }}
                           InputProps={{
@@ -937,7 +870,6 @@ function EditInvoice() {
                           }}
                         />
                       </div>
-
                       <div className="col-md-6">
                         <Autocomplete
                           id={`description_${index}`}
@@ -967,7 +899,7 @@ function EditInvoice() {
                               {...params}
                               variant="standard"
                               style={{
-                                marginTop: index === 0 ? '-5px' : '-5px',
+                                marginTop: index === 0 ? '-10px' : '-10px',
                                 width: "100%"
                               }}
                               // InputProps={{
@@ -992,7 +924,10 @@ function EditInvoice() {
                           inputProps={{
                             style: { textAlign: 'center' }
                           }}
-                          style={{ width: "100%", marginTop: "8px", marginLeft: "30px" }}
+                          InputProps={{
+                            disableUnderline: true
+                          }}
+                          style={{ width: "100%", marginLeft: "30px" }}
                           onKeyDown={(event) =>
                             handleEnterKeyPress(event, "quantity", index)
                           }
@@ -1004,13 +939,13 @@ function EditInvoice() {
                           variant="standard"
                           type="text"
                           name="price_each"
-                          value={formatPrice(item.price_each)}
+                          value={item.price_each ? (item.price_each) : "0.00"}
                           onChange={(e) => handleInputChange(index, e)}
                           onKeyDown={(event) => handleEnterKeyPress(event, "price_each", index)}
-                          style={{ width: "55%", marginTop: "8px" }}
+                          style={{ width: "55%", }}
                           InputProps={{
                             startAdornment: (
-                              <InputAdornment position="center">
+                              <InputAdornment position="start">
                                 <span
                                   style={{
                                     marginRight: 'auto', marginLeft: '10px',
@@ -1021,6 +956,7 @@ function EditInvoice() {
                                 </span>
                               </InputAdornment>
                             ),
+                            disableUnderline: true,
                             style: { justifyContent: 'center' }
                           }}
                           inputProps={{
@@ -1034,7 +970,7 @@ function EditInvoice() {
                           marginLeft: "-50px", width: "150px", textAlign: "center"
                         }}
                       >
-                        <p style={{ marginTop: "20px" }}>
+                        <p style={{ marginTop: "0px" }}>
                           {`$${((item.quantity || 0) * (item.price_each || 0)).toFixed(2)}`}
                         </p>
                       </div>
@@ -1057,10 +993,16 @@ function EditInvoice() {
                           : formUpdateData.items.length >= 12 && formUpdateData.items.length <= 14
                             ? "6px"
                             : formUpdateData.items.length >= 15 && formUpdateData.items.length <= 16
-                              ? "60px"
-                              : formUpdateData.items.length > 17
-                                ? "0px"
-                                : "50px"
+                              ? "0px"
+                              : formUpdateData.items.length >= 17 && formUpdateData.items.length <= 18
+                                ? "2px"
+                                : formUpdateData.items.length >= 19 && formUpdateData.items.length <= 20
+                                  ? "2px"
+                                  : formUpdateData.items.length >= 21 && formUpdateData.items.length <= 22
+                                    ? "2px"
+                                    : formUpdateData.items.length > 23
+                                      ? "0px"
+                                      : "0px"
                 }}
               >
                 <p style={{

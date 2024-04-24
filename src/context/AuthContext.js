@@ -13,12 +13,12 @@ const AuthProvider = ({ children }) => {
 
   const createDefaultItems = () => {
     const items = [];
-    for (let i = 1; i <= 15; i++) {
+    for (let i = 1; i <= 23; i++) {
       items.push({
         lot_no: "",
         description: "",
         quantity: 0,
-        price_each: 0,
+        price_each: "0.00",
         total_amount: 0,
       });
     }
@@ -35,7 +35,7 @@ const AuthProvider = ({ children }) => {
     job_site_num: "",
     job_site_name: "",
     job_location: "",
-    items: createDefaultItems(),  
+    items: createDefaultItems(),
     invoice: {
       invoice_num: null,
       date: null,
@@ -45,12 +45,12 @@ const AuthProvider = ({ children }) => {
 
   const createDefaultUpdateItems = () => {
     const items = [];
-    for (let i = 1; i <= 16; i++) {
+    for (let i = 1; i <= 23; i++) {
       items.push({
         lot_no: "",
         description: "",
         quantity: 0,
-        price_each: 0,
+        price_each: "0.00",
         total_amount: 0,
       });
     }
@@ -67,7 +67,7 @@ const AuthProvider = ({ children }) => {
     job_site_num: "",
     job_site_name: "",
     job_location: "",
-    items: createDefaultUpdateItems(), 
+    items: createDefaultUpdateItems(),
     invoice: {
       invoice_num: null,
       date: null,
