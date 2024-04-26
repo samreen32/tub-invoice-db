@@ -71,10 +71,12 @@ function EditSecondInvoice() {
     const { name, value } = e.target;
     const formatPriceEach = (value) => {
       let numericValue = String(value);
-      numericValue = numericValue.replace(/[^0-9.]/g, '');
+      numericValue = numericValue.replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
       const dotIndex = numericValue.indexOf('.');
-      if (dotIndex === -1 && numericValue.length > 2) {
-        numericValue = numericValue.slice(0, 2) + '.' + numericValue.slice(2);
+      if (dotIndex === -1 && numericValue.length > 3) {
+        numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
+      } else if (dotIndex > 3) { // Adjust position of the dot if it's placed incorrectly
+        numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
       }
 
       return numericValue;
@@ -311,7 +313,7 @@ function EditSecondInvoice() {
   const handleEnterKeyPress = (event, currentField, currentIndex) => {
     if (event.key === "Enter") {
       event.preventDefault();
-  
+
       let nextFieldId;
       let nextIndex = currentIndex;
       switch (currentField) {
@@ -336,14 +338,14 @@ function EditSecondInvoice() {
         default:
           return; // Do nothing if it's not one of the expected fields
       }
-  
+
       const nextFieldElement = document.getElementById(nextFieldId);
       if (nextFieldElement) {
         nextFieldElement.focus();
       }
     }
   };
-  
+
 
   function safeParseFloat(value) {
     const num = parseFloat(value);
@@ -925,7 +927,7 @@ function EditSecondInvoice() {
                             disableUnderline: true,
                             style: { textAlign: 'center' }
                           }}
-                          style={{ width: "100%", marginLeft: "30px" }}
+                          style={{ width: "100%", marginLeft: "45px" }}
                           onKeyDown={(event) =>
                             handleEnterKeyPress(event, "quantity", index)
                           }
@@ -939,7 +941,7 @@ function EditSecondInvoice() {
                           name="price_each"
                           value={item.price_each}
                           onChange={(e) => handleInputChange(index, e)}
-                          style={{ width: "60%", marginLeft: "50px" }}
+                          style={{ width: "60%", marginLeft: "45px" }}
                           InputProps={{
                             startAdornment: item.price_each && item.price_each !== '' ?
                               <InputAdornment position="start">

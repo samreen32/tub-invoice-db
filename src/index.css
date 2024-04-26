@@ -1143,19 +1143,15 @@ input {
   display: flex;
   flex-direction: column;
   height: 100%;
-  /* Adjust based on your page height, typically could be 1122px for a standard 11in page */
   justify-content: space-between;
-  /* This pushes the last child to the bottom */
 }
 
 .invoice-content {
-  /* Content of the invoice goes here, allows flexibility */
   flex: 1;
 }
 
 .invoice-last-div {
   flex-shrink: 0;
-  /* Ensures the footer doesn't shrink */
 }
 
 .css-l4u8b9-MuiInputBase-root-MuiInput-root:before,
@@ -1176,6 +1172,6 @@ input {
 }
 
 
-.css-1h51icj-MuiAutocomplete-root .MuiInput-root .MuiInput-input {
+/* .css-1h51icj-MuiAutocomplete-root .MuiInput-root .MuiInput-input {
   padding: 4px 4px 4px 0px !important;
-}
+} */

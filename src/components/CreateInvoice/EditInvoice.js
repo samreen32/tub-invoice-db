@@ -71,15 +71,17 @@ function EditInvoice() {
     const { name, value } = e.target;
     const formatPriceEach = (value) => {
       let numericValue = String(value);
-      numericValue = numericValue.replace(/[^0-9.]/g, '');
+      numericValue = numericValue.replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
       const dotIndex = numericValue.indexOf('.');
-      if (dotIndex === -1 && numericValue.length > 2) {
-        numericValue = numericValue.slice(0, 2) + '.' + numericValue.slice(2);
+      if (dotIndex === -1 && numericValue.length > 3) {
+        numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
+      } else if (dotIndex > 3) { // Adjust position of the dot if it's placed incorrectly
+        numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
       }
-
+  
       return numericValue;
     };
-
+  
     const formattedValue = name === 'price_each' ? formatPriceEach(value) : value;
     setFormUpdateData((prevData) => {
       if (index !== undefined) {
@@ -89,12 +91,12 @@ function EditInvoice() {
           }
           return item;
         });
-
+  
         const totalAmount = updatedItems.reduce((total, item) => {
           const priceEach = String(item.price_each).replace('.', '');
           return total + (parseFloat(item.quantity || 0) * parseFloat(priceEach || 0));
         }, 0);
-
+  
         return {
           ...prevData,
           items: updatedItems,
@@ -108,6 +110,7 @@ function EditInvoice() {
       }
     });
   };
+  
 
   const handleAddItem = () => {
     const newItems = Array.from({ length: 30 }, () => ({
@@ -939,7 +942,7 @@ function EditInvoice() {
                             disableUnderline: true,
                             style: { textAlign: 'center' }
                           }}
-                          style={{ width: "100%", marginLeft: "30px" }}
+                          style={{ width: "100%", marginLeft: "45px" }}
                           onKeyDown={(event) =>
                             handleEnterKeyPress(event, "quantity", index)
                           }
@@ -953,7 +956,7 @@ function EditInvoice() {
                           name="price_each"
                           value={item.price_each}
                           onChange={(e) => handleInputChange(index, e)}
-                          style={{ width: "60%", marginLeft: "50px" }}
+                          style={{ width: "60%", marginLeft: "45px" }}
                           InputProps={{
                             startAdornment: item.price_each && item.price_each !== '' ?
                               <InputAdornment position="start">

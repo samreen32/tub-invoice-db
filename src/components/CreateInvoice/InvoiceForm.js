@@ -65,10 +65,12 @@ function InvoiceForm() {
     const { name, value } = e.target;
     const formatPriceEach = (value) => {
       let numericValue = String(value);
-      numericValue = numericValue.replace(/[^0-9.]/g, '');
+      numericValue = numericValue.replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
       const dotIndex = numericValue.indexOf('.');
-      if (dotIndex === -1 && numericValue.length > 2) {
-        numericValue = numericValue.slice(0, 2) + '.' + numericValue.slice(2);
+      if (dotIndex === -1 && numericValue.length > 3) {
+        numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
+      } else if (dotIndex > 3) { // Adjust position of the dot if it's placed incorrectly
+        numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
       }
 
       return numericValue;
@@ -223,27 +225,9 @@ function InvoiceForm() {
     navigate("/main");
   };
 
-  const formatPrice = (price) => {
-    const priceString = typeof price === 'string' ? price : String(price);
-    const [integerPart, decimalPart] = priceString.split('.');
-
-    let formattedDecimalPart = '';
-    if (decimalPart) {
-      formattedDecimalPart = decimalPart.replace(/0+$/, '');
-      if (formattedDecimalPart === '') {
-        formattedDecimalPart = '00';
-      } else {
-        formattedDecimalPart = formattedDecimalPart.padEnd(2, '0');
-      }
-    } else {
-      formattedDecimalPart = '00';
-    }
-
-    return `${integerPart}.${formattedDecimalPart}`;
-  };
 
   const baseInvoiceSectionStyle = {
-    marginTop: "126px",
+    marginTop: "200px",
     border: "2px solid white",
   };
 
@@ -253,27 +237,26 @@ function InvoiceForm() {
 
       let nextFieldId;
       let nextIndex = currentIndex;
-
-      // Determining the next field based on the current field
       switch (currentField) {
         case "lot_no":
-          nextFieldId = `description_${currentIndex}`; // Move to 'Description' of same item
+          nextFieldId = `description_${currentIndex}`;
           break;
         case "description":
-          nextFieldId = `quantity_${currentIndex}`; // Move to 'Quantity' of same item
+          nextFieldId = `quantity_${currentIndex}`;
           break;
         case "quantity":
-          nextFieldId = `price_each_${currentIndex}`; // Move to 'Price Each' of same item
+          nextFieldId = `price_each_${currentIndex}`;
           break;
         case "price_each":
-          nextIndex = currentIndex + 1; // Move to next item's 'Lot No'
-          if (nextIndex >= formData.items.length) {
-            nextIndex = 0; // Optionally, wrap to the first item
+          if (currentIndex === formData.items.length - 1) {
+            handleAddItem();
+            return;
+          } else {
+            nextIndex = currentIndex + 1;
+            nextFieldId = `lot_no_${nextIndex}`;
           }
-          nextFieldId = `lot_no_${nextIndex}`;
           break;
         default:
-          // Default case to handle any unexpected fields
           return; // Do nothing if it's not one of the expected fields
       }
 
@@ -754,18 +737,14 @@ function InvoiceForm() {
                           type="text"
                           name="lot_no"
                           value={item.lot_no}
+                          onKeyDown={(event) => handleEnterKeyPress(event, "lot_no", index)}
                           onChange={(e) => handleInputChange(index, e)}
-                          onKeyPress={(e) => handleLotNoKeyPress(e, index)}
                           style={{
-                            // marginTop: '8px',
                             width: `${Math.max(30, Math.min(10 + ((item.lot_no ? item?.lot_no?.length : 0) * 8), 100))}%`
                           }}
                           InputProps={{
                             disableUnderline: true
                           }}
-                        // onKeyDown={(event) =>
-                        //   handleEnterKeyPress(event, "lot_no", index)
-                        // }
                         />
                       </div>
                       <div className="col-md-6">
@@ -815,16 +794,14 @@ function InvoiceForm() {
                           name="quantity"
                           value={item.quantity}
                           onChange={(e) => handleInputChange(index, e)}
-                          inputProps={{
+                          InputProps={{
+                            disableUnderline: true,
                             style: { textAlign: 'center' }
                           }}
+                          style={{ width: "100%", marginLeft: "45px" }}
                           onKeyDown={(event) =>
                             handleEnterKeyPress(event, "quantity", index)
                           }
-                          style={{ width: "100%", marginLeft: "30px" }}
-                          InputProps={{
-                            disableUnderline: true
-                          }}
                         />
                       </div>
                       <div className="col-md-2 text-center" style={{ position: "relative" }}>
@@ -833,39 +810,40 @@ function InvoiceForm() {
                           variant="standard"
                           type="text"
                           name="price_each"
-                          // value={item.price_each > 0 ? formatPrice(item.price_each) : ""}
-                          value={(item.price_each)}
+                          value={item.price_each}
                           onChange={(e) => handleInputChange(index, e)}
-                          onKeyDown={(event) => handleEnterKeyPress(event, "price_each", index)}
-                          style={{ width: "55%", }}
+                          style={{ width: "60%",  marginLeft: "33px" }}
                           InputProps={{
-                            startAdornment: item.price_each.length > 0 ? <InputAdornment position="start">
-                              <span
-                                style={{
-                                  marginRight: 'auto', marginLeft: '10px',
-                                  fontSize: '1.4rem', color: "black"
-                                }}
-                              >
-                                $
-                              </span>
-                            </InputAdornment> : null,
-                            disableUnderline: true,
-                            style: { justifyContent: 'center' }
+                            startAdornment: item.price_each && item.price_each !== '' ?
+                              <InputAdornment position="start">
+                                <span
+                                  style={{
+                                    fontSize: "20px",
+                                    color: "black"
+                                  }}
+                                >
+                                  $
+                                </span>
+                              </InputAdornment> : null,
+                            disableUnderline: true
                           }}
-                          inputProps={{
-                            style: { textAlign: 'center' }
-                          }}
+                          onKeyPress={(e) => handleLotNoKeyPress(e, index)}
+                          onKeyDown={(event) => handleEnterKeyPress(event, "price_each", index)}
                         />
                       </div>
-                      <div className="col-md-1" style={{
-                        marginLeft: "-50px", width: "150px", textAlign: "center"
-                      }}>
+                      <div
+                        className="col-md-1"
+                        style={{
+                          marginLeft: "-50px", width: "150px", textAlign: "center"
+                        }}
+                      >
                         <p style={{ height: "20px", margin: "0" }}>
                           {
                             (item.quantity && item.price_each) ?
                               `$${((item.quantity || 0) * (parseFloat(item.price_each) || 0)).toFixed(2)}` :
                               ''
                           }
+
                         </p>
                       </div>
                     </div>
@@ -902,7 +880,7 @@ function InvoiceForm() {
                 <p style={{
                   marginRight: "70px",
                   // marginTop: formData.items.length > 17 ? "30%" : "0px"
-                  // marginTop: "30px"
+                  marginTop: "30px"
                 }}>
                   Total Due: {`$${formData?.total_amount?.toFixed(2) || ""}`}
                 </p>
