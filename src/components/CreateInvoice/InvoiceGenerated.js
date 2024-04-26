@@ -92,8 +92,8 @@ function InvoiceGenerated() {
         {
           lot_no: "",
           description: "",
-          quantity: 0,
-          price_each: 0,
+          quantity: "",
+          price_each: "",
         },
       ],
       invoice: {
@@ -115,7 +115,6 @@ function InvoiceGenerated() {
             >
               <i class="fas fa-home fa-1x"></i>
             </span>
-
             <span onClick={handleGenerateNew} className="new-invoice-btn">
               New estimate
             </span>
@@ -151,7 +150,7 @@ function InvoiceGenerated() {
                 <span style={{ fontSize: "22px" }}>
                   PO Box 30596 <br />
                   Las Vegas, NV. 89173 <br />
-                  Office: (702) 445-6232 <br />
+                  Office: (702) 445-6262 <br />
                   Fax: (702) 445-6241
                 </span>
 
@@ -189,7 +188,7 @@ function InvoiceGenerated() {
                         variant="standard"
                         value={formData.bill_to[fieldIndex - 1]}
                         onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
-                        // style={{ marginTop: "2px" }}
+                        style={{ height: "100%" }}
                         readOnly
                         InputProps={{
                           disableUnderline: true
@@ -261,7 +260,7 @@ function InvoiceGenerated() {
             <div className="row item_details_div px-3" style={{ marginTop: "-65px" }}>
               {formData.items.map((item, index) => (
                 <>
-                  {(index + 1) % 24 === 0 && (
+                  {(index + 1) % 31 === 0 && (
                     <>
                       <h5 className="text-center"
                         style={{
@@ -282,7 +281,7 @@ function InvoiceGenerated() {
                               <span style={{ fontSize: "22px" }}>
                                 PO Box 30596 <br />
                                 Las Vegas, NV. 89173 <br />
-                                Office: (702) 445-6232 <br />
+                                Office: (702) 445-6262 <br />
                                 Fax: (702) 445-6241
                               </span>
 
@@ -320,7 +319,7 @@ function InvoiceGenerated() {
                                       variant="standard"
                                       value={formData.bill_to[fieldIndex - 1]}
                                       onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex - 1)}
-                                      // style={{ marginTop: "2px" }}
+                                      style={{ height: "100%" }}
                                       readOnly
                                       InputProps={{
                                         disableUnderline: true
@@ -418,8 +417,8 @@ function InvoiceGenerated() {
                         name="description"
                         value={item.description}
                         aria-readonly
-                        inputProps={{ style: { width: '100%', maxWidth: '100%' }, }}
-                        style={{ marginTop: '-8px', width: `${Math.min(10 + (item?.description?.length * 2), 100)}%` }}
+                        // inputProps={{ style: { width: '100%', maxWidth: '100%', height: "100%" } }}
+                        style={{ width: `${Math.min(8 + (item?.description?.length * 2), 100)}%` }}
                         InputProps={{
                           disableUnderline: true
                         }}
@@ -448,18 +447,23 @@ function InvoiceGenerated() {
                         variant="standard"
                         type="text"
                         name="price_each"
-                        value={formatPrice(item.price_each)}
+                        value={item.price_each}
                         aria-readonly
-                        style={{ width: "50%" }}
+                        style={{ width: "55%" }}
                         InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <span style={{ fontSize: '1.4rem', color: "black" }}>$</span>
-                            </InputAdornment>
-                          ),
-                          disableUnderline: true
+                          startAdornment: item.price_each.length > 0 ? <InputAdornment position="start">
+                            <span
+                              style={{
+                                marginRight: 'auto', marginLeft: '10px',
+                                fontSize: '1.4rem', color: "black"
+                              }}
+                            >
+                              $
+                            </span>
+                          </InputAdornment> : null,
+                          disableUnderline: true,
+                          style: { justifyContent: 'center' }
                         }}
-
                       />
                     </div>
                     <div className="col-md-1"
@@ -467,8 +471,12 @@ function InvoiceGenerated() {
                         marginLeft: "-50px", width: "150px", textAlign: "center"
                       }}
                     >
-                      <p style={{ marginTop: "0px" }}>
-                        {`$${((item.quantity || 0) * (item.price_each || 0)).toFixed(2)}`}
+                     <p style={{ height: "20px", margin: "0" }}>
+                        {
+                          (item.quantity && item.price_each) ?
+                            `$${((item.quantity || 0) * (parseFloat(item.price_each) || 0)).toFixed(2)}` :
+                            ''
+                        }
                       </p>
                     </div>
                   </div>
@@ -494,12 +502,12 @@ function InvoiceGenerated() {
                             : formData.items.length >= 17 && formData.items.length <= 18
                               ? "2px"
                               : formData.items.length >= 19 && formData.items.length <= 20
-                              ? "2px"
-                              : formData.items.length >= 21 && formData.items.length <= 22
-                              ? "2px"
-                              : formData.items.length > 23
-                                ? "0px"
-                                : "0px"
+                                ? "2px"
+                                : formData.items.length >= 21 && formData.items.length <= 29
+                                  ? "2px"
+                                  : formData.items.length > 30
+                                    ? "0px"
+                                    : "0px"
               }}
             >
               <p style={{

@@ -3,7 +3,7 @@ import { UserLogin } from "../../context/AuthContext";
 import logo from "../../assets/img/logo.png";
 import TextField from "@mui/material/TextField";
 import { useNavigate } from "react-router";
-import { INVOICE } from "../../Auth_API";
+import { FETCH_BILL_TO, FETCH_DESCRIPPTION, INVOICE } from "../../Auth_API";
 import axios from "axios";
 import Swal from "sweetalert2";
 import InputAdornment from '@mui/material/InputAdornment';
@@ -12,15 +12,43 @@ import 'react-datepicker/dist/react-datepicker.css';
 
 function InvoiceForm() {
   let navigate = useNavigate();
-  const { formData, setFormData, addresses, descriptions } = UserLogin();
+  const { formData, setFormData, addresses, descriptions, setDescriptions, setAddresses } = UserLogin();
   const [visibleBillToFields, setVisibleBillToFields] = useState(1);
-  const createDefaultItems = (numItems = 23) => {
+
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      try {
+        const response = await axios.get(FETCH_BILL_TO);
+        setAddresses(response.data);
+      } catch (error) {
+        console.error('Failed to fetch addresses:', error);
+      }
+    };
+
+    fetchAddresses();
+  }, [setAddresses, addresses]);
+
+  useEffect(() => {
+    const fetchDescriptions = async () => {
+      try {
+        const response = await axios.get(FETCH_DESCRIPPTION);
+        console.log(response.data, "sgdhjgs")
+        setDescriptions(response.data);
+      } catch (error) {
+        console.error('Failed to fetch descriptions:', error);
+      }
+    };
+
+    fetchDescriptions();
+  }, [setDescriptions, descriptions]);
+
+  const createDefaultItems = (numItems = 30) => {
     return Array.from({ length: numItems }, () => ({
       lot_no: "",
       description: "",
-      quantity: 0,
-      price_each: "0.00",
-      total_amount: 0,
+      quantity: "",
+      price_each: "",
+      total_amount: "",
     }));
   };
 
@@ -76,12 +104,12 @@ function InvoiceForm() {
   };
 
   const handleAddItem = () => {
-    const newItems = Array.from({ length: 23 }, () => ({
+    const newItems = Array.from({ length: 30 }, () => ({
       lot_no: "",
       description: "",
-      quantity: 0,
-      price_each: "0.00",
-      total_amount: 0,
+      quantity: "",
+      price_each: "",
+      total_amount: "",
     }));
     setFormData(prevData => ({
       ...prevData,
@@ -182,8 +210,8 @@ function InvoiceForm() {
         {
           lot_no: "",
           description: "",
-          quantity: 0,
-          price_each: "0.00",
+          quantity: "",
+          price_each: "",
         },
       ],
       invoice: {
@@ -397,8 +425,6 @@ function InvoiceForm() {
                     value={formData.PO_date || ''}
                     onChange={(e) => handleInputChange(undefined, e)}
                   />
-
-
                 </div>
                 <div className="col-md-2" style={{ textAlign: "center" }}>
                   <b>Type of Work</b>
@@ -504,7 +530,7 @@ function InvoiceForm() {
               <div className="row item_details_div px-3" style={{ marginTop: "-65px" }}>
                 {formData.items.map((item, index) => (
                   <>
-                    {(index + 1) % 24 === 0 && (
+                    {(index + 1) % 31 === 0 && (
                       <>
                         <h5 className="text-center"
                           style={{
@@ -834,8 +860,12 @@ function InvoiceForm() {
                       <div className="col-md-1" style={{
                         marginLeft: "-50px", width: "150px", textAlign: "center"
                       }}>
-                        <p style={{ marginTop: "0px" }}>
-                          {`$${((item.quantity || 0) * (item.price_each || 0)).toFixed(2)}`}
+                        <p style={{ height: "20px", margin: "0" }}>
+                          {
+                            (item.quantity && item.price_each) ?
+                              `$${((item.quantity || 0) * (parseFloat(item.price_each) || 0)).toFixed(2)}` :
+                              ''
+                          }
                         </p>
                       </div>
                     </div>
@@ -862,9 +892,9 @@ function InvoiceForm() {
                                 ? "2px"
                                 : formData.items.length >= 19 && formData.items.length <= 20
                                   ? "2px"
-                                  : formData.items.length >= 21 && formData.items.length <= 22
+                                  : formData.items.length >= 21 && formData.items.length <= 29
                                     ? "2px"
-                                    : formData.items.length > 23
+                                    : formData.items.length > 30
                                       ? "0px"
                                       : "0px"
                 }}
@@ -872,7 +902,7 @@ function InvoiceForm() {
                 <p style={{
                   marginRight: "70px",
                   // marginTop: formData.items.length > 17 ? "30%" : "0px"
-                  marginTop: "30px"
+                  // marginTop: "30px"
                 }}>
                   Total Due: {`$${formData?.total_amount?.toFixed(2) || ""}`}
                 </p>

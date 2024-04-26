@@ -1,6 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { FETCH_BILL_TO, FETCH_DESCRIPPTION } from "../Auth_API";
-import axios from "axios";
+import React, { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext();
 
@@ -13,13 +11,13 @@ const AuthProvider = ({ children }) => {
 
   const createDefaultItems = () => {
     const items = [];
-    for (let i = 1; i <= 23; i++) {
+    for (let i = 1; i <= 30; i++) {
       items.push({
         lot_no: "",
         description: "",
-        quantity: 0,
-        price_each: "0.00",
-        total_amount: 0,
+        quantity: "",
+        price_each: "",
+        total_amount: "",
       });
     }
     return items;
@@ -45,12 +43,12 @@ const AuthProvider = ({ children }) => {
 
   const createDefaultUpdateItems = () => {
     const items = [];
-    for (let i = 1; i <= 23; i++) {
+    for (let i = 1; i <= 30; i++) {
       items.push({
         lot_no: "",
         description: "",
-        quantity: 0,
-        price_each: "0.00",
+        quantity: "",
+        price_each: "",
         total_amount: 0,
       });
     }
@@ -114,32 +112,6 @@ const AuthProvider = ({ children }) => {
     "December",
   ];
 
-  useEffect(() => {
-    const fetchAddresses = async () => {
-      try {
-        const response = await axios.get(FETCH_BILL_TO);
-        setAddresses(response.data);
-      } catch (error) {
-        console.error('Failed to fetch addresses:', error);
-      }
-    };
-
-    fetchAddresses();
-  }, []);
-
-
-  useEffect(() => {
-    const fetchDescriptions = async () => {
-      try {
-        const response = await axios.get(FETCH_DESCRIPPTION);
-        setDescriptions(response.data);
-      } catch (error) {
-        console.error('Failed to fetch descriptions:', error);
-      }
-    };
-
-    fetchDescriptions();
-  }, []);
 
   return (
     <AuthContext.Provider
