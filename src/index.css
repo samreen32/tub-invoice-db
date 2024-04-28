@@ -29,6 +29,13 @@ svg {
   /* overflow-x: auto; */
 }
 
+.container-report {
+  background: #FFF;
+  border-radius: 5px;
+  z-index: 1;
+  overflow-y: auto;
+}
+
 @media (max-width: 768px) {
   .container {
     width: 100%;
@@ -167,9 +174,10 @@ h3 {
   background-color: #000;
 }
 
-.css-1x51dt5-MuiInputBase-input-MuiInput-input{
+.css-1x51dt5-MuiInputBase-input-MuiInput-input {
   padding: 6px 5px !important;
 }
+
 .item_details_div {
   margin-top: 1%;
 }
@@ -419,6 +427,7 @@ h3 {
 
 .total_amount_invoices p {
   font-size: 19px;
+  margin-top: 2%;
 }
 
 /* Search field styling */
@@ -1082,7 +1091,7 @@ a:focus {
 .css-levciy-MuiTablePagination-displayedRows,
 .css-8coetn,
 .css-q34dxg {
-  font-size: 1.4rem !important;
+  font-size: 1rem !important;
 }
 
 .css-194a1fa-MuiSelect-select-MuiInputBase-input.css-194a1fa-MuiSelect-select-MuiInputBase-input.css-194a1fa-MuiSelect-select-MuiInputBase-input,
@@ -1162,13 +1171,17 @@ input {
 }
 
 .centeredInput::before {
-  content: '$';  /* Adding the dollar symbol */
+  content: '$';
+  /* Adding the dollar symbol */
   position: absolute;
-  left: 50%;  /* Center the symbol */
-  transform: translateX(-50%);  /* Ensure it's perfectly centered */
+  left: 50%;
+  /* Center the symbol */
+  transform: translateX(-50%);
+  /* Ensure it's perfectly centered */
   color: black;
   font-size: 1.4rem;
-  pointer-events: none;  /* Prevent the symbol from blocking input */
+  pointer-events: none;
+  /* Prevent the symbol from blocking input */
 }
 
 

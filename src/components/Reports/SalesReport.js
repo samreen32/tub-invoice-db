@@ -226,7 +226,7 @@ export default function SalesReport() {
                                 <h2 style={{ padding: "0 5px", marginTop: "50px" }}>Sales Trend</h2>
                             </span><br />
                             <Paper sx={{ width: "100%", overflow: "hidden" }}>
-                                <TableContainer sx={{ maxHeight: 1000 }}>
+                                <TableContainer>
                                     <Table stickyHeader aria-label="sticky table">
                                         <TableHead>
                                             <TableRow>

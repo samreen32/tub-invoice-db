@@ -206,9 +206,9 @@ export default function SecondInvoiceReport() {
     };
 
     return (
-        <div style={{ marginTop: "2%" }}>
+        <div style={{ marginTop: "2%", padding: "0px 50px" }}>
             <div id="invoice-generated">
-                <div className="container px-5 py-5" style={{ width: "100%" }}>
+                <div className="container-report px-5 py-5" style={{ width: "100%" }}>
                     <>
                         <h2
                             style={{
@@ -299,7 +299,7 @@ export default function SecondInvoiceReport() {
                         </>
 
                         <Paper sx={{ width: "100%", overflow: "hidden" }}>
-                            <TableContainer sx={{ maxHeight: 1000 }}>
+                            <TableContainer>
                                 <Table stickyHeader aria-label="sticky table">
                                     <TableHead>
                                         <TableRow>

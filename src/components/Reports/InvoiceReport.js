@@ -121,8 +121,8 @@ export default function InvoiceReport() {
   const columns = [
     { id: "invoice_num", label: "Estimate No.", minWidth: 100 },
     { id: "bill_to", label: "Bill To", minWidth: 100 },
-    { id: "PO_number", label: "PO Number", minWidth: 100 },
-    { id: "PO_date", label: "PO Estimate Date", minWidth: 100 },
+    { id: "PO_number", label: "PO No.", minWidth: 100 },
+    { id: "PO_date", label: "PO Date", minWidth: 100 },
     { id: "type_of_work", label: "Type of Work", minWidth: 100 },
     { id: "job_site_num", label: "Job Site Number", minWidth: 100 },
     { id: "total_amount", label: "Amount", minWidth: 100 },
@@ -139,6 +139,7 @@ export default function InvoiceReport() {
     },
   ];
 
+  
   /* Table pagination */
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -181,9 +182,9 @@ export default function InvoiceReport() {
   };
 
   return (
-    <div style={{ marginTop: "2%" }}>
+    <div style={{ marginTop: "2%", padding: "0px 50px" }}>
       <div id="invoice-generated">
-        <div className="container px-5 py-5" style={{ width: "100%" }}>
+        <div className="container-report px-5 py-5" style={{ width: "100%" }}>
           <>
             <h2
               style={{
@@ -274,7 +275,7 @@ export default function InvoiceReport() {
             </>
 
             <Paper sx={{ width: "100%", overflow: "hidden" }}>
-              <TableContainer sx={{ maxHeight: 1000 }}>
+              <TableContainer>
                 <Table stickyHeader aria-label="sticky table">
                   <TableHead>
                     <TableRow>

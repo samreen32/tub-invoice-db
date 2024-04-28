@@ -220,7 +220,7 @@ export default function NonPayment_Report() {
               <h2 style={{ padding: "5px" }}>Unpaid Invoice Report</h2>
             </span><br />
             <Paper sx={{ width: "100%", overflow: "hidden" }}>
-              <TableContainer sx={{ maxHeight: 600 }}>
+              <TableContainer>
                 <Table stickyHeader aria-label="sticky table">
                   <TableHead>
                     <TableRow>

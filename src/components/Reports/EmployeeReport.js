@@ -238,7 +238,7 @@ export default function EmployeeReport() {
                             <h2 style={{ padding: "5px" }}>Employee Report</h2>
                         </span><br />
                         <Paper sx={{ width: "100%", overflow: "hidden" }}>
-                            <TableContainer sx={{ maxHeight: 1000 }}>
+                            <TableContainer>
                                 <Table stickyHeader aria-label="sticky table">
                                     <TableHead>
                                         <TableRow>

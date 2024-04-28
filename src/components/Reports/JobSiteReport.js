@@ -98,18 +98,18 @@ export default function JobSiteReport() {
     };
 
     return (
-        <div style={{ marginTop: "2%" }}>
+        <div style={{ marginTop: "2%", padding: "0px 50px" }}>
             <span style={{
                 cursor: "pointer", textAlign: "center",
                 justifyContent: "center", display: "flex",
-                marginLeft: "1260px"
+                marginLeft: "990px"
 
             }}>
                 <span onClick={() => generatePDF(targetRef, { filename: "invoices.pdf" })}
                     className="new-invoice-btn mx-3"> Generate Print</span>
             </span>
             <div id="invoice-generated">
-                <div className="container px-5 py-5" style={{ width: "100%" }}>
+                <div className="container-report px-5 py-5" style={{ width: "100%" }}>
                     <h2
                         style={{
                             display: "flex",
@@ -121,7 +121,7 @@ export default function JobSiteReport() {
                             onClick={() => {
                                 navigate("/main");
                             }}
-                            style={{ cursor: "pointer", marginLeft: "-1300px", marginTop: "-40px" }}
+                            style={{ cursor: "pointer", marginLeft: "-1000px", marginTop: "-40px" }}
                         >
                             <i class="fa fa-chevron-left fa-1x" aria-hidden="true"></i>
                         </span>
@@ -155,12 +155,12 @@ export default function JobSiteReport() {
                     </>
 
                     <div ref={targetRef} style={{ padding: "0 20px" }}>
-                        <br />     <br /><br />
+                        <br /> 
                         <span style={{ cursor: "pointer", marginLeft: "40%" }}>
                             <h2 style={{ padding: "5px" }}>Job Site Name Report</h2>
                         </span><br />
                         <Paper sx={{ width: "100%", overflow: "hidden" }}>
-                            <TableContainer sx={{ maxHeight: 1000 }}>
+                            <TableContainer>
                                 <Table stickyHeader aria-label="sticky table">
                                     <TableHead>
                                         <TableRow>
