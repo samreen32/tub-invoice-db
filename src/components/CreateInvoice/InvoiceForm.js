@@ -60,16 +60,54 @@ function InvoiceForm() {
   }, []);
 
   const inputRefs = useRef([]);
+  const [typingTimeout, setTypingTimeout] = useState(null);
+
+  const formatDateInput = (value) => {
+    let numbers = value.replace(/[^\d]/g, '');  // Remove non-digit characters
+    if (numbers.length > 8) {
+      numbers = numbers.slice(0, 8);  // Limit to MMDDYYYY
+    }
+    if (numbers.length > 4) {
+      return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4)}`;  // Format as MM/DD/YYYY
+    } else if (numbers.length > 2) {
+      return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;  // Format as MM/DD
+    }
+    return numbers;
+  };
+
+  const handleDateChange = (e) => {
+    const { value } = e.target;
+    const formattedDate = formatDateInput(value);
+    setFormData(prevData => ({
+      ...prevData,
+      PO_date: formattedDate
+    }));
+  };
 
   const handleInputChange = (index, e) => {
     const { name, value } = e.target;
+
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+
+    setTypingTimeout(setTimeout(() => {
+      formatAndSetPrice(index, name, value);
+    }, 500));  // 500ms delay after the last key press to determine if user has stopped typing
+  };
+
+  const formatAndSetPrice = (index, name, value) => {
     const formatPriceEach = (value) => {
-      let numericValue = String(value);
-      numericValue = numericValue.replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
+      let numericValue = String(value).replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
+
+      if (numericValue.length === 3 && !numericValue.includes('.')) {
+        numericValue += ".00"; // Add .00 if there are exactly 3 digits and no decimal point
+      }
+
       const dotIndex = numericValue.indexOf('.');
       if (dotIndex === -1 && numericValue.length > 3) {
         numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
-      } else if (dotIndex > 3) { // Adjust position of the dot if it's placed incorrectly
+      } else if (dotIndex > 3) {
         numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
       }
 
@@ -104,6 +142,7 @@ function InvoiceForm() {
       }
     });
   };
+
 
   const handleAddItem = () => {
     const newItems = Array.from({ length: 30 }, () => ({
@@ -171,6 +210,7 @@ function InvoiceForm() {
       const response = await axios.post(`${INVOICE}`, formData);
       console.log("Estimate generated successfully:", response.data);
       navigate(`/estimate_generated`);
+      console.log(response, "hsgfjsdfs")
       setFormData((prevData) => ({
         ...prevData,
         invoice: {
@@ -267,6 +307,43 @@ function InvoiceForm() {
     }
   };
 
+  const handleInputBlur = (index, e) => {
+    const { name, value } = e.target;
+    if (name === 'price_each') {
+      const formattedValue = formatPriceEach(value);
+      setFormData((prevData) => {
+        const updatedItems = prevData.items.map((item, idx) => {
+          if (idx === index) {
+            return { ...item, [name]: formattedValue };
+          }
+          return item;
+        });
+        return {
+          ...prevData,
+          items: updatedItems
+        };
+      });
+    }
+  };
+
+  const formatPriceEach = (value) => {
+    let numericValue = String(value).replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
+
+    if (numericValue === "") {
+      return "0.00"; // Default to "0.00" if the field is empty
+    }
+
+    const dotIndex = numericValue.indexOf('.');
+    if (numericValue.length <= 3 && dotIndex === -1) {
+      numericValue += ".00"; // Append .00 if there are 1-3 digits and no decimal point
+    } else if (dotIndex !== -1 && dotIndex > 3) {
+      numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
+    }
+
+    return numericValue;
+  };
+
+
   return (
     <div id="invoice-generated">
       <div style={{ display: "flex", marginBottom: "50px" }}>
@@ -299,7 +376,7 @@ function InvoiceForm() {
                   PO Box 30596 <br />
                   Las Vegas, NV. 89173 <br />
                   Office: (702) 445-6232 <br />
-                  Fax: (702) 445-6241
+                  Fax: &nbsp;&nbsp;&nbsp;&nbsp;(702) 445-6241
                 </span>
               </address>
             </div>
@@ -398,7 +475,7 @@ function InvoiceForm() {
                   <TextField
                     id="PO_date"
                     name="PO_date"
-                    type="date"
+                    type="text"
                     variant="standard"
                     placeholder="mm/dd/yyyy"
                     style={{ width: "75%", marginTop: "10px" }}
@@ -406,7 +483,7 @@ function InvoiceForm() {
                       disableUnderline: true
                     }}
                     value={formData.PO_date || ''}
-                    onChange={(e) => handleInputChange(undefined, e)}
+                   onChange={handleDateChange}  
                   />
                 </div>
                 <div className="col-md-2" style={{ textAlign: "center" }}>
@@ -499,10 +576,10 @@ function InvoiceForm() {
                   {/* <i className="fas fa-plus-circle"></i> */}
                 </span>
                 &nbsp;
-                <div className="col-md-2">
+                <div className="col-md-3">
                   <b>Lot No.</b>
                 </div>
-                <div className="col-md-6 text-center">
+                <div className="col-md-5 text-center">
                   <b>Description</b>
                 </div>
                 <div className="col-md-1" style={{ marginLeft: "-2px" }}><b>Quantity</b></div>
@@ -614,6 +691,7 @@ function InvoiceForm() {
                                   disableUnderline: true
                                 }}
                                 value={formData.PO_Invoice_date}
+                                onChange={handleDateChange}  
                               />
 
                             </div>
@@ -728,7 +806,7 @@ function InvoiceForm() {
                       className="row"
                       style={{ marginTop: index === 0 ? "6%" : "0px" }}
                     >
-                      <div className="col-md-2">
+                      <div className="col-md-3">
                         <TextField
                           id={`lot_no_${index}`}
                           key={index}
@@ -737,6 +815,7 @@ function InvoiceForm() {
                           type="text"
                           name="lot_no"
                           value={item.lot_no}
+                          autoComplete="off"
                           onKeyDown={(event) => handleEnterKeyPress(event, "lot_no", index)}
                           onChange={(e) => handleInputChange(index, e)}
                           style={{
@@ -747,7 +826,7 @@ function InvoiceForm() {
                           }}
                         />
                       </div>
-                      <div className="col-md-6">
+                      <div className="col-md-5">
                         <Autocomplete
                           id={`description_${index}`}
                           freeSolo
@@ -793,6 +872,7 @@ function InvoiceForm() {
                           type="text"
                           name="quantity"
                           value={item.quantity}
+                          autoComplete="off"
                           onChange={(e) => handleInputChange(index, e)}
                           InputProps={{
                             disableUnderline: true,
@@ -812,7 +892,9 @@ function InvoiceForm() {
                           name="price_each"
                           value={item.price_each}
                           onChange={(e) => handleInputChange(index, e)}
-                          style={{ width: "60%",  marginLeft: "33px" }}
+                          onBlur={(e) => handleInputBlur(index, e)}
+                          style={{ width: "60%", marginLeft: "33px" }}
+                          autoComplete="off"
                           InputProps={{
                             startAdornment: item.price_each && item.price_each !== '' ?
                               <InputAdornment position="start">

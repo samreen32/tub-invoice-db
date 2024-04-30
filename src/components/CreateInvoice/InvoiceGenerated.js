@@ -151,7 +151,7 @@ function InvoiceGenerated() {
                   PO Box 30596 <br />
                   Las Vegas, NV. 89173 <br />
                   Office: (702) 445-6262 <br />
-                  Fax: (702) 445-6241
+                  Fax: &nbsp;&nbsp;&nbsp;&nbsp;(702) 445-6241
                 </span>
 
               </address>
@@ -283,7 +283,7 @@ function InvoiceGenerated() {
                                 PO Box 30596 <br />
                                 Las Vegas, NV. 89173 <br />
                                 Office: (702) 445-6262 <br />
-                                Fax: (702) 445-6241
+                                Fax: &nbsp;&nbsp;&nbsp;&nbsp;(702) 445-6241
                               </span>
 
                             </address>
@@ -441,7 +441,7 @@ function InvoiceGenerated() {
                           disableUnderline: true,
                           style: { textAlign: 'center' }
                         }}
-                        style={{ width: "100%",  marginLeft: "45px" }}
+                        style={{ width: "100%", marginLeft: "45px" }}
                       />
                     </div>
                     <div className="col-md-2 text-center" style={{ position: "relative" }}>

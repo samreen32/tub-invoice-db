@@ -18,7 +18,7 @@ function EditSecondInvoice() {
   const { state } = useLocation();
   const { invoiceNum } = state;
   const { formUpdateData, setFormUpdateData, addresses, descriptions, setAddresses,
-    adAvaiableDatePicker, setAdAvaiableDatePicker, setDescriptions } = UserLogin();
+    setDescriptions } = UserLogin();
   const [visibleBillToFields, setVisibleBillToFields] = useState(3);
 
   useEffect(() => {
@@ -66,16 +66,55 @@ function EditSecondInvoice() {
   }, []);
 
   const inputRefs = useRef([]);
+  const [typingTimeout, setTypingTimeout] = useState(null);
+
+  const formatDateInput = (value) => {
+    let numbers = value.replace(/[^\d]/g, '');  // Remove non-digit characters
+    if (numbers.length > 8) {
+      numbers = numbers.slice(0, 8);  // Limit to MMDDYYYY
+    }
+    if (numbers.length > 4) {
+      return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4)}`;  // Format as MM/DD/YYYY
+    } else if (numbers.length > 2) {
+      return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;  // Format as MM/DD
+    }
+    return numbers;
+  };
+
+  const handleDateChange = (e) => {
+    const { value } = e.target;
+    const formattedDate = formatDateInput(value);
+    setFormUpdateData(prevData => ({
+      ...prevData,
+      PO_Invoice_date: formattedDate
+    }));
+  };
+
 
   const handleInputChange = (index, e) => {
     const { name, value } = e.target;
+
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+
+    setTypingTimeout(setTimeout(() => {
+      formatAndSetPrice(index, name, value);
+    }, 500));  // 500ms delay after the last key press to determine if user has stopped typing
+  };
+
+  const formatAndSetPrice = (index, name, value) => {
     const formatPriceEach = (value) => {
-      let numericValue = String(value);
-      numericValue = numericValue.replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
+      let numericValue = String(value).replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
+
+      if (numericValue.length === 3 && !numericValue.includes('.')) {
+        numericValue += ".00"; // Add .00 if there are exactly 3 digits and no decimal point
+      }
+
       const dotIndex = numericValue.indexOf('.');
       if (dotIndex === -1 && numericValue.length > 3) {
         numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
-      } else if (dotIndex > 3) { // Adjust position of the dot if it's placed incorrectly
+      } else if (dotIndex > 3) {
         numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
       }
 
@@ -180,12 +219,12 @@ function EditSecondInvoice() {
         const response = await axios.get(`${GET_INVOICE}/${invoiceNum}`);
         if (response.data.success) {
           const invoiceData = response.data.invoice;
-          // console.log(invoiceData, "invoice daat on invoice")
-          const validDate = invoiceData.PO_Invoice_date ? new Date(invoiceData.PO_Invoice_date) : null;
+          // console.log(invoiceData, "dshfsj")
+          // const validDate = invoiceData.PO_Invoice_date ? new Date(invoiceData.PO_Invoice_date) : null;
           setFormUpdateData({
             ...formUpdateData,
             ...invoiceData,
-            PO_Invoice_date: validDate
+            // PO_Invoice_date: validDate
           });
         } else {
           console.error(response.data.message);
@@ -346,7 +385,6 @@ function EditSecondInvoice() {
     }
   };
 
-
   function safeParseFloat(value) {
     const num = parseFloat(value);
     return isNaN(num) ? 0 : num;
@@ -362,6 +400,42 @@ function EditSecondInvoice() {
 
   const totalAmount = calculateTotalAmount(formUpdateData.items);
 
+  const handleInputBlur = (index, e) => {
+    const { name, value } = e.target;
+    if (name === 'price_each') {
+      const formattedValue = formatPriceEach(value);
+      setFormUpdateData((prevData) => {
+        const updatedItems = prevData.items.map((item, idx) => {
+          if (idx === index) {
+            return { ...item, [name]: formattedValue };
+          }
+          return item;
+        });
+        return {
+          ...prevData,
+          items: updatedItems
+        };
+      });
+    }
+  };
+
+  const formatPriceEach = (value) => {
+    let numericValue = String(value).replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
+
+    // Return an empty string if no input is provided
+    if (numericValue === "") {
+      return ""; // Return empty if the field is empty
+    }
+
+    const dotIndex = numericValue.indexOf('.');
+    if (numericValue.length <= 3 && dotIndex === -1) {
+      numericValue += ".00"; // Append .00 if there are 1-3 digits and no decimal point
+    } else if (dotIndex !== -1 && dotIndex > 3) {
+      numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
+    }
+
+    return numericValue;
+  };
 
   return (
     <div id="invoice-generated">
@@ -420,7 +494,7 @@ function EditSecondInvoice() {
                   PO Box 30596 <br />
                   Las Vegas, NV. 89173 <br />
                   Office: (702) 445-6232 <br />
-                  Fax: (702) 445-6241
+                  Fax: &nbsp;&nbsp;&nbsp;&nbsp;(702) 445-6241
                 </span>
               </address>
             </div>
@@ -504,31 +578,17 @@ function EditSecondInvoice() {
                 <div className="col-md-2 text-center">
                   <b>PO Date</b>
                   <TextField
-                    readOnly
                     id="PO_Invoice_date"
                     variant="standard"
                     placeholder="mm/dd/yyyy"
                     type="text"
                     style={{ width: "75%", marginTop: "10px", marginLeft: "30px" }}
-                    onClick={() => setAdAvaiableDatePicker(true)}
+                    onChange={handleDateChange}
                     InputProps={{
                       disableUnderline: true
                     }}
-                    value={formatDate(formUpdateData.PO_Invoice_date)}
+                    value={formUpdateData.PO_Invoice_date || ""}
                   />
-                  {adAvaiableDatePicker && (
-                    <div style={{ position: 'absolute', zIndex: 1000 }}>
-                      <DatePicker
-                        selected={formUpdateData.PO_Invoice_date}
-                        onChange={(date) => {
-                          setFormUpdateData({ ...formUpdateData, PO_Invoice_date: date });
-                          setAdAvaiableDatePicker(false);
-                        }}
-                        dateFormat="MM/dd/yyyy"
-                        inline
-                      />
-                    </div>
-                  )}
                 </div>
                 <div className="col-md-2" style={{ textAlign: "center" }}>
                   <span style={{ fontWeight: "800", marginLeft: "15px" }}>Type of Work</span>
@@ -656,7 +716,7 @@ function EditSecondInvoice() {
                                   PO Box 30596 <br />
                                   Las Vegas, NV. 89173 <br />
                                   Office: (702) 445-6232 <br />
-                                  Fax: (702) 445-6241
+                                  Fax: &nbsp;&nbsp;&nbsp;&nbsp;(702) 445-6241
                                 </span>
                               </address>
                             </div>
@@ -738,31 +798,17 @@ function EditSecondInvoice() {
                             <div className="col-md-2 text-center">
                               <b>PO Date</b>
                               <TextField
-                                readOnly
                                 id="PO_Invoice_date"
                                 variant="standard"
                                 placeholder="mm/dd/yyyy"
                                 type="text"
                                 style={{ width: "75%", marginTop: "10px", marginLeft: "30px" }}
-                                onClick={() => setAdAvaiableDatePicker(true)}
+                                onChange={handleDateChange}
                                 InputProps={{
                                   disableUnderline: true
                                 }}
-                                value={formatDate(formUpdateData.PO_Invoice_date)}
+                                value={formUpdateData.PO_Invoice_date || ""}
                               />
-                              {adAvaiableDatePicker && (
-                                <div style={{ position: 'absolute', zIndex: 1000 }}>
-                                  <DatePicker
-                                    selected={formUpdateData.PO_Invoice_date}
-                                    onChange={(date) => {
-                                      setFormUpdateData({ ...formUpdateData, PO_Invoice_date: date });
-                                      setAdAvaiableDatePicker(false);
-                                    }}
-                                    dateFormat="MM/dd/yyyy"
-                                    inline
-                                  />
-                                </div>
-                              )}
                             </div>
                             <div className="col-md-2" style={{ textAlign: "center" }}>
                               <b>Type of Work</b>
@@ -853,10 +899,10 @@ function EditSecondInvoice() {
                               {/* <i className="fas fa-plus-circle"></i> */}
                             </span>
                             &nbsp;
-                            <div className="col-md-2">
+                            <div className="col-md-3">
                               <b>Lot No.</b>
                             </div>
-                            <div className="col-md-6 text-center">
+                            <div className="col-md-5 text-center">
                               <b>Description</b>
                             </div>
                             <div className="col-md-1" style={{ marginLeft: "-2px" }}><b>Quantity</b></div>
@@ -871,7 +917,7 @@ function EditSecondInvoice() {
                       className="row"
                       style={{ marginTop: index === 0 ? "6%" : "0px" }}
                     >
-                      <div className="col-md-2">
+                      <div className="col-md-3">
                         <TextField
                           id={`lot_no_${index}`}
                           key={index}
@@ -882,6 +928,7 @@ function EditSecondInvoice() {
                           value={item.lot_no}
                           onChange={(e) => handleInputChange(index, e)}
                           // onKeyPress={(e) => handleLotNoKeyPress(e, index)}
+                          autoComplete="off"
                           style={{
                             width: `${Math.max(30, Math.min(10 + ((item.lot_no ? item?.lot_no?.length : 0) * 8), 100))}%`
                           }}
@@ -893,7 +940,7 @@ function EditSecondInvoice() {
                           }
                         />
                       </div>
-                      <div className="col-md-6">
+                      <div className="col-md-5">
                         <Autocomplete
                           id={`description_${index}`}
                           freeSolo
@@ -923,6 +970,7 @@ function EditSecondInvoice() {
                           name="quantity"
                           value={item.quantity}
                           onChange={(e) => handleInputChange(index, e)}
+                          autoComplete="off"
                           InputProps={{
                             disableUnderline: true,
                             style: { textAlign: 'center' }
@@ -942,6 +990,8 @@ function EditSecondInvoice() {
                           value={item.price_each}
                           onChange={(e) => handleInputChange(index, e)}
                           style={{ width: "60%", marginLeft: "45px" }}
+                          onBlur={(e) => handleInputBlur(index, e)}
+                          autoComplete="off"
                           InputProps={{
                             startAdornment: item.price_each && item.price_each !== '' ?
                               <InputAdornment position="start">
