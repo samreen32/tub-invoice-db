@@ -15,6 +15,7 @@ import { Toolbar } from "@mui/material";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import generatePDF from "react-to-pdf";
+import * as XLSX from 'xlsx';
 
 export default function SalesStatement() {
     let navigate = useNavigate();
@@ -149,6 +150,72 @@ export default function SalesStatement() {
         setSearchQuery("");
     };
 
+    const downloadExcel = () => {
+        const filteredData = invoices.map(invoice => {
+            const lastPayment = invoice.payments && invoice.payments.length > 0 ? invoice.payments[invoice.payments.length - 1] : null;
+            const checkNumber = lastPayment ? lastPayment.check_num : "-";
+            const paymentDate = lastPayment && lastPayment.payment_date
+                ? new Date(lastPayment.payment_date).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit"
+                })
+                : "-";
+
+            return {
+                "Invoice No.": invoice.invoice_num,
+                "Invoice Date": new Date(invoice.PO_Invoice_date).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit"
+                }),
+                "PO No.": invoice.PO_number,
+                "Job Site Number": invoice.job_site_num,
+                "Lot No.": invoice.lot_no,
+                "Job Location": invoice.job_location,
+                "Paid Date": paymentDate,
+                "Check no": checkNumber,
+                "Total Amount": `$${invoice.total_amount.toFixed(2)}`,
+                "Balance Due": `$0.00`
+            };
+        });
+
+        const workSheet = XLSX.utils.json_to_sheet(filteredData);
+        workSheet['!cols'] = [
+            { wch: 15 },
+            { wch: 25 },
+            { wch: 15 },
+            { wch: 15 },
+            { wch: 15 },
+            { wch: 25 },
+            { wch: 25 },
+            { wch: 25 },
+            { wch: 15 },
+            { wch: 15 },
+            { wch: 15 },
+        ];
+        const headerCellStyle = {
+            font: {
+                name: 'Calibri',
+                sz: 14,
+                bold: true
+            },
+            alignment: {
+                horizontal: "center",
+                vertical: "center"
+            }
+        };
+        const headers = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1'];
+        headers.forEach((cellRef) => {
+            if (workSheet[cellRef]) {
+                workSheet[cellRef].s = headerCellStyle;
+            }
+        });
+
+        const workBook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workBook, workSheet, "Invoices");
+        XLSX.writeFile(workBook, "SaleStatement.xlsx");
+    };
 
     return (
         <div style={{ marginTop: "2%" }}>
@@ -157,9 +224,22 @@ export default function SalesStatement() {
                 justifyContent: "right", display: "flex",
                 background: "transparent",
             }}>
-                <span onClick={() => generatePDF(targetRef, { filename: "invoices.pdf" })}
+                <span onClick={() => generatePDF(targetRef, { filename: "SaleStatement.pdf" })}
                     className="new-invoice-btn mx-3"> Generate Print</span>
-            </span><br />
+                <button
+                    onClick={downloadExcel}
+                    style={{
+                        cursor: 'pointer',
+                        fontSize: "14px",
+                        padding: "12px",
+                        background: "green",
+                        border: "none",
+                        color: "white",
+                    }}
+                >
+                    Download Excel
+                </button>
+            </span>
 
             <div id="invoice-generated">
                 <div className="container px-5 py-5" style={{ width: "100%" }}>
@@ -247,9 +327,9 @@ export default function SalesStatement() {
                             </Select>
                         </>
 
-                        <div ref={targetRef} style={{ padding: "20px" }}>
+                        <div ref={targetRef} style={{ padding: "0 20px" }}>
                             <span style={{ cursor: "pointer", marginLeft: "40%" }}>
-                                <h2 style={{ padding: "0 5px", marginTop: "50px" }}>Sales Statement</h2>
+                                <h2 style={{ padding: "5px" }}>Sales Statement</h2>
                             </span><br />
                             <Paper sx={{ width: "100%", overflow: "hidden" }}>
                                 <TableContainer>
@@ -263,8 +343,8 @@ export default function SalesStatement() {
                                                         style={{
                                                             minWidth: column.minWidth,
                                                             backgroundColor: "#08a0d1",
-                                                        color: "white",
-                                                        fontWeight: "500"
+                                                            color: "white",
+                                                            fontWeight: "500"
                                                         }}
                                                     >
                                                         {column.label}
@@ -301,45 +381,72 @@ export default function SalesStatement() {
                                                     page * rowsPerPage,
                                                     page * rowsPerPage + rowsPerPage
                                                 )
-                                                .map((invoice) => (
-                                                    <TableRow
-                                                        key={invoice.invoice_num}
-                                                        onClick={() => setInvoiceDetails(invoice.invoice_num)}
-                                                        style={{ cursor: "pointer" }}
-                                                    >
-                                                        {columns.map((column) => (
-                                                            <TableCell key={column.id} align="left">
-                                                                {column.id === "PO_Invoice_date" ? (
-                                                                    new Date(invoice.PO_Invoice_date).toLocaleDateString()
-                                                                ) : column.id === "payment_status" ? (
-                                                                    invoice.payment_status.toString()
-                                                                ) : column.id === "total_amount" ? (
-                                                                    `$${invoice.total_amount.toFixed(2)}`
-                                                                ) : column.id === "payment_date" ? (
-                                                                    invoice.payments.length > 0 ? (
-                                                                        invoice.payments[invoice.payments.length - 1].payment_date ? new Date(invoice.payments[invoice.payments.length - 1].payment_date).toLocaleDateString("en-US", {
-                                                                            year: "2-digit",
-                                                                            month: "2-digit",
-                                                                            day: "2-digit"
-                                                                        }) : "-"
+                                                .map((invoice, index) => (
+                                                    <>
+                                                        {index !== 0 && index % 29 === 0 && (
+                                                            <>
+                                                                <TableRow style={{ height: "120px" }}>
+                                                                    {columns.map((column) => (
+                                                                        <TableCell key={`spacer-${column.id}`} />
+                                                                    ))}
+                                                                </TableRow>
+                                                                <TableRow>
+                                                                    {columns.map((column) => (
+                                                                        <TableCell
+                                                                            key={column.id}
+                                                                            align="left"
+                                                                            style={{
+                                                                                minWidth: column.minWidth,
+                                                                                backgroundColor: "#08a0d1",
+                                                                                color: "white",
+                                                                                fontWeight: "500",
+                                                                            }}
+                                                                        >
+                                                                            {column.label}
+                                                                        </TableCell>
+                                                                    ))}
+                                                                </TableRow>
+                                                            </>
+                                                        )}
+                                                        <TableRow
+                                                            key={invoice.invoice_num}
+                                                            onClick={() => setInvoiceDetails(invoice.invoice_num)}
+                                                            style={{ cursor: "pointer" }}
+                                                        >
+                                                            {columns.map((column) => (
+                                                                <TableCell key={column.id} align="left">
+                                                                    {column.id === "PO_Invoice_date" ? (
+                                                                        new Date(invoice.PO_Invoice_date).toLocaleDateString()
+                                                                    ) : column.id === "payment_status" ? (
+                                                                        invoice.payment_status.toString()
+                                                                    ) : column.id === "total_amount" ? (
+                                                                        `$${invoice.total_amount.toFixed(2)}`
+                                                                    ) : column.id === "payment_date" ? (
+                                                                        invoice.payments.length > 0 ? (
+                                                                            invoice.payments[invoice.payments.length - 1].payment_date ? new Date(invoice.payments[invoice.payments.length - 1].payment_date).toLocaleDateString("en-US", {
+                                                                                year: "2-digit",
+                                                                                month: "2-digit",
+                                                                                day: "2-digit"
+                                                                            }) : "-"
+                                                                        ) : (
+                                                                            "-"
+                                                                        )
+                                                                    ) : column.id === "check_num" ? (
+                                                                        invoice.payments.length > 0 ? (
+                                                                            invoice.payments[invoice.payments.length - 1].check_num
+                                                                        ) : (
+                                                                            "-"
+                                                                        )
                                                                     ) : (
-                                                                        "-"
-                                                                    )
-                                                                ) : column.id === "check_num" ? (
-                                                                    invoice.payments.length > 0 ? (
-                                                                        invoice.payments[invoice.payments.length - 1].check_num
-                                                                    ) : (
-                                                                        "-"
-                                                                    )
-                                                                ) : (
-                                                                    invoice[column.id]
-                                                                )}
-                                                            </TableCell>
-                                                        ))}
-                                                    </TableRow>
-
+                                                                        invoice[column.id]
+                                                                    )}
+                                                                </TableCell>
+                                                            ))}
+                                                        </TableRow>
+                                                    </>
                                                 ))}
                                         </TableBody>
+
 
                                     </Table>
                                 </TableContainer>

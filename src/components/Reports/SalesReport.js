@@ -15,6 +15,7 @@ import { Toolbar } from "@mui/material";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import generatePDF from "react-to-pdf";
+import * as XLSX from 'xlsx';
 
 export default function SalesReport() {
     let navigate = useNavigate();
@@ -28,7 +29,6 @@ export default function SalesReport() {
     const [isExpanded, setIsExpanded] = useState(false);
     const searchWords = searchQuery.split(" ");
     const [filteredTotalAmount, setFilteredTotalAmount] = useState(0);
-
     const currentYear = new Date().getFullYear();
     const [selectedYear, setSelectedYear] = useState(currentYear);
 
@@ -140,6 +140,56 @@ export default function SalesReport() {
         setSearchQuery("");
     };
 
+    const downloadExcel = () => {
+        const excelColumns = [
+            { id: "bill_to", label: "Customers" },
+            ...Array.from({ length: 12 }, (_, index) => ({
+                id: `month_${index + 1}`,
+                label: `${selectedYear}/${index + 1}`
+            })),
+            { id: "total_amount", label: "Total" }
+        ];
+        const filteredData = invoices.map(invoice => {
+            const invoiceRow = {
+                "Customers": invoice.bill_to.length > 0 ? invoice.bill_to[0] : "-",
+                "Total": `$${invoice.total_amount.toFixed(2)}`
+            };
+            excelColumns.forEach(column => {
+                if (column.id.startsWith("month_")) {
+                    invoiceRow[column.label] = invoice[column.id] ? `$${invoice[column.id].toFixed(2)}` : "-";
+                }
+            });
+
+            return invoiceRow;
+        });
+        const workSheet = XLSX.utils.json_to_sheet(filteredData);
+        workSheet['!cols'] = excelColumns.map(() => ({
+            wch: 15
+        }));
+        const headerCellStyle = {
+            font: {
+                name: 'Calibri',
+                sz: 14,
+                bold: true
+            },
+            alignment: {
+                horizontal: "center",
+                vertical: "center"
+            }
+        };
+        excelColumns.forEach((column, index) => {
+            const cellRef = XLSX.utils.encode_cell({ r: 0, c: index });
+            if (workSheet[cellRef]) {
+                workSheet[cellRef].s = headerCellStyle;
+            }
+        });
+
+        const workBook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workBook, workSheet, "Invoices");
+        XLSX.writeFile(workBook, "salesReport.xlsx");
+    };
+
+
     return (
         <div style={{ marginTop: "2%" }}>
             <span className="container" style={{
@@ -148,8 +198,21 @@ export default function SalesReport() {
                 background: "transparent",
                 maxWidth: "1800px"
             }}>
-                <span onClick={() => generatePDF(targetRef, { filename: "invoices.pdf" })}
+                <span onClick={() => generatePDF(targetRef, { filename: "salesReport.pdf" })}
                     className="new-invoice-btn mx-3"> Generate Print</span>
+                <button
+                    onClick={downloadExcel}
+                    style={{
+                        cursor: 'pointer',
+                        fontSize: "14px",
+                        padding: "12px",
+                        background: "green",
+                        border: "none",
+                        color: "white",
+                    }}
+                >
+                    Download Excel
+                </button>
             </span>
             <div id="invoice-generated">
                 <div className="container px-5 py-5" style={{ maxWidth: "1800px" }}>
@@ -221,9 +284,8 @@ export default function SalesReport() {
                         </Select>
 
                         <div ref={targetRef} style={{ padding: "0 20px" }}>
-
                             <span style={{ cursor: "pointer", marginLeft: "40%" }}>
-                                <h2 style={{ padding: "0 5px", marginTop: "50px" }}>Sales Trend</h2>
+                                <h2 style={{ padding: "5px" }}>Sales Trend</h2>
                             </span><br />
                             <Paper sx={{ width: "100%", overflow: "hidden" }}>
                                 <TableContainer>
@@ -249,37 +311,56 @@ export default function SalesReport() {
                                         </TableHead>
                                         <TableBody>
                                             {invoices
-                                                .slice(
-                                                    page * rowsPerPage,
-                                                    page * rowsPerPage + rowsPerPage
-                                                )
+                                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                                 .map((invoice, rowIndex) => (
-                                                    <TableRow
-                                                        key={invoice.bill_to.join(", ")}
-                                                        onClick={() => setInvoiceDetails(invoice.invoice_num)}
-                                                        style={{ cursor: "pointer" }}
-                                                    >
-                                                        {columns.map((column, colIndex) => (
-                                                            <TableCell key={column.id} align="left"
-                                                                style={{
-                                                                    borderRight: colIndex !== columns.length - 1 ? '1px solid #ddd' : 'none',
-                                                                    borderBottom: rowIndex !== rowsPerPage - 1 ? '1px solid #ddd' : 'none',
-                                                                }}
-                                                            >
-                                                                {column.id === "bill_to" ? (
-                                                                    invoice.bill_to.length > 0 ? invoice.bill_to[0] : "-"
-                                                                ) : column.id.startsWith("month_") ? (
-                                                                    invoice[column.id] ? `$${invoice[column.id].toFixed(2)}` : "-"
-                                                                ) : column.id === "total_amount" ? (
-                                                                    `$${invoice[column.id].toFixed(2)}`
-                                                                ) : (
-                                                                    invoice[column.id]
-                                                                )}
-                                                            </TableCell>
-                                                        ))}
-                                                    </TableRow>
+                                                    <>
+                                                        {rowIndex !== 0 && rowIndex % 33 === 0 && (
+                                                            <TableRow>
+                                                                {columns.map((column, colIndex) => (
+                                                                    <TableCell
+                                                                        key={column.id}
+                                                                        align="left"
+                                                                        style={{
+                                                                            minWidth: column.minWidth,
+                                                                            backgroundColor: "#08a0d1",
+                                                                            color: "white",
+                                                                            fontWeight: "500",
+                                                                            borderRight: colIndex !== columns.length - 1 ? '1px solid #ddd' : 'none',
+                                                                        }}
+                                                                    >
+                                                                        {column.label}
+                                                                    </TableCell>
+                                                                ))}
+                                                            </TableRow>
+                                                        )}
+                                                        <TableRow
+                                                            key={invoice.bill_to.join(", ")}
+                                                            onClick={() => setInvoiceDetails(invoice.invoice_num)}
+                                                            style={{ cursor: "pointer" }}
+                                                        >
+                                                            {columns.map((column, colIndex) => (
+                                                                <TableCell key={column.id} align="left"
+                                                                    style={{
+                                                                        borderRight: colIndex !== columns.length - 1 ? '1px solid #ddd' : 'none',
+                                                                        borderBottom: rowIndex !== invoices.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).length - 1 ? '1px solid #ddd' : 'none',
+                                                                    }}
+                                                                >
+                                                                    {column.id === "bill_to" ? (
+                                                                        invoice.bill_to.length > 0 ? invoice.bill_to[0] : "-"
+                                                                    ) : column.id.startsWith("month_") ? (
+                                                                        invoice[column.id] ? `$${invoice[column.id].toFixed(2)}` : "-"
+                                                                    ) : column.id === "total_amount" ? (
+                                                                        `$${invoice[column.id].toFixed(2)}`
+                                                                    ) : (
+                                                                        invoice[column.id]
+                                                                    )}
+                                                                </TableCell>
+                                                            ))}
+                                                        </TableRow>
+                                                    </>
                                                 ))}
                                         </TableBody>
+
                                     </Table>
                                 </TableContainer>
 

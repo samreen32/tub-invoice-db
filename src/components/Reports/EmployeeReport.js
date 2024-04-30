@@ -15,6 +15,7 @@ import { UserLogin } from "../../context/AuthContext";
 import { Toolbar } from "@mui/material";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
+import * as XLSX from 'xlsx';
 
 export default function EmployeeReport() {
     let navigate = useNavigate();
@@ -137,16 +138,71 @@ export default function EmployeeReport() {
         setSearchQuery("");
     };
 
+    const downloadExcel = () => {
+        const filteredData = invoices.map(invoice => ({
+            "Invoice No.": invoice.invoice_num,
+            "PO Date": new Date(invoice.PO_date).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit"
+            }),
+            "Installer": invoice.installer,
+            "Earned Amount": `$${invoice.total_amount.toFixed(2)}`
+        }));
+
+        const workSheet = XLSX.utils.json_to_sheet(filteredData);
+        workSheet['!cols'] = [
+            { wch: 15 },
+            { wch: 25 },
+            { wch: 15 },
+            { wch: 15 },
+        ];
+        const headerCellStyle = {
+            font: {
+                name: 'Calibri',
+                sz: 14,
+                bold: true
+            },
+            alignment: {
+                horizontal: "center",
+                vertical: "center"
+            }
+        };
+        const headers = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1'];
+        headers.forEach((cellRef) => {
+            if (workSheet[cellRef]) {
+                workSheet[cellRef].s = headerCellStyle;
+            }
+        });
+
+        const workBook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workBook, workSheet, "Invoices");
+        XLSX.writeFile(workBook, "EmployeeReport.xlsx");
+    };
+
     return (
-        <div style={{ marginTop: "2%" }}>
+        <div style={{ marginTop: "2%", padding: "0px 50px" }}>
             <span style={{
                 cursor: "pointer", textAlign: "center",
                 justifyContent: "center", display: "flex",
-                marginLeft: "1260px"
+                marginLeft: "990px"
 
             }}>
-                <span onClick={() => generatePDF(targetRef, { filename: "invoice.pdf" })}
+                <span onClick={() => generatePDF(targetRef, { filename: "EmployeeReport.pdf" })}
                     className="new-invoice-btn mx-3"> Generate Print</span>
+                <button
+                    onClick={downloadExcel}
+                    style={{
+                        cursor: 'pointer',
+                        fontSize: "14px",
+                        padding: "12px",
+                        background: "green",
+                        border: "none",
+                        color: "white",
+                    }}
+                >
+                    Download Excel
+                </button>
             </span>
             <div id="invoice-generated">
                 <div className="container px-5" style={{ width: "100%" }}>
@@ -233,9 +289,8 @@ export default function EmployeeReport() {
                         </Select>
                     </>
                     <div ref={targetRef} style={{ padding: "0 20px" }}>
-                        <br /><br />
                         <span style={{ cursor: "pointer", marginLeft: "40%" }}>
-                            <h2 style={{ padding: "5px" }}>Employee Report</h2>
+                            <h2 style={{ padding: "5px" }}>Employee Statement</h2>
                         </span><br />
                         <Paper sx={{ width: "100%", overflow: "hidden" }}>
                             <TableContainer>

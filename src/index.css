@@ -20,13 +20,10 @@ svg {
 }
 
 .container {
-  /* width: 100%;
-  height: 100%; */
   background: #FFF;
   border-radius: 5px;
   z-index: 1;
   overflow-y: auto;
-  /* overflow-x: auto; */
 }
 
 .container-report {
@@ -1188,3 +1185,8 @@ input {
 /* .css-1h51icj-MuiAutocomplete-root .MuiInput-root .MuiInput-input {
   padding: 4px 4px 4px 0px !important;
 } */
+
+.css-1ex1afd-MuiTableCell-root,
+.css-q34dxg {
+  padding: 3px !important;
+}

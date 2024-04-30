@@ -15,6 +15,7 @@ import { useNavigate } from "react-router";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import generatePDF from "react-to-pdf";
+import * as XLSX from 'xlsx';
 
 export default function CustomerReport() {
   let navigate = useNavigate();
@@ -190,16 +191,74 @@ export default function CustomerReport() {
     return [total30Days, total60Days, total90Days, totalOver90Days, overallTotal];
   };
 
+  const downloadExcel = () => {
+    const filteredData = invoices.map(invoice => ({
+      "Invoice No.": invoice.invoice_num,
+      "Date": new Date(invoice.date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }),
+      "Bill To": invoice.bill_to.join(", "),
+      "Installer": invoice.installer,
+      "Total Amount": `$${invoice.total_amount.toFixed(2)}`,
+      "Payment": `$0.00`,
+      "Due Amount": `$${invoice.total_amount.toFixed(2)}`
+    }));
+
+    const workSheet = XLSX.utils.json_to_sheet(filteredData);
+    workSheet['!cols'] = [
+      { wch: 15 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 15 },
+    ];
+    const headerCellStyle = {
+      font: {
+        name: 'Calibri',
+        sz: 14,
+        bold: true
+      },
+      alignment: {
+        horizontal: "center",
+        vertical: "center"
+      }
+    };
+    const headers = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1'];
+    headers.forEach((cellRef) => {
+      if (workSheet[cellRef]) {
+        workSheet[cellRef].s = headerCellStyle;
+      }
+    });
+
+    const workBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workBook, workSheet, "Invoices");
+    XLSX.writeFile(workBook, "CustomerReport.xlsx");
+  };
+
   return (
     <div style={{ marginTop: "2%" }}>
       <span style={{
         cursor: "pointer", textAlign: "center",
         justifyContent: "center", display: "flex",
-        marginLeft: "1260px"
+        marginLeft: "990px"
 
       }}>
-        <span onClick={() => generatePDF(targetRef, { filename: "invoices.pdf" })}
+        <span onClick={() => generatePDF(targetRef, { filename: "CustomerReport.pdf" })}
           className="new-invoice-btn mx-3"> Generate Print</span>
+        <button
+          onClick={downloadExcel}
+          style={{
+            cursor: 'pointer',
+            fontSize: "14px",
+            padding: "12px",
+            background: "green",
+            border: "none",
+            color: "white",
+          }}
+        >
+          Download Excel
+        </button>
       </span>
       <div id="invoice-generated">
         <div className="container px-5 py-5" style={{ width: "100%" }}>
@@ -311,24 +370,16 @@ export default function CustomerReport() {
                     <TableBody>
                       {invoices
                         .filter((invoice) => {
-                          const searchString = searchWords.map((word) =>
-                            word.toLowerCase()
-                          );
+                          const searchString = searchWords.map((word) => word.toLowerCase());
                           return (
                             searchString.some(
                               (word) =>
-                                invoice.bill_to
-                                  .join(", ")
-                                  .toLowerCase()
-                                  .includes(word) ||
+                                invoice.bill_to.join(", ").toLowerCase().includes(word) ||
                                 invoice.job_site_name.toLowerCase().includes(word)
                             ) ||
                             searchString.every(
                               (word) =>
-                                invoice.bill_to
-                                  .join(", ")
-                                  .toLowerCase()
-                                  .includes(word) ||
+                                invoice.bill_to.join(", ").toLowerCase().includes(word) ||
                                 invoice.job_site_name.toLowerCase().includes(word)
                             )
                           );
@@ -338,33 +389,61 @@ export default function CustomerReport() {
                           page * rowsPerPage + rowsPerPage
                         )
                         .map((invoice, index) => (
-                          <TableRow
-                            key={invoice.invoice_num}
-                            onClick={() => setInvoiceDetails(invoice.invoice_num)}
-                            style={{ cursor: "pointer" }}
-                          >
-                            <TableCell align="left">{index + 1}</TableCell>
-                            {columns.slice(1).map((column) => (
-                              <TableCell
-                                key={column.id}
-                                align={"left"}>
-                                {column.id === "date"
-                                  ? new Date(invoice.date).toLocaleDateString()
-                                  : column.id === "bill_to"
-                                    ? invoice.bill_to.length > 0 ? invoice.bill_to[0] : "-"
-                                    :
-                                    column.id === "total_amount"
-                                      ? `$${invoice.total_amount.toFixed(2)}`
-                                      : column.id === "payments"
-                                        ? `$${'0.00'}`
-                                        : invoice[column.id]
-                                }
-
-                              </TableCell>
-                            ))}
-                          </TableRow>
+                          <>
+                            {/* Insert header row after every 32 items */}
+                            {index !== 0 && index % 26 === 0 && (
+                              <>
+                                <TableRow style={{ height: "80px" }}>
+                                  {columns.map((column) => (
+                                    <TableCell key={`spacer-${column.id}`} />
+                                  ))}
+                                </TableRow>
+                                <TableRow>
+                                  {columns.map((column) => (
+                                    <TableCell
+                                      key={column.id}
+                                      align="left"
+                                      style={{
+                                        minWidth: column.minWidth,
+                                        backgroundColor: "#08a0d1",
+                                        color: "white",
+                                        fontWeight: "500"
+                                      }}
+                                    >
+                                      {column.label}
+                                    </TableCell>
+                                  ))}
+                                </TableRow>
+                              </>
+                            )}
+                            <TableRow
+                              key={invoice.invoice_num}
+                              onClick={() => setInvoiceDetails(invoice.invoice_num)}
+                              style={{ cursor: "pointer" }}
+                            >
+                              <TableCell align="left">{index + 1}</TableCell>
+                              {columns.slice(1).map((column) => (
+                                <TableCell
+                                  key={column.id}
+                                  align="left"
+                                >
+                                  {column.id === "date"
+                                    ? new Date(invoice.date).toLocaleDateString()
+                                    : column.id === "bill_to"
+                                      ? invoice.bill_to.length > 0 ? invoice.bill_to[0] : "-"
+                                      : column.id === "total_amount"
+                                        ? `$${invoice.total_amount.toFixed(2)}`
+                                        : column.id === "payments"
+                                          ? `$${'0.00'}`
+                                          : invoice[column.id]
+                                  }
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          </>
                         ))}
                     </TableBody>
+
                   </Table>
                 </TableContainer>
                 <div className="amount-container">

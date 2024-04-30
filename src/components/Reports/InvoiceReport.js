@@ -15,6 +15,7 @@ import { UserLogin } from "../../context/AuthContext";
 import { Toolbar } from "@mui/material";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
+import * as XLSX from 'xlsx';
 
 export default function InvoiceReport() {
   let navigate = useNavigate();
@@ -118,6 +119,64 @@ export default function InvoiceReport() {
 
   }, [selectedYear, selectedMonth, page, rowsPerPage, searchQuery, searchWords]);
 
+
+  const downloadExcel = () => {
+    const filteredData = invoices.map(invoice => ({
+      "Estimate No.": invoice.invoice_num,
+      "Bill To": invoice.bill_to.join(", "),
+      "PO No.": invoice.PO_number,
+      "PO Date": new Date(invoice.PO_date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }),
+      "Type of Work": invoice.type_of_work,
+      "Job Site Number": invoice.job_site_num,
+      "Amount": `$${invoice.total_amount.toFixed(2)}`,
+      "Payment Status": invoice.payment_status ? "Paid" : "Unpaid"
+    }));
+
+    const workSheet = XLSX.utils.json_to_sheet(filteredData);
+
+    // Set custom column widths
+    workSheet['!cols'] = [
+      { wch: 15 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 10 },
+      { wch: 15 }
+    ];
+
+    // Applying styles to header row
+    const headerCellStyle = {
+      font: {
+        name: 'Calibri',
+        sz: 14,
+        bold: true
+      },
+      alignment: {
+        horizontal: "center",
+        vertical: "center"
+      }
+    };
+
+    // Ensure each header cell is styled
+    const headers = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1']; // Adjust as per your columns
+    headers.forEach((cellRef) => {
+      if (workSheet[cellRef]) { // Check if cell exists
+        workSheet[cellRef].s = headerCellStyle;
+      }
+    });
+
+    const workBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workBook, workSheet, "Invoices");
+    XLSX.writeFile(workBook, "EstimateReport.xlsx");
+  };
+
+
   const columns = [
     { id: "invoice_num", label: "Estimate No.", minWidth: 100 },
     { id: "bill_to", label: "Bill To", minWidth: 100 },
@@ -137,9 +196,18 @@ export default function InvoiceReport() {
       label: "Delete",
       minWidth: 100,
     },
+    // {
+    //   id: "download",
+    //   label: "Download",
+    //   minWidth: 100,
+    //   align: "center",
+    //   format: () => (
+    //     <i className="fa fa-download fa-xl" aria-hidden="true" onClick={downloadExcel} style={{ cursor: 'pointer' }}></i>
+    //   )
+    // },    
   ];
 
-  
+
   /* Table pagination */
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -209,8 +277,8 @@ export default function InvoiceReport() {
             </h2>
 
             {/* Search field */}
-            <div style={{ marginBottom: "-50px" }}>
-              <Toolbar className="toolbar-search">
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <Toolbar className="toolbar-search" style={{ marginBottom: "-55px" }}>
                 <form className="d-flex search-form" role="search">
                   <div
                     className={`search-container ${isExpanded ? "expanded" : ""
@@ -233,46 +301,60 @@ export default function InvoiceReport() {
                   </div>
                 </form>
               </Toolbar>
+
+              <div>
+                <button
+                  onClick={downloadExcel}
+                  style={{
+                    cursor: 'pointer',
+                    fontSize: "14px",
+                    padding: "12px",
+                    background: "#00bbf0",
+                    border: "none",
+                    color: "white",
+                  }}
+                >
+                  Download Excel
+                </button>
+                <Select
+                  value={selectedYear}
+                  onChange={handleYearChange}
+                  style={{
+                    marginLeft: "20px",
+                    marginRight: "10px",
+                    marginTop: "20px",
+                  }}
+                  displayEmpty
+                >
+                  <MenuItem value="">All Years... </MenuItem>
+                  {Array.from(
+                    { length: 10 },
+                    (_, index) => new Date().getFullYear() - index
+                  ).map((year) => (
+                    <MenuItem key={year} value={year.toString()}>
+                      {year}
+                    </MenuItem>
+                  ))}
+
+                </Select>
+
+                <Select
+                  value={selectedMonth}
+                  onChange={handleMonthChange}
+                  style={{ marginRight: "20px", marginTop: "20px" }}
+                  displayEmpty
+                >
+                  <MenuItem value="">All Months... </MenuItem>
+                  {months.map((month) => (
+                    <MenuItem key={month} value={month}>
+                      {month}
+                    </MenuItem>
+                  ))}
+
+                </Select>
+
+              </div>
             </div>
-
-            <>
-              <Select
-                value={selectedYear}
-                onChange={handleYearChange}
-                style={{
-                  marginLeft: "20px",
-                  marginRight: "10px",
-                  marginTop: "20px",
-                }}
-                displayEmpty
-              >
-                <MenuItem value="">All Years... </MenuItem>
-                {Array.from(
-                  { length: 10 },
-                  (_, index) => new Date().getFullYear() - index
-                ).map((year) => (
-                  <MenuItem key={year} value={year.toString()}>
-                    {year}
-                  </MenuItem>
-                ))}
-
-              </Select>
-
-              <Select
-                value={selectedMonth}
-                onChange={handleMonthChange}
-                style={{ marginRight: "20px", marginTop: "20px" }}
-                displayEmpty
-              >
-                <MenuItem value="">All Months... </MenuItem>
-                {months.map((month) => (
-                  <MenuItem key={month} value={month}>
-                    {month}
-                  </MenuItem>
-                ))}
-
-              </Select>
-            </>
 
             <Paper sx={{ width: "100%", overflow: "hidden" }}>
               <TableContainer>
@@ -282,18 +364,19 @@ export default function InvoiceReport() {
                       {columns.map((column) => (
                         <TableCell
                           key={column.id}
-                          align="left"
+                          align={column.align || "left"}
                           style={{
                             minWidth: column.minWidth,
                             backgroundColor: "#08a0d1",
                             color: "white",
                             fontWeight: "500"
-                        }}
+                          }}
                         >
-                          {column.label}
+                          {column.format ? column.format() : column.label}
                         </TableCell>
                       ))}
                     </TableRow>
+
                   </TableHead>
                   <TableBody>
                     {invoices
@@ -353,7 +436,7 @@ export default function InvoiceReport() {
                                 <Button
                                   variant="contained"
                                   // color="primary"
-                                  style={{background: "green"}}
+                                  style={{ background: "green" }}
                                   onClick={() => handleEditInvoice(invoice.invoice_num)}
                                 >
                                   Edit
@@ -363,7 +446,7 @@ export default function InvoiceReport() {
                                 <Button
                                   variant="contained"
                                   // color="secondary"
-                                  style={{background: "red"}}
+                                  style={{ background: "red" }}
                                   onClick={() => handleDeleteInvoice(invoice.invoice_num)}
                                 >
                                   Delete
