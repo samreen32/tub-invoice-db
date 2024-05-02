@@ -260,7 +260,7 @@ function InvoiceGenerated() {
             <div className="row item_details_div px-3" style={{ marginTop: "-65px" }}>
               {formData.items.map((item, index) => (
                 <>
-                  {(index + 1) % 31 === 0 && (
+                  {(index + 1) % 32 === 0 && (
                     <>
                       <h5 className="text-center"
                         style={{
@@ -508,9 +508,9 @@ function InvoiceGenerated() {
                               ? "2px"
                               : formData.items.length >= 19 && formData.items.length <= 20
                                 ? "2px"
-                                : formData.items.length >= 21 && formData.items.length <= 29
+                                : formData.items.length >= 21 && formData.items.length <= 30
                                   ? "2px"
-                                  : formData.items.length > 30
+                                  : formData.items.length > 31
                                     ? "0px"
                                     : "0px"
               }}

@@ -11,7 +11,7 @@ const AuthProvider = ({ children }) => {
 
   const createDefaultItems = () => {
     const items = [];
-    for (let i = 1; i <= 30; i++) {
+    for (let i = 1; i <= 31; i++) {
       items.push({
         lot_no: "",
         description: "",
@@ -43,7 +43,7 @@ const AuthProvider = ({ children }) => {
 
   const createDefaultUpdateItems = () => {
     const items = [];
-    for (let i = 1; i <= 30; i++) {
+    for (let i = 1; i <= 31; i++) {
       items.push({
         lot_no: "",
         description: "",

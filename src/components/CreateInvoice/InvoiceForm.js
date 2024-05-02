@@ -42,7 +42,7 @@ function InvoiceForm() {
     fetchDescriptions();
   }, [setDescriptions, descriptions]);
 
-  const createDefaultItems = (numItems = 30) => {
+  const createDefaultItems = (numItems = 31) => {
     return Array.from({ length: numItems }, () => ({
       lot_no: "",
       description: "",
@@ -60,7 +60,6 @@ function InvoiceForm() {
   }, []);
 
   const inputRefs = useRef([]);
-  const [typingTimeout, setTypingTimeout] = useState(null);
 
   const formatDateInput = (value) => {
     let numbers = value.replace(/[^\d]/g, '');  // Remove non-digit characters
@@ -86,22 +85,15 @@ function InvoiceForm() {
 
   const handleInputChange = (index, e) => {
     const { name, value } = e.target;
-
-    if (typingTimeout) {
-      clearTimeout(typingTimeout);
-    }
-
-    setTypingTimeout(setTimeout(() => {
-      formatAndSetPrice(index, name, value);
-    }, 500));  // 500ms delay after the last key press to determine if user has stopped typing
+    formatAndSetPrice(index, name, value);
   };
 
   const formatAndSetPrice = (index, name, value) => {
     const formatPriceEach = (value) => {
-      let numericValue = String(value).replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
+      let numericValue = String(value).replace(/[^0-9.]/g, '');
 
       if (numericValue.length === 3 && !numericValue.includes('.')) {
-        numericValue += ".00"; // Add .00 if there are exactly 3 digits and no decimal point
+        numericValue += ".00";
       }
 
       const dotIndex = numericValue.indexOf('.');
@@ -265,7 +257,6 @@ function InvoiceForm() {
     navigate("/main");
   };
 
-
   const baseInvoiceSectionStyle = {
     marginTop: "200px",
     border: "2px solid white",
@@ -326,11 +317,13 @@ function InvoiceForm() {
     }
   };
 
+
   const formatPriceEach = (value) => {
     let numericValue = String(value).replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
 
+    // Return an empty string if no input is provided
     if (numericValue === "") {
-      return "0.00"; // Default to "0.00" if the field is empty
+      return ""; // Return empty if the field is empty
     }
 
     const dotIndex = numericValue.indexOf('.');
@@ -342,6 +335,7 @@ function InvoiceForm() {
 
     return numericValue;
   };
+
 
 
   return (
@@ -478,12 +472,12 @@ function InvoiceForm() {
                     type="text"
                     variant="standard"
                     placeholder="mm/dd/yyyy"
-                    style={{ width: "75%", marginTop: "10px" }}
+                    style={{ width: "75%", marginTop: "10px", marginLeft: "30px" }}
                     InputProps={{
                       disableUnderline: true
                     }}
                     value={formData.PO_date || ''}
-                   onChange={handleDateChange}  
+                    onChange={handleDateChange}
                   />
                 </div>
                 <div className="col-md-2" style={{ textAlign: "center" }}>
@@ -590,7 +584,7 @@ function InvoiceForm() {
               <div className="row item_details_div px-3" style={{ marginTop: "-65px" }}>
                 {formData.items.map((item, index) => (
                   <>
-                    {(index + 1) % 31 === 0 && (
+                    {(index + 1) % 32 === 0 && (
                       <>
                         <h5 className="text-center"
                           style={{
@@ -686,12 +680,12 @@ function InvoiceForm() {
                                 variant="standard"
                                 placeholder="mm/dd/yyyy"
                                 type="date"
-                                style={{ width: "75%", marginTop: "23px", }}
+                                style={{ width: "75%", marginTop: "23px", marginLeft: "30px" }}
                                 InputProps={{
                                   disableUnderline: true
                                 }}
                                 value={formData.PO_Invoice_date}
-                                onChange={handleDateChange}  
+                                onChange={handleDateChange}
                               />
 
                             </div>
@@ -952,9 +946,9 @@ function InvoiceForm() {
                                 ? "2px"
                                 : formData.items.length >= 19 && formData.items.length <= 20
                                   ? "2px"
-                                  : formData.items.length >= 21 && formData.items.length <= 29
+                                  : formData.items.length >= 21 && formData.items.length <= 30
                                     ? "2px"
-                                    : formData.items.length > 30
+                                    : formData.items.length > 31
                                       ? "0px"
                                       : "0px"
                 }}

@@ -48,7 +48,7 @@ function EditInvoice() {
     fetchDescriptions();
   }, [setDescriptions, descriptions]);
 
-  const createDefaultUpdateItems = (numItems = 30) => {
+  const createDefaultUpdateItems = (numItems = 31) => {
     return Array.from({ length: numItems }, () => ({
       lot_no: "",
       description: "",
@@ -93,14 +93,7 @@ function EditInvoice() {
 
   const handleInputChange = (index, e) => {
     const { name, value } = e.target;
-
-    if (typingTimeout) {
-      clearTimeout(typingTimeout);
-    }
-
-    setTypingTimeout(setTimeout(() => {
-      formatAndSetPrice(index, name, value);
-    }, 500));  // 500ms delay after the last key press to determine if user has stopped typing
+    formatAndSetPrice(index, name, value);
   };
 
   const formatAndSetPrice = (index, name, value) => {
@@ -388,6 +381,7 @@ function EditInvoice() {
   }
 
   const totalAmount = calculateTotalAmount(formUpdateData.items);
+
   const handleInputBlur = (index, e) => {
     const { name, value } = e.target;
     if (name === 'price_each') {
@@ -409,18 +403,19 @@ function EditInvoice() {
 
   const formatPriceEach = (value) => {
     let numericValue = String(value).replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
-
+  
+    // Return an empty string if no input is provided
     if (numericValue === "") {
-      return "0.00"; // Default to "0.00" if the field is empty
+      return ""; // Return empty if the field is empty
     }
-
+  
     const dotIndex = numericValue.indexOf('.');
     if (numericValue.length <= 3 && dotIndex === -1) {
       numericValue += ".00"; // Append .00 if there are 1-3 digits and no decimal point
     } else if (dotIndex !== -1 && dotIndex > 3) {
       numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
     }
-
+  
     return numericValue;
   };
 
@@ -505,7 +500,7 @@ function EditInvoice() {
           </div>
 
           <form>
-            <div className="row bill_to_div px-3" style={{ border: "2px solid white", marginTop: "-10px" }}>
+            <div className="row bill_to_div px-3" style={{ border: "2px solid white", marginTop: "10px" }}>
               <div className="col-md-9">
                 <p>
                   <p style={{ fontWeight: "800" }}>Bill To</p>
@@ -699,13 +694,13 @@ function EditInvoice() {
               <div className="row item_details_div px-3" style={{ marginTop: "-65px" }}>
                 {formUpdateData.items.map((item, index) => (
                   <>
-                    {(index + 1) % 31 === 0 && (
+                    {(index + 1) % 32 === 0 && (
                       <>
                         <h5 className="text-center"
                           style={{
                             fontSize: "25px",
                             fontWeight: "600",
-                            // marginBottom: "-20px"
+                            marginTop: "120px"
                           }}
                         >
                           Thank You! We truly appreciate your business!
@@ -741,7 +736,8 @@ function EditInvoice() {
                               </p>
                             </div>
                           </div>
-                          <div className="row bill_to_div " style={{ border: "2px solid white", marginTop: "-10px" }}>
+                          <div className="row bill_to_div " style={{ border: "2px solid white", 
+                          marginTop: "10px" }}>
                             <div className="col-md-9">
                               <p>
                                 <p style={{ fontWeight: "800" }}>Bill To</p>
@@ -1068,11 +1064,11 @@ function EditInvoice() {
                                 ? "2px"
                                 : formUpdateData.items.length >= 19 && formUpdateData.items.length <= 20
                                   ? "2px"
-                                  : formUpdateData.items.length >= 21 && formUpdateData.items.length <= 29
+                                  : formUpdateData.items.length >= 21 && formUpdateData.items.length <= 30
+                                  ? "2px"
+                                  : formUpdateData.items.length > 31
                                     ? "0px"
-                                    : formUpdateData.items.length > 30
-                                      ? "0px"
-                                      : "0px"
+                                    : "0px"
                 }}
               >
                 <p style={{ marginRight: "70px", marginTop: "6px" }}>
