@@ -863,7 +863,7 @@ function EditInvoice() {
                             <div
                               className='col-md-1'
                               style={{
-                                marginLeft: '-65px',
+                                marginLeft: '-70px',
                                 width: '150px',
                                 textAlign: 'right',
                               }}

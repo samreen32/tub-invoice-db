@@ -61,7 +61,7 @@ function InvoiceGenerated() {
   }
 
   const baseInvoiceSectionStyle = {
-    marginTop: "210px",
+    marginTop: "190px",
     border: "2px solid white",
   };
 
@@ -413,7 +413,7 @@ function InvoiceGenerated() {
                           <p
                             style={{
                               marginRight: '70px',
-                              marginTop: '50px',
+                              marginTop: '60px',
                             }}
                           >
                             Total Due: {`$${formData?.total_amount?.toFixed(2) || ''}`}
@@ -434,7 +434,7 @@ function InvoiceGenerated() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '50px',
+                              marginTop: '85px',
                             }}
                           >
                             Thank You! We truly appreciate your business!
