@@ -140,22 +140,18 @@ h3 {
 .bill_to_div,
 .estimate_address_div {
   border: 4px solid black;
-  padding: 12px 0px;
+  /* padding: 12px 0px; */
 }
 
 .last-row {
   border: 4px solid black;
-  padding: 12px;
+  padding: 20px;
   width: 1325px;
-  margin-left: -10px;
+  /* margin-left: -25px; */
 }
 
-/* .item_details_div {
-  border-right: 1px solid #000;
-} */
 
 .form-col {
-  /* border-left: 1px solid #000; */
   margin-top: -10px !important;
 }
 

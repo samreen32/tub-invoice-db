@@ -9,8 +9,9 @@ import { EDIT_INVOICE, FETCH_BILL_TO, FETCH_DESCRIPPTION, GET_INVOICE } from "..
 import generatePDF from "react-to-pdf";
 import InputAdornment from '@mui/material/InputAdornment';
 import Autocomplete from '@mui/material/Autocomplete';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import { divideArrayIntoChunks } from "../../utils";
+
+const CHUNK_SIZE = 31;
 
 function EditSecondInvoice() {
   let navigate = useNavigate();
@@ -143,13 +144,7 @@ function EditSecondInvoice() {
   };
 
   const handleAddItem = () => {
-    const newItems = Array.from({ length: 30 }, () => ({
-      lot_no: "",
-      description: "",
-      quantity: "",
-      price_each: "",
-      total_amount: 0,
-    }));
+    const newItems = createDefaultUpdateItems();
     setFormUpdateData(prevData => ({
       ...prevData,
       items: [...prevData.items, ...newItems]
@@ -172,6 +167,11 @@ function EditSecondInvoice() {
     }
   }, [formUpdateData.items.length]);
 
+  useEffect(() => {
+    // Re-adjust the references to only keep as many as there are items
+    inputRefs.current = inputRefs.current.slice(0, formUpdateData.items.length);
+  }, [formUpdateData.items]);
+
   const fieldRefs = useRef([]);
 
   /* Press enter key to add new field as well as key focus */
@@ -192,9 +192,6 @@ function EditSecondInvoice() {
     }
   };
 
-  useEffect(() => {
-    fieldRefs.current = fieldRefs.current.slice(0, formUpdateData.bill_to.length);
-  }, [formUpdateData.bill_to]);
 
   const updateBillToField = (index, value) => {
     setFormUpdateData((prevData) => {
@@ -311,13 +308,6 @@ function EditSecondInvoice() {
     navigate("/invoice");
   };
 
-  const getCurrentDate = () => {
-    const currentDate = new Date();
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const day = String(currentDate.getDate()).padStart(2, '0');
-    const year = String(currentDate.getFullYear()).slice(-2);
-    return `${month}/${day}/${year}`;
-  };
 
   function formatDate(date) {
     if (!date) {
@@ -377,21 +367,6 @@ function EditSecondInvoice() {
     }
   };
 
-  function safeParseFloat(value) {
-    const num = parseFloat(value);
-    return isNaN(num) ? 0 : num;
-  }
-
-  const calculateTotalAmount = (items) => {
-    return items.reduce((total, item) => {
-      const quantity = safeParseFloat(item.quantity);
-      const priceEach = safeParseFloat(item.price_each);
-      return total + (quantity * priceEach);
-    }, 0);
-  }
-
-  const totalAmount = calculateTotalAmount(formUpdateData.items);
-
   const handleInputBlur = (index, e) => {
     const { name, value } = e.target;
     if (name === 'price_each') {
@@ -413,20 +388,49 @@ function EditSecondInvoice() {
 
   const formatPriceEach = (value) => {
     let numericValue = String(value).replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
-  
+
     // Return an empty string if no input is provided
     if (numericValue === "") {
       return ""; // Return empty if the field is empty
     }
-  
+
     const dotIndex = numericValue.indexOf('.');
     if (numericValue.length <= 3 && dotIndex === -1) {
       numericValue += ".00"; // Append .00 if there are 1-3 digits and no decimal point
     } else if (dotIndex !== -1 && dotIndex > 3) {
       numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
     }
-  
+
     return numericValue;
+  };
+
+  const chunkedArray = () => {
+    return divideArrayIntoChunks(formUpdateData, CHUNK_SIZE);
+  };
+
+  const handleUpdateAndGeneratePDF = async () => {
+    try {
+      const response = await axios.put(
+        `${EDIT_INVOICE}/${invoiceNum}`,
+        formUpdateData
+      );
+      if (response.data.success) {
+        generatePDF(targetRef, { filename: "invoice.pdf" })
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: response.data.message || "Failed to update invoice.",
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to update invoice. Please try again later.",
+      });
+      console.error("Failed to update invoice:", error.message);
+    }
   };
 
   return (
@@ -461,7 +465,7 @@ function EditSecondInvoice() {
             Update Invoice
           </span>
           <span
-            onClick={() => generatePDF(targetRef, { filename: "invoice.pdf" })}
+            onClick={handleUpdateAndGeneratePDF}
             className="new-invoice-btn"
             style={{ background: "green", border: "none" }}
           >
@@ -476,592 +480,471 @@ function EditSecondInvoice() {
         ref={targetRef}
       >
         <div id="pdf">
-          <div className="row">
-            <div className="invoice-first-div col-9 px-5">
-              <img src={logo} alt="logo tub" />
-              <address className="mt-3 px-3">
-                <b style={{ fontSize: "28px" }}>Tub Pro's, Inc. </b>
-                <br />
-                <span style={{ fontSize: "22px" }}>
-                  PO Box 30596 <br />
-                  Las Vegas, NV. 89173 <br />
-                  Office: (702) 445-6232 <br />
-                  Fax: &nbsp;&nbsp;&nbsp;&nbsp;(702) 445-6241
-                </span>
-              </address>
-            </div>
-            <div className="col-3">
-              <p className="invoice-details">
-                <b>Invoice</b>
-              </p>
-              <p>
-                Number &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                {formUpdateData.invoice_num}
-              </p>
-              <p>
-                Date
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                {getCurrentDate()}
-              </p>
-
-            </div>
-          </div>
-
           <form>
-            <div className="row bill_to_div px-3" style={{ border: "2px solid white", marginTop: "15px" }}>
-              <div className="col-md-9">
-                <p>
-                  <p style={{ fontWeight: "800" }}>Bill To</p>
-                  {[1, 2, 3].map((fieldIndex) => (
-                    fieldIndex <= visibleBillToFields && (
-                      <React.Fragment key={`bill_to_${fieldIndex}`}>
-                        <Autocomplete
-                          freeSolo
-                          options={addresses}
-                          value={formUpdateData.bill_to[fieldIndex - 1] || ''}
-                          onChange={(event, newValue) => {
-                            updateBillToField(fieldIndex - 1, newValue);
-                          }}
-                          onInputChange={(event, newInputValue) => {
-                            updateBillToField(fieldIndex - 1, newInputValue);
-                          }}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              variant="standard"
-                              inputRef={el => fieldRefs.current[fieldIndex] = el}
-                              onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
-                              style={{ marginTop: "-20px", width: "50%", height: "100%" }}
-                            // InputProps={{
-                            //   disableUnderline: true
-                            // }}
-                            />
-                          )}
-                        />
-                      </React.Fragment>
-                    )
-                  ))}
-                </p>
-              </div>
-            </div>
-
-            <div className="last-row" style={{ marginTop: "-20px" }}>
-              <div className="row po_details_div px-3">
-                <div className="col-md-1 text-center">
-                  <b>PO No.</b>
-                  <input
-                    id="po_num"
-                    type="text"
-                    name="PO_number"
-                    value={formUpdateData.PO_number}
-                    onChange={(e) => handleInputChange(undefined, e)}
-                    style={{
-                      // marginTop: "12px",
-                      width: "100%",
-                      border: "none",
-                      textAlign: "center",
-                      outline: "none",
-                      borderBottom: "none",
-                    }}
-                    onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                    onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                  />
-                </div>
-                <div className="col-md-2 text-center">
-                  <b>PO Date</b>
-                  <TextField
-                    id="PO_Invoice_date"
-                    variant="standard"
-                    placeholder="mm/dd/yyyy"
-                    type="text"
-                    style={{ width: "75%", marginTop: "10px", marginLeft: "30px" }}
-                    onChange={handleDateChange}
-                    InputProps={{
-                      disableUnderline: true
-                    }}
-                    value={formUpdateData.PO_Invoice_date || ""}
-                  />
-                </div>
-                <div className="col-md-2" style={{ textAlign: "center" }}>
-                  <span style={{ fontWeight: "800", marginLeft: "15px" }}>Type of Work</span>
-                  <input
-                    id="type_of_work"
-                    type="text"
-                    name="type_of_work"
-                    value={formUpdateData.type_of_work}
-                    onChange={(e) => handleInputChange(undefined, e)}
-                    style={{
-                      // marginTop: "12px",
-                      width: "100%",
-                      border: "none",
-                      textAlign: "center",
-                      outline: "none",
-                      borderBottom: "none",
-                    }}
-                    onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                    onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                  />
-                </div>
-                <div className="col-md-2 text-center">
-                  <span style={{ fontWeight: "800", marginLeft: "15px" }}>Job Site No.</span>
-                  <input
-                    id="job_site_no"
-                    type="text"
-                    name="job_site_num"
-                    value={formUpdateData.job_site_num}
-                    onChange={(e) => handleInputChange(undefined, e)}
-                    style={{
-                      // marginTop: "12px",
-                      width: "100%",
-                      border: "none",
-                      textAlign: "center",
-                      outline: "none",
-                      borderBottom: "none",
-                    }}
-                    onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                    onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                  />
-                </div>
-                <div className="col-md-2 text-center">
-                  <span style={{ marginLeft: "60px", fontWeight: "bold" }}>Job Name</span>
-                  <input
-                    id="job_site_name"
-                    type="text"
-                    name="job_site_name"
-                    value={formUpdateData.job_site_name}
-                    onChange={(e) => handleInputChange(undefined, e)}
-                    style={{
-                      // marginTop: "12px",
-                      width: "130%",
-                      border: "none",
-                      textAlign: "center",
-                      outline: "none",
-                      borderBottom: "none",
-
-                    }}
-                    onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                    onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                  />
-                </div>
-                <div className="col-md-3 text-center">
-                  <b>Job Location</b>
-                  <input
-                    id="job_location"
-                    type="text"
-                    name="job_location"
-                    value={formUpdateData.job_location}
-                    onChange={(e) => handleInputChange(undefined, e)}
-                    style={{
-                      // marginTop: "12px",
-                      width: "100%",
-                      border: "none",
-                      textAlign: "center",
-                      outline: "none",
-                      borderBottom: "none",
-                    }}
-                    onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                    onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                  />
-
-                </div>
-              </div>
-
-              <div className="line"></div>
-              <div className="row item_details_div px-3">
-                <span className="plus-icon" onClick={handleAddItem}>
-                  {/* <i className="fas fa-plus-circle"></i> */}
-                </span>
-                &nbsp;
-                <div className="col-md-2">
-                  <b>Lot No.</b>
-                </div>
-                <div className="col-md-6 text-center">
-                  <b>Description</b>
-                </div>
-                <div className="col-md-1" style={{ marginLeft: "-2px" }}><b>Quantity</b></div>
-                <div className="col-md-2" style={{ marginLeft: "20px" }}><b>Price Each</b></div>
-                <div className="col-md-1" style={{ marginLeft: "-75px" }}> <b>Amount</b></div>
-              </div>
-              {/* <div style={{ height: '900px', }}> */}
-              <div className="row item_details_div px-3" style={{ marginTop: "-65px" }}>
-                {formUpdateData.items.map((item, index) => (
-                  <>
-                    {(index + 1) % 32 === 0 && (
-                      <>
-                        <h5 className="text-center"
-                          style={{
-                            fontSize: "25px",
-                            fontWeight: "600",
-                            marginTop: "120px"
-                          }}
-                        >
-                          Thank You! We truly appreciate your business!
-                        </h5>
-                        <div style={baseInvoiceSectionStyle}>
-                          <div className="row">
-                            <div className="invoice-first-div col-9 ">
-                              <img src={logo} alt="logo tub" />
-                              <address className="mt-3 px-3">
-                                <b style={{ fontSize: "28px" }}>Tub Pro's, Inc. </b>
-                                <br />
-                                <span style={{ fontSize: "22px" }}>
-                                  PO Box 30596 <br />
-                                  Las Vegas, NV. 89173 <br />
-                                  Office: (702) 445-6232 <br />
-                                  Fax: &nbsp;&nbsp;&nbsp;&nbsp;(702) 445-6241
-                                </span>
-                              </address>
-                            </div>
-                            <div className="col-3">
-                              <p className="invoice-details">
-                                <b>Invoice</b>
-                              </p>
-                              <p>
-                                Number &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                {formUpdateData.invoice_num}
-                              </p>
-                              <p>
-                                Date
-                                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                                {getCurrentDate()}
-                              </p>
-
-                            </div>
-                          </div>
-
-                          <div className="row bill_to_div" style={{
-                            border: "2px solid white",
-                            marginTop: "15px"
-                          }}>
-                            <div className="col-md-9">
-                              <p>
-                                <p style={{ fontWeight: "800" }}>Bill To</p>
-                                {[1, 2, 3].map((fieldIndex) => (
-                                  fieldIndex <= visibleBillToFields && (
-                                    <React.Fragment key={`bill_to_${fieldIndex}`}>
-                                      <Autocomplete
-                                        freeSolo
-                                        options={addresses}
-                                        value={formUpdateData.bill_to[fieldIndex - 1] || ''}
-                                        onChange={(event, newValue) => {
-                                          updateBillToField(fieldIndex - 1, newValue);
-                                        }}
-                                        onInputChange={(event, newInputValue) => {
-                                          updateBillToField(fieldIndex - 1, newInputValue);
-                                        }}
-                                        renderInput={(params) => (
-                                          <TextField
-                                            {...params}
-                                            variant="standard"
-                                            inputRef={el => fieldRefs.current[fieldIndex] = el}
-                                            onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
-                                            style={{ marginTop: "-20px", width: `55%`, height: "100%" }}
-                                          />
-                                        )}
-                                      />
-                                    </React.Fragment>
-                                  )
-                                ))}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="row po_details_div">
-                            <div className="col-md-1 text-center">
-                              <b>PO No.</b>
-                              <input
-                                id="po_num"
-                                type="text"
-                                name="PO_number"
-                                value={formUpdateData.PO_number}
-                                onChange={(e) => handleInputChange(undefined, e)}
-                                style={{
-                                  // marginTop: "12px",
-                                  width: "100%",
-                                  border: "none",
-                                  textAlign: "center",
-                                  outline: "none",
-                                  borderBottom: "none",
-                                }}
-                                onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                                onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                              />
-                            </div>
-                            <div className="col-md-2 text-center">
-                              <b>PO Date</b>
-                              <TextField
-                                id="PO_Invoice_date"
-                                variant="standard"
-                                placeholder="mm/dd/yyyy"
-                                type="text"
-                                style={{ width: "75%", marginTop: "10px", marginLeft: "30px" }}
-                                onChange={handleDateChange}
-                                InputProps={{
-                                  disableUnderline: true
-                                }}
-                                value={formUpdateData.PO_Invoice_date || ""}
-                              />
-                            </div>
-                            <div className="col-md-2" style={{ textAlign: "center" }}>
-                              <b>Type of Work</b>
-                              <input
-                                id="type_of_work"
-                                type="text"
-                                name="type_of_work"
-                                value={formUpdateData.type_of_work}
-                                onChange={(e) => handleInputChange(undefined, e)}
-                                style={{
-                                  // marginTop: "12px",
-                                  width: "100%",
-                                  border: "none",
-                                  textAlign: "center",
-                                  outline: "none",
-                                  borderBottom: "none",
-                                }}
-                                onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                                onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                              />
-                            </div>
-                            <div className="col-md-2 text-center">
-                              <span style={{ fontWeight: "800", marginLeft: "15px" }}>Job Site No.</span>
-                              <input
-                                id="job_site_no"
-                                type="text"
-                                name="job_site_num"
-                                value={formUpdateData.job_site_num}
-                                onChange={(e) => handleInputChange(undefined, e)}
-                                style={{
-                                  // marginTop: "12px",
-                                  width: "100%",
-                                  border: "none",
-                                  textAlign: "center",
-                                  outline: "none",
-                                  borderBottom: "none",
-                                }}
-                                onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                                onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                              />
-                            </div>
-                            <div className="col-md-2 text-center">
-                              <span style={{ marginLeft: "60px", fontWeight: "bold" }}>Job Name</span>
-                              <input
-                                id="job_site_name"
-                                type="text"
-                                name="job_site_name"
-                                value={formUpdateData.job_site_name}
-                                onChange={(e) => handleInputChange(undefined, e)}
-                                style={{
-                                  // marginTop: "12px",
-                                  width: "130%",
-                                  border: "none",
-                                  textAlign: "center",
-                                  outline: "none",
-                                  borderBottom: "none",
-                                }}
-                                onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                                onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                              />
-                            </div>
-                            <div className="col-md-3 text-center">
-                              <b>Job Location</b>
-                              <input
-                                id="job_location"
-                                type="text"
-                                name="job_location"
-                                value={formUpdateData.job_location}
-                                onChange={(e) => handleInputChange(undefined, e)}
-                                style={{
-                                  // marginTop: "12px",
-                                  width: "100%",
-                                  border: "none",
-                                  textAlign: "center",
-                                  outline: "none",
-                                  borderBottom: "none",
-                                }}
-                                onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                                onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                              />
-
-                            </div>
-                          </div>
-
-                          <div className="line"></div>
-                          <div className="row item_details_div">
-                            <span className="plus-icon" onClick={handleAddItem}>
-                              {/* <i className="fas fa-plus-circle"></i> */}
-                            </span>
-                            &nbsp;
-                            <div className="col-md-3">
-                              <b>Lot No.</b>
-                            </div>
-                            <div className="col-md-5 text-center">
-                              <b>Description</b>
-                            </div>
-                            <div className="col-md-1" style={{ marginLeft: "-2px" }}><b>Quantity</b></div>
-                            <div className="col-md-2" style={{ marginLeft: "20px" }}><b>Price Each</b></div>
-                            <div className="col-md-1" style={{ marginLeft: "-75px" }}> <b>Amount</b></div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
+            <div>
+              <div className='row item_details_div px-3'>
+                {chunkedArray().map((outerItem, index) => (
+                  <div key={index}>
                     <div
-                      className="row"
-                      style={{ marginTop: index === 0 ? "6%" : "0px" }}
+                      style={
+                        index != 0
+                          ? baseInvoiceSectionStyle
+                          : { border: '2px solid white' }
+                      }
                     >
-                      <div className="col-md-3">
-                        <TextField
-                          id={`lot_no_${index}`}
-                          key={index}
-                          ref={el => inputRefs.current[index] = el}
-                          variant="standard"
-                          type="text"
-                          name="lot_no"
-                          value={item.lot_no}
-                          onChange={(e) => handleInputChange(index, e)}
-                          // onKeyPress={(e) => handleLotNoKeyPress(e, index)}
-                          autoComplete="off"
-                          style={{
-                            width: `${Math.max(30, Math.min(10 + ((item.lot_no ? item?.lot_no?.length : 0) * 8), 100))}%`
-                          }}
-                          InputProps={{
-                            disableUnderline: true
-                          }}
-                          onKeyDown={(event) =>
-                            handleEnterKeyPress(event, "lot_no", index)
-                          }
-                        />
-                      </div>
-                      <div className="col-md-5">
-                        <Autocomplete
-                          id={`description_${index}`}
-                          freeSolo
-                          options={descriptions}
-                          value={item.description || ''}
-                          onChange={(event, newValue) => handleInputChange(index, {
-                            target: { name: 'description', value: newValue },
-                          })
-                          }
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              variant="standard"
-                              style={{ marginTop: index === 0 ? '-10px' : '-10px' }}
-                              onKeyDown={(event) =>
-                                handleEnterKeyPress(event, "description", index)
-                              }
-                            />
-                          )}
-                        />
-                      </div>
-                      <div className="col-md-1 text-center">
-                        <TextField
-                          id={`quantity_${index}`}
-                          variant="standard"
-                          type="text"
-                          name="quantity"
-                          value={item.quantity}
-                          onChange={(e) => handleInputChange(index, e)}
-                          autoComplete="off"
-                          InputProps={{
-                            disableUnderline: true,
-                            style: { textAlign: 'center' }
-                          }}
-                          style={{ width: "100%", marginLeft: "45px" }}
-                          onKeyDown={(event) =>
-                            handleEnterKeyPress(event, "quantity", index)
-                          }
-                        />
-                      </div>
-                      <div className="col-md-2">
-                        <TextField
-                          id={`price_each_${index}`}
-                          variant="standard"
-                          type="text"
-                          name="price_each"
-                          value={item.price_each}
-                          onChange={(e) => handleInputChange(index, e)}
-                          style={{ width: "60%", marginLeft: "45px" }}
-                          onBlur={(e) => handleInputBlur(index, e)}
-                          autoComplete="off"
-                          InputProps={{
-                            startAdornment: item.price_each && item.price_each !== '' ?
-                              <InputAdornment position="start">
-                                <span
-                                  style={{
-                                    fontSize: "20px",
-                                    color: "black"
-                                  }}
-                                >
-                                  $
-                                </span>
-                              </InputAdornment> : null,
-                            disableUnderline: true
-                          }}
-                          onKeyPress={(e) => handleLotNoKeyPress(e, index)}
-                          onKeyDown={(event) => handleEnterKeyPress(event, "price_each", index)}
-                        />
-                      </div>
+                      <div className="row" style={{ marginTop: "-20px" }}>
+                        <div className="invoice-first-div col-9 px-5">
+                          <img src={logo} alt="logo tub" />
+                          <address className="mt-3 px-3">
+                            <b style={{ fontSize: "28px" }}>Tub Pro's, Inc. </b>
+                            <br />
+                            <span style={{ fontSize: "22px" }}>
+                              PO Box 30596 <br />
+                              Las Vegas, NV. 89173 <br />
+                              Office: (702) 445-6232 <br />
+                              Fax: &nbsp;&nbsp;&nbsp;&nbsp;(702) 445-6241
+                            </span>
+                          </address>
+                        </div>
+                        <div className="col-3">
+                          <p className="invoice-details">
+                            <b>Invoice</b>
+                          </p>
+                          <p>
+                            Number &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            {formUpdateData.invoice_num}
+                          </p>
 
-                      <div
-                        className="col-md-1"
-                        style={{
-                          marginLeft: "-50px", width: "150px", textAlign: "center"
-                        }}
-                      >
-                        <p style={{ height: "20px", margin: "0" }}>
-                          {
-                            (item.quantity && item.price_each) ?
-                              `$${((item.quantity || 0) * (parseFloat(item.price_each) || 0)).toFixed(2)}` :
-                              ''
-                          }
-
-                        </p>
+                          <p>
+                            Date
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            {formatDate(formUpdateData.date)}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </>
-                ))}
-              </div>
+                    <div className="row bill_to_div px-3" style={{ border: "2px solid white" }}>
+                      <div className="col-md-9">
+                        <div>
+                          <b>Bill To</b>
+                          {[1, 2, 3].map(
+                            (fieldIndex) =>
+                              fieldIndex <= visibleBillToFields && (
+                                <React.Fragment key={`bill_to_${fieldIndex}`}>
+                                  <Autocomplete
+                                    freeSolo
+                                    options={addresses}
+                                    value={formUpdateData.bill_to[fieldIndex - 1] || ''}
+                                    onChange={(event, newValue) => {
+                                      updateBillToField(fieldIndex - 1, newValue);
+                                    }}
+                                    onInputChange={(event, newInputValue) => {
+                                      updateBillToField(fieldIndex - 1, newInputValue);
+                                    }}
+                                    renderInput={(params) => (
+                                      <TextField
+                                        {...params}
+                                        variant="standard"
+                                        inputRef={el => fieldRefs.current[fieldIndex] = el}
+                                        onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
+                                        style={{ marginTop: "-20px", width: "100%", }}
+                                      />
+                                    )}
+                                  />
+                                </React.Fragment>
+                              )
+                          )}
+                        </div>
+                      </div>
+                      <div className="col-md-3">
 
-              <div
-                className="invoice-last-div px-3"
-                style={{
-                  marginTop: formUpdateData.items.length === 2
-                    ? "1000px"
-                    : formUpdateData.items.length >= 3 && formUpdateData.items.length <= 5
-                      ? "600px"
-                      : formUpdateData.items.length >= 6 && formUpdateData.items.length <= 8
-                        ? "500px"
-                        : formUpdateData.items.length >= 9 && formUpdateData.items.length <= 11
-                          ? "220px"
-                          : formUpdateData.items.length >= 12 && formUpdateData.items.length <= 14
-                            ? "6px"
-                            : formUpdateData.items.length >= 15 && formUpdateData.items.length <= 16
-                              ? "2px"
-                              : formUpdateData.items.length >= 17 && formUpdateData.items.length <= 18
-                                ? "2px"
-                                : formUpdateData.items.length >= 19 && formUpdateData.items.length <= 20
-                                  ? "2px"
-                                  : formUpdateData.items.length >= 21 && formUpdateData.items.length <= 30
-                                  ? "2px"
-                                  : formUpdateData.items.length > 31
-                                    ? "0px"
-                                    : "0px"
-                }}
-              >
-                <p style={{ marginRight: "70px", marginTop: "6px" }}>
-                  Total Due: ${totalAmount.toFixed(2)}
-                </p>
-                <h5 style={{
-                  fontSize: "25px",
-                  fontWeight: "600",
-                  marginTop: "-20px"
-                }}>
-                  Thank You! We truly appreciate your business!
-                </h5>
+                      </div>
+                    </div>
+
+                    <div className='last-row' style={{ marginLeft: "-25px" }}>
+                      <div className="row po_details_div">
+                        <div className="col-md-1 text-center">
+                          <b>PO No.</b>
+                          <input
+                            id="po_num"
+                            type="text"
+                            name="PO_number"
+                            value={formUpdateData.PO_number}
+                            onChange={(e) => handleInputChange(undefined, e)}
+                            style={{
+                              width: "100%",
+                              border: "none",
+                              textAlign: "center",
+                              outline: "none",
+
+                            }}
+                            onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                            onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                          />
+                        </div>
+                        <div className="col-md-2 text-center">
+                          <b>PO Date</b>
+                          <TextField
+                            id="PO_Invoice_date"
+                            variant="standard"
+                            placeholder="mm/dd/yyyy"
+                            type="text"
+                            style={{ width: "75%", marginTop: "10px", marginLeft: "30px" }}
+                            InputProps={{
+                              disableUnderline: true
+                            }}
+                            value={formUpdateData.PO_Invoice_date || ""}
+                            onChange={handleDateChange}
+                          />
+                        </div>
+
+                        <div className="col-md-2" style={{ textAlign: "center" }}>
+                          <span style={{ fontWeight: "700", marginLeft: "20px" }}>Type of Work</span>
+                          <input
+                            id="type_of_work"
+                            type="text"
+                            name="type_of_work"
+                            value={formUpdateData.type_of_work}
+                            onChange={(e) => handleInputChange(undefined, e)}
+                            style={{
+                              width: "100%",
+                              border: "none",
+                              textAlign: "center",
+                              outline: "none",
+
+                            }}
+                            onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                            onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                          />
+                        </div>
+                        <div className="col-md-2 text-center">
+                          <span style={{ fontWeight: "700", marginLeft: "20px" }}>Job Site No.</span>
+                          <input
+                            id="job_site_no"
+                            type="text"
+                            name="job_site_num"
+                            value={formUpdateData.job_site_num}
+                            onChange={(e) => handleInputChange(undefined, e)}
+                            style={{
+
+                              width: "100%",
+                              border: "none",
+                              textAlign: "center",
+                              outline: "none",
+
+                            }}
+                            onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                            onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                          />
+                        </div>
+                        <div className="col-md-2 text-center">
+                          <span style={{ marginLeft: "65px", fontWeight: "bold" }}>Job Name</span>
+                          <input
+                            id="job_site_name"
+                            type="text"
+                            name="job_site_name"
+                            value={formUpdateData.job_site_name}
+                            onChange={(e) => handleInputChange(undefined, e)}
+                            style={{
+                              width: "130%",
+                              border: "none",
+                              textAlign: "center",
+                              outline: "none",
+
+                            }}
+                            onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                            onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                          />
+                        </div>
+                        <div className="col-md-3 text-center">
+                          <span style={{ marginLeft: "20px", fontWeight: "bold" }}>Job Location</span>
+                          <input
+                            id="job_location"
+                            type="text"
+                            name="job_location"
+                            value={formUpdateData.job_location}
+                            onChange={(e) => handleInputChange(undefined, e)}
+                            style={{
+                              width: "100%",
+                              border: "none",
+                              textAlign: "center",
+                              outline: "none",
+
+                            }}
+                            onFocus={(e) => e.target.style.borderBottomColor = "white"}
+                            onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                          />
+
+                        </div>
+                      </div>
+                      <div className='line'></div>
+                      <div className="row item_details_div">
+                        <span className="plus-icon" onClick={handleAddItem}>
+                        </span>
+                        &nbsp;
+                        <div className="col-md-2">
+                          <b>Lot No.</b>
+                        </div>
+                        <div className="col-md-6 text-center">
+                          <b>Description</b>
+                        </div>
+                        <div className="col-md-1" style={{ marginLeft: "-2px" }}><b>Quantity</b></div>
+                        <div className="col-md-2" style={{ marginLeft: "25px" }}><b>Price Each</b></div>
+                        <div className="col-md-1" style={{ marginLeft: "-60px" }}> <b>Amount</b></div>
+                      </div>
+
+                      {outerItem.items.map((item, innerIndex) => {
+                        const actualIndex = index * CHUNK_SIZE + innerIndex;
+                        return (
+                          <div className='row' key={actualIndex}
+                            style={{ marginTop: actualIndex === 0 ? '10px' : '0px' }}>
+
+                            <div className='col-md-3'>
+                              <TextField
+                                id={`lot_no_${actualIndex}`}
+                                ref={(el) => (inputRefs.current[actualIndex] = el)}
+                                value={item.lot_no}
+                                onChange={(e) => handleInputChange(actualIndex, e)}
+                                variant='standard'
+                                type='text'
+                                name='lot_no'
+                                autoComplete='off'
+                                onKeyDown={(event) =>
+                                  handleEnterKeyPress(
+                                    event,
+                                    'lot_no',
+                                    innerIndex
+                                  )
+                                }
+                                style={{
+                                  width: `${Math.max(30, Math.min(10 + ((item.lot_no ? item?.lot_no?.length : 0) * 8), 100))}%`,
+                                  marginLeft: "20px"
+                                }}
+                                InputProps={{
+                                  disableUnderline: true,
+                                }}
+                              />
+                            </div>
+                            <div className='col-md-5'>
+                              <Autocomplete
+                                id={`description_${actualIndex}`}
+                                freeSolo
+                                options={descriptions}
+                                ref={(el) => (inputRefs.current[actualIndex] = el)}
+                                value={item.description || ''}
+                                onChange={(event, newValue) => {
+                                  handleInputChange(actualIndex, {
+                                    target: {
+                                      name: 'description',
+                                      value: newValue,
+                                    },
+                                  });
+                                }}
+                                onInputChange={(
+                                  event,
+                                  newInputValue,
+                                  reason
+                                ) => {
+                                  if (reason === 'input') {
+                                    handleInputChange(actualIndex, {
+                                      target: {
+                                        name: 'description',
+                                        value: newInputValue,
+                                      },
+                                    });
+                                  }
+                                }}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    variant='standard'
+                                    style={{
+                                      marginTop:
+                                        actualIndex === 0 ? '-10px' : '-10px',
+                                      width: '100%',
+                                    }}
+                                    onKeyDown={(event) =>
+                                      handleEnterKeyPress(
+                                        event,
+                                        'description',
+                                        actualIndex
+                                      )
+                                    }
+                                  />
+                                )}
+                              />
+                            </div>
+                            <div className='col-md-1 text-center'>
+                              <TextField
+                                id={`quantity_${actualIndex}`}
+                                variant='standard'
+                                type='text'
+                                name='quantity'
+                                value={item.quantity}
+                                autoComplete='off'
+                                onChange={(e) =>
+                                  handleInputChange(actualIndex, e)
+                                }
+                                InputProps={{
+                                  disableUnderline: true,
+                                  style: { textAlign: 'center' },
+                                }}
+                                style={{ width: "100%", marginLeft: "30px" }}
+                                onKeyDown={(event) =>
+                                  handleEnterKeyPress(
+                                    event,
+                                    'quantity',
+                                    actualIndex
+                                  )
+                                }
+                              />
+                            </div>
+                            <div
+                              className='col-md-2 text-center'
+                              style={{ position: 'relative' }}
+                            >
+                              <TextField
+                                id={`price_each_${actualIndex}`}
+                                variant='standard'
+                                type='text'
+                                name='price_each'
+                                value={item.price_each}
+                                onChange={(e) =>
+                                  handleInputChange(actualIndex, e)
+                                }
+                                onBlur={(e) => handleInputBlur(actualIndex, e)}
+                                style={{ width: "60%", marginLeft: "-10px" }}
+                                autoComplete='off'
+                                InputProps={{
+                                  startAdornment:
+                                    item.price_each &&
+                                      item.price_each !== '' ? (
+                                      <InputAdornment position='start'>
+                                        <span
+                                          style={{
+                                            fontSize: '20px',
+                                            color: 'black',
+                                          }}
+                                        >
+                                          $
+                                        </span>
+                                      </InputAdornment>
+                                    ) : null,
+                                  disableUnderline: true,
+                                }}
+                                onKeyPress={(e) => {
+                                  if (
+                                    index == chunkedArray()?.length - 1 &&
+                                    outerItem.items?.length - 1 == actualIndex
+                                  )
+                                    handleLotNoKeyPress(e, actualIndex);
+                                }}
+                                onKeyDown={(event) => {
+                                  handleEnterKeyPress(
+                                    event,
+                                    'price_each',
+                                    actualIndex,
+                                    chunkedArray(),
+                                    index,
+                                    outerItem.items
+                                  );
+                                }}
+                              />
+                            </div>
+                            <div
+                              className='col-md-1'
+                              style={{
+                                marginLeft: '-65px',
+                                width: '150px',
+                                textAlign: 'right',
+                              }}
+                            >
+                              <p style={{ height: '20px', margin: '0' }}>
+                                {item.quantity && item.price_each
+                                  ? `$${(
+                                    (item.quantity || 0) *
+                                    (parseFloat(item.price_each) || 0)
+                                  ).toFixed(2)}`
+                                  : ''}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {index === chunkedArray().length - 1 ? (
+                        <div
+                          className='invoice-last-div px-3'
+                          style={{
+                            marginTop:
+                              formUpdateData.items.length === 2
+                                ? '1000px'
+                                : formUpdateData.items.length >= 3 && formUpdateData.items.length <= 5
+                                  ? '600px'
+                                  : formUpdateData.items.length >= 6 && formUpdateData.items.length <= 8
+                                    ? '500px'
+                                    : formUpdateData.items.length >= 9 &&
+                                      formUpdateData.items.length <= 11
+                                      ? '220px'
+                                      : formUpdateData.items.length >= 12 &&
+                                        formUpdateData.items.length <= 14
+                                        ? '6px'
+                                        : formUpdateData.items.length >= 15 &&
+                                          formUpdateData.items.length <= 16
+                                          ? '2px'
+                                          : formUpdateData.items.length >= 17 &&
+                                            formUpdateData.items.length <= 18
+                                            ? '2px'
+                                            : formUpdateData.items.length >= 19 &&
+                                              formUpdateData.items.length <= 20
+                                              ? '2px'
+                                              : formUpdateData.items.length >= 21 &&
+                                                formUpdateData.items.length <= 30
+                                                ? '2px'
+                                                : formUpdateData.items.length > 31
+                                                  ? '0px'
+                                                  : '0px',
+                          }}
+                        >
+                          <p
+                            style={{
+                              marginRight: '70px',
+                              marginTop: '35px',
+                            }}
+                          >
+                            Total Due: {`$${formUpdateData?.total_amount?.toFixed(2) || ''}`}
+                          </p>
+                          <h5
+                            style={{
+                              fontSize: '25px',
+                              fontWeight: '600',
+                              marginTop: '-40px',
+                            }}
+                          >
+                            Thank You! We truly appreciate your business!
+                          </h5>
+                        </div>
+                      ) : (
+                        <div style={{ textAlign: "center", }}>
+                          <h5
+                            style={{
+                              fontSize: '25px',
+                              fontWeight: '600',
+                              marginTop: '50px',
+                            }}
+                          >
+                            Thank You! We truly appreciate your business!
+                          </h5>
+
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </form>
+
         </div>
       </div >
     </div >
