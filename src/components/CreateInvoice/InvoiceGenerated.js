@@ -61,7 +61,7 @@ function InvoiceGenerated() {
   }
 
   const baseInvoiceSectionStyle = {
-    marginTop: "190px",
+    marginTop: "160px",
     border: "2px solid white",
   };
 
@@ -139,12 +139,12 @@ function InvoiceGenerated() {
                   <>
                     <div
                       style={
-                        index != 0
+                        index !== 0
                           ? baseInvoiceSectionStyle
                           : { border: '2px solid white' }
                       }
                     >
-                      <div className="row">
+                      <div className="row" style={{ marginTop: "-30px" }}>
                         <div className="invoice-first-div col-9 px-5">
                           <img src={logo} alt="logo tub" />
                           <address className="mt-3 px-3">
@@ -183,9 +183,9 @@ function InvoiceGenerated() {
                     <div className="row bill_to_div px-3"
                       style={{ width: "50%", border: "2px solid white" }}
                     >
-                      <div className="col-md-9">
+                      <div className="col-md-10">
                         <div>
-                          <b>Bill To</b>
+                        <span style={{ fontWeight: "700", marginLeft: "0px" }}>Bill To</span>
                           {[1, 2, 3].map((fieldIndex) => (
                             fieldIndex <= visibleBillToFields && (
                               <React.Fragment key={`bill_to_${fieldIndex}`}>
@@ -310,7 +310,7 @@ function InvoiceGenerated() {
                                 name="description"
                                 value={item.description}
                                 aria-readonly
-                                style={{ marginTop: innerIndex === 0 ? '-10px' : '-10px' }}
+                                style={{ marginTop: innerIndex === 0 ? '-10px' : '-10px', width: '100%', }}
                                 InputProps={{
                                   disableUnderline: true
                                 }}
@@ -339,7 +339,7 @@ function InvoiceGenerated() {
                                 name="price_each"
                                 aria-readonly
                                 value={item.price_each}
-                                style={{ width: "60%", marginLeft: "-30px" }}
+                                style={{ width: "60%", marginLeft: "0px" }}
                                 InputProps={{
                                   startAdornment: item.price_each && item.price_each !== '' ?
                                     <InputAdornment position="start">
@@ -359,7 +359,7 @@ function InvoiceGenerated() {
                             <div
                               className='col-md-1'
                               style={{
-                                marginLeft: '-65px',
+                                marginLeft: '-75px',
                                 width: '150px',
                                 textAlign: 'right',
                               }}
@@ -413,7 +413,7 @@ function InvoiceGenerated() {
                           <p
                             style={{
                               marginRight: '70px',
-                              marginTop: '60px',
+                              marginTop: '0px',
                             }}
                           >
                             Total Due: {`$${formData?.total_amount?.toFixed(2) || ''}`}
@@ -422,7 +422,7 @@ function InvoiceGenerated() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '-20px',
+                              marginTop: '-55px',
                             }}
                           >
                             Thank You! We truly appreciate your business!
@@ -434,7 +434,7 @@ function InvoiceGenerated() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '85px',
+                              marginTop: '-30px',
                             }}
                           >
                             Thank You! We truly appreciate your business!

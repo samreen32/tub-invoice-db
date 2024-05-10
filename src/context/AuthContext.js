@@ -17,7 +17,7 @@ const AuthProvider = ({ children }) => {
         description: "",
         quantity: "",
         price_each: "",
-        total_amount: "",
+        total_amount: 0,
       });
     }
     return items;

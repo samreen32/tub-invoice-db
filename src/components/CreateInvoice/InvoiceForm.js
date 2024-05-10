@@ -35,15 +35,20 @@ function InvoiceForm() {
     const fetchDescriptions = async () => {
       try {
         const response = await axios.get(FETCH_DESCRIPPTION);
-        console.log(response.data, "sgdhjgs")
-        setDescriptions(response.data);
+        if (response.data) {
+          setDescriptions(response.data.map(item => ({ label: item })));
+        } else {
+          setDescriptions([]);
+        }
       } catch (error) {
         console.error('Failed to fetch descriptions:', error);
+        setDescriptions([]);
       }
     };
 
     fetchDescriptions();
-  }, [setDescriptions, descriptions]);
+  }, []);
+
 
   const createDefaultItems = (numItems = 31) => {
     return Array.from({ length: numItems }, () => ({
@@ -51,7 +56,7 @@ function InvoiceForm() {
       description: "",
       quantity: "",
       price_each: "",
-      total_amount: "",
+      total_amount: 0,
     }));
   };
 
@@ -120,9 +125,10 @@ function InvoiceForm() {
         });
 
         const totalAmount = updatedItems.reduce((total, item) => {
-          const priceEach = String(item.price_each).replace('.', '');
-          return total + (parseFloat(item.quantity || 0) * parseFloat(priceEach || 0));
+          const priceEach = parseFloat(item.price_each || 0);
+          return total + (parseFloat(item.quantity || 0) * priceEach);
         }, 0);
+
 
         return {
           ...prevData,
@@ -161,7 +167,6 @@ function InvoiceForm() {
   }, [formData.items.length]);
 
   useEffect(() => {
-    // Re-adjust the references to only keep as many as there are items
     inputRefs.current = inputRefs.current.slice(0, formData.items.length);
   }, [formData.items]);
 
@@ -201,7 +206,7 @@ function InvoiceForm() {
       const response = await axios.post(`${INVOICE}`, formData);
       console.log("Estimate generated successfully:", response.data);
       navigate(`/estimate_generated`);
-      console.log(response, "hsgfjsdfs")
+      console.log(response, "hsgfjsdfs");
       setFormData((prevData) => ({
         ...prevData,
         invoice: {
@@ -267,6 +272,27 @@ function InvoiceForm() {
       let nextFieldId;
       let nextIndex = currentIndex;
       switch (currentField) {
+        case "installer":
+          nextFieldId = "PO_number";
+          break;
+        case "PO_number":
+          nextFieldId = "PO_date";
+          break;
+        case "PO_date":
+          nextFieldId = "type_of_work";
+          break;
+        case "type_of_work":
+          nextFieldId = "job_site_num";
+          break;
+        case "job_site_num":
+          nextFieldId = "job_site_name";
+          break;
+        case "job_site_name":
+          nextFieldId = "job_location";
+          break;
+        case "job_location":
+          nextFieldId = `lot_no_0`;
+          break;
         case "lot_no":
           nextFieldId = `description_${currentIndex}`;
           break;
@@ -336,6 +362,9 @@ function InvoiceForm() {
     return divideArrayIntoChunks(formData, CHUNK_SIZE);
   };
 
+  console.log("formData sent to API:", formData);
+
+
   return (
     <div id="invoice-generated">
       <div style={{ display: "flex", marginBottom: "50px" }}>
@@ -365,12 +394,12 @@ function InvoiceForm() {
                   <>
                     <div
                       style={
-                        index != 0
+                        index !== 0
                           ? baseInvoiceSectionStyle
                           : { border: '2px solid white' }
                       }
                     >
-                      <div className='row'>
+                      <div className='row' style={{ marginTop: "-20px" }}>
                         <div className='invoice-first-div col-8'>
                           <img src={logo} alt='logo tub' />
                           <address className='mt-3 px-3'>
@@ -406,10 +435,10 @@ function InvoiceForm() {
 
                       </div>
                     </div>
-                    <div className="row bill_to_div px-3" style={{ border: "2px solid white" }}>
+                    <div className="row bill_to_div" style={{ border: "2px solid white" }}>
                       <div className="col-md-9">
                         <p>
-                          <b>Bill To</b>
+                          <span style={{ fontWeight: "700", marginLeft: "0px" }}>Bill To</span>
                           {[1, 2, 3].map((fieldIndex) => (
                             fieldIndex <= visibleBillToFields && (
                               <React.Fragment key={`bill_to_${fieldIndex}`}>
@@ -451,6 +480,7 @@ function InvoiceForm() {
                             name="installer"
                             value={formData.installer}
                             onChange={(e) => handleInputChange(undefined, e)}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'installer')}
                             InputProps={{
                               disableUnderline: true
                             }}
@@ -462,22 +492,23 @@ function InvoiceForm() {
                     <div className='last-row'>
                       <div className='row po_details_div'>
                         <div className='col-md-1 '>
-                        <span style={{fontWeight: "700", marginLeft: "7px"}}>PO No.</span>
+                          <span style={{ fontWeight: "700", marginLeft: "7px" }}>PO No.</span>
                           {/* <br /> */}
                           <input
-                            id='po_num'
+                            id='PO_number'
                             type='text'
                             name='PO_number'
                             value={formData.PO_number}
                             onChange={(e) => handleInputChange(undefined, e)}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'PO_number')}
                             style={{
                               marginTop: "12px",
-                              width: '100%',
+                              width: '120%',
                               border: 'none',
                               textAlign: 'center',
                               outline: 'none',
                               borderBottom: 'none',
-                              marginLeft : "-7px"
+                              marginLeft: "-7px"
                             }}
                             onFocus={(e) =>
                               (e.target.style.borderBottomColor = 'white')
@@ -501,6 +532,7 @@ function InvoiceForm() {
                             }}
                             value={formData.PO_date || ""}
                             onChange={handleDateChange}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'PO_date')}
                           />
                         </div>
                         <div
@@ -515,6 +547,7 @@ function InvoiceForm() {
                             name='type_of_work'
                             value={formData.type_of_work}
                             onChange={(e) => handleInputChange(undefined, e)}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'type_of_work')}
                             style={{
                               marginTop: '12px',
                               width: '100%',
@@ -535,11 +568,12 @@ function InvoiceForm() {
                           <b>Job Site No.</b>
                           <br />
                           <input
-                            id='job_site_no'
+                            id='job_site_num'
                             type='text'
                             name='job_site_num'
                             value={formData.job_site_num}
                             onChange={(e) => handleInputChange(undefined, e)}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'job_site_num')}
                             style={{
                               marginTop: '12px',
                               width: '100%',
@@ -572,6 +606,7 @@ function InvoiceForm() {
                             name='job_site_name'
                             value={formData.job_site_name}
                             onChange={(e) => handleInputChange(undefined, e)}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'job_site_name')}
                             style={{
                               marginTop: '12px',
                               width: '130%',
@@ -597,6 +632,7 @@ function InvoiceForm() {
                             name='job_location'
                             value={formData.job_location}
                             onChange={(e) => handleInputChange(undefined, e)}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'job_location')}
                             style={{
                               marginTop: '12px',
                               width: '100%',
@@ -661,7 +697,7 @@ function InvoiceForm() {
                                 }
                                 style={{
                                   width: `${Math.max(30, Math.min(10 + ((item.lot_no ? item?.lot_no?.length : 0) * 8), 100))}%`,
-                                  marginLeft: "20px"
+                                  marginLeft: "6px"
                                 }}
                                 InputProps={{
                                   disableUnderline: true,
@@ -672,21 +708,20 @@ function InvoiceForm() {
                               <Autocomplete
                                 id={`description_${actualIndex}`}
                                 freeSolo
-                                options={descriptions}
+                                options={descriptions || []}
+                                getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                                ref={(el) => (inputRefs.current[actualIndex] = el)}
                                 value={item.description || ''}
                                 onChange={(event, newValue) => {
+                                  const descriptionValue = newValue ? (typeof newValue === 'string' ? newValue : newValue.label) : '';
                                   handleInputChange(actualIndex, {
                                     target: {
                                       name: 'description',
-                                      value: newValue,
+                                      value: descriptionValue,
                                     },
                                   });
                                 }}
-                                onInputChange={(
-                                  event,
-                                  newInputValue,
-                                  reason
-                                ) => {
+                                onInputChange={(event, newInputValue, reason) => {
                                   if (reason === 'input') {
                                     handleInputChange(actualIndex, {
                                       target: {
@@ -696,6 +731,7 @@ function InvoiceForm() {
                                     });
                                   }
                                 }}
+                                
                                 renderInput={(params) => (
                                   <TextField
                                     {...params}
@@ -731,7 +767,7 @@ function InvoiceForm() {
                                   disableUnderline: true,
                                   style: { textAlign: 'center' },
                                 }}
-                                style={{ width: "100%", marginLeft: "30px" }}
+                                style={{ width: "100%", marginLeft: "33px" }}
                                 onKeyDown={(event) =>
                                   handleEnterKeyPress(
                                     event,

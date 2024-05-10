@@ -39,15 +39,19 @@ function EditInvoice() {
     const fetchDescriptions = async () => {
       try {
         const response = await axios.get(FETCH_DESCRIPPTION);
-        // console.log(response.data, "sgdhjgs")
-        setDescriptions(response.data);
+        if (response.data) {
+          setDescriptions(response.data.map(item => ({ label: item })));  // Example transformation
+        } else {
+          setDescriptions([]);
+        }
       } catch (error) {
         console.error('Failed to fetch descriptions:', error);
+        setDescriptions([]);
       }
     };
 
     fetchDescriptions();
-  }, [setDescriptions, descriptions]);
+  }, []);
 
   const createDefaultUpdateItems = (numItems = 31) => {
     return Array.from({ length: numItems }, () => ({
@@ -97,10 +101,10 @@ function EditInvoice() {
 
   const formatAndSetPrice = (index, name, value) => {
     const formatPriceEach = (value) => {
-      let numericValue = String(value).replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
+      let numericValue = String(value).replace(/[^0-9.]/g, '');
 
       if (numericValue.length === 3 && !numericValue.includes('.')) {
-        numericValue += ".00"; // Add .00 if there are exactly 3 digits and no decimal point
+        numericValue += ".00";
       }
 
       const dotIndex = numericValue.indexOf('.');
@@ -124,8 +128,8 @@ function EditInvoice() {
         });
 
         const totalAmount = updatedItems.reduce((total, item) => {
-          const priceEach = String(item.price_each).replace('.', '');
-          return total + (parseFloat(item.quantity || 0) * parseFloat(priceEach || 0));
+          const priceEach = parseFloat(item.price_each || 0);
+          return total + (parseFloat(item.quantity || 0) * priceEach);
         }, 0);
 
         return {
@@ -331,6 +335,27 @@ function EditInvoice() {
       let nextFieldId;
       let nextIndex = currentIndex;
       switch (currentField) {
+        case "installer":
+          nextFieldId = "PO_number";
+          break;
+        case "PO_number":
+          nextFieldId = "PO_date";
+          break;
+        case "PO_date":
+          nextFieldId = "type_of_work";
+          break;
+        case "type_of_work":
+          nextFieldId = "job_site_num";
+          break;
+        case "job_site_num":
+          nextFieldId = "job_site_name";
+          break;
+        case "job_site_name":
+          nextFieldId = "job_location";
+          break;
+        case "job_location":
+          nextFieldId = `lot_no_0`;
+          break;
         case "lot_no":
           nextFieldId = `description_${currentIndex}`;
           break;
@@ -483,7 +508,7 @@ function EditInvoice() {
                   <div key={index}>
                     <div
                       style={
-                        index != 0
+                        index !== 0
                           ? baseInvoiceSectionStyle
                           : { border: '2px solid white' }
                       }
@@ -519,10 +544,10 @@ function EditInvoice() {
                         </div>
                       </div>
                     </div>
-                    <div className="row bill_to_div px-3" style={{ border: "2px solid white" }}>
-                      <div className="col-md-9">
+                    <div className="row bill_to_div" style={{ border: "2px solid white" }}>
+                      <div className="col-md-6">
                         <div>
-                          <b>Bill To</b>
+                          <span style={{ fontWeight: "700", marginLeft: "0px" }}>Bill To</span>
                           {[1, 2, 3].map(
                             (fieldIndex) =>
                               fieldIndex <= visibleBillToFields && (
@@ -552,7 +577,7 @@ function EditInvoice() {
                           )}
                         </div>
                       </div>
-                      <div className="col-md-3">
+                      <div className="col-md-3" style={{ marginLeft: "22%" }}>
                         <p>
                           <b>Installer</b> <br />
                           <TextField
@@ -562,6 +587,7 @@ function EditInvoice() {
                             name="installer"
                             value={formUpdateData.installer}
                             onChange={(e) => handleInputChange(undefined, e)}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'installer')}
                             InputProps={{
                               disableUnderline: true
                             }}
@@ -573,18 +599,20 @@ function EditInvoice() {
                     <div className='last-row' style={{ marginLeft: "-25px" }}>
                       <div className="row po_details_div">
                         <div className="col-md-1 text-center">
-                          <b>PO No.</b>
+                          <span style={{ fontWeight: "700", marginLeft: "7px" }}>PO No.</span>
                           <input
-                            id="po_num"
+                            id="PO_number"
                             type="text"
                             name="PO_number"
                             value={formUpdateData.PO_number}
                             onChange={(e) => handleInputChange(undefined, e)}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'PO_number')}
                             style={{
-                              width: "100%",
+                              width: "120%",
                               border: "none",
                               textAlign: "center",
                               outline: "none",
+                              marginLeft: "-9px"
 
                             }}
                             onFocus={(e) => e.target.style.borderBottomColor = "white"}
@@ -604,17 +632,19 @@ function EditInvoice() {
                             }}
                             value={formUpdateData.PO_date || ""}
                             onChange={handleDateChange}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'PO_date')}
                           />
                         </div>
 
                         <div className="col-md-2" style={{ textAlign: "center" }}>
-                          <span style={{ fontWeight: "700", marginLeft: "20px" }}>Type of Work</span>
+                          <span style={{ fontWeight: "700", marginLeft: "0px" }}>Type of Work</span>
                           <input
                             id="type_of_work"
                             type="text"
                             name="type_of_work"
                             value={formUpdateData.type_of_work}
                             onChange={(e) => handleInputChange(undefined, e)}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'type_of_work')}
                             style={{
                               width: "100%",
                               border: "none",
@@ -629,11 +659,12 @@ function EditInvoice() {
                         <div className="col-md-2 text-center">
                           <span style={{ fontWeight: "700", marginLeft: "20px" }}>Job Site No.</span>
                           <input
-                            id="job_site_no"
+                            id="job_site_num"
                             type="text"
                             name="job_site_num"
                             value={formUpdateData.job_site_num}
                             onChange={(e) => handleInputChange(undefined, e)}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'job_site_num')}
                             style={{
 
                               width: "100%",
@@ -654,6 +685,7 @@ function EditInvoice() {
                             name="job_site_name"
                             value={formUpdateData.job_site_name}
                             onChange={(e) => handleInputChange(undefined, e)}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'job_site_name')}
                             style={{
                               width: "130%",
                               border: "none",
@@ -673,6 +705,7 @@ function EditInvoice() {
                             name="job_location"
                             value={formUpdateData.job_location}
                             onChange={(e) => handleInputChange(undefined, e)}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'job_location')}
                             style={{
                               width: "100%",
                               border: "none",
@@ -727,7 +760,7 @@ function EditInvoice() {
                                 }
                                 style={{
                                   width: `${Math.max(30, Math.min(10 + ((item.lot_no ? item?.lot_no?.length : 0) * 8), 100))}%`,
-                                  marginLeft: "20px"
+                                  marginLeft: "6px"
                                 }}
                                 InputProps={{
                                   disableUnderline: true,
@@ -738,22 +771,20 @@ function EditInvoice() {
                               <Autocomplete
                                 id={`description_${actualIndex}`}
                                 freeSolo
-                                options={descriptions}
+                                options={descriptions || []}
+                                getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
                                 ref={(el) => (inputRefs.current[actualIndex] = el)}
                                 value={item.description || ''}
                                 onChange={(event, newValue) => {
+                                  const descriptionValue = newValue ? (typeof newValue === 'string' ? newValue : newValue.label) : '';
                                   handleInputChange(actualIndex, {
                                     target: {
                                       name: 'description',
-                                      value: newValue,
+                                      value: descriptionValue,
                                     },
                                   });
                                 }}
-                                onInputChange={(
-                                  event,
-                                  newInputValue,
-                                  reason
-                                ) => {
+                                onInputChange={(event, newInputValue, reason) => {
                                   if (reason === 'input') {
                                     handleInputChange(actualIndex, {
                                       target: {
