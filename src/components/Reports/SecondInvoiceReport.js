@@ -434,7 +434,12 @@ export default function SecondInvoiceReport() {
                                                             ) : column.id === "payment_status" ? (
                                                                 invoice.payment_status.toString()
                                                             ) : column.id === "total_amount" ? (
-                                                                `$${invoice.total_amount.toFixed(2)}`
+                                                                `${invoice.total_amount.toLocaleString('en-US', {
+                                                                    style: 'currency',
+                                                                    currency: 'USD',
+                                                                    minimumFractionDigits: 2,
+                                                                    maximumFractionDigits: 2
+                                                                }) || '$0.00'}`
                                                             ) : column.id === "PO_Invoice_date" ? (
                                                                 new Date(invoice.PO_Invoice_date).toLocaleDateString("en-US", {
                                                                     year: "2-digit",
@@ -500,7 +505,12 @@ export default function SecondInvoiceReport() {
                             </TableContainer>
                             <div className="amount-container">
                                 <div className="total_amount_invoices">
-                                    <p className="py-1">Total: &nbsp; &nbsp; ${filteredTotalAmount.toFixed(2)}
+                                    <p className="py-1">Total: &nbsp; &nbsp; {filteredTotalAmount?.toLocaleString('en-US', {
+                                        style: 'currency',
+                                        currency: 'USD',
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    }) || '$0.00'}
                                     </p>
                                 </div>
                             </div>

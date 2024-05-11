@@ -103,15 +103,15 @@ function EditInvoice() {
     const formatPriceEach = (value) => {
       let numericValue = String(value).replace(/[^0-9.]/g, '');
 
-      if (numericValue.length === 3 && !numericValue.includes('.')) {
+      if (numericValue.length === 4 && !numericValue.includes('.')) {
         numericValue += ".00";
       }
 
       const dotIndex = numericValue.indexOf('.');
-      if (dotIndex === -1 && numericValue.length > 3) {
-        numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
-      } else if (dotIndex > 3) {
-        numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
+      if (dotIndex === -1 && numericValue.length > 4) {
+        numericValue = numericValue.slice(0, 4) + '.' + numericValue.slice(4);
+      } else if (dotIndex > 4) {
+        numericValue = numericValue.slice(0, 4) + '.' + numericValue.slice(4);
       }
 
       return numericValue;
@@ -144,6 +144,25 @@ function EditInvoice() {
         };
       }
     });
+  };
+
+  const handleInputBlur = (index, e) => {
+    const { name, value } = e.target;
+    if (name === 'price_each') {
+      const formattedValue = formatPriceEach(value);
+      setFormUpdateData((prevData) => {
+        const updatedItems = prevData.items.map((item, idx) => {
+          if (idx === index) {
+            return { ...item, [name]: formattedValue };
+          }
+          return item;
+        });
+        return {
+          ...prevData,
+          items: updatedItems
+        };
+      });
+    }
   };
 
   const handleAddItem = () => {
@@ -385,39 +404,17 @@ function EditInvoice() {
     }
   };
 
-
-  const handleInputBlur = (index, e) => {
-    const { name, value } = e.target;
-    if (name === 'price_each') {
-      const formattedValue = formatPriceEach(value);
-      setFormUpdateData((prevData) => {
-        const updatedItems = prevData.items.map((item, idx) => {
-          if (idx === index) {
-            return { ...item, [name]: formattedValue };
-          }
-          return item;
-        });
-        return {
-          ...prevData,
-          items: updatedItems
-        };
-      });
-    }
-  };
-
   const formatPriceEach = (value) => {
-    let numericValue = String(value).replace(/[^0-9.]/g, ''); // Remove non-numeric characters except the dot
-
-    // Return an empty string if no input is provided
+    let numericValue = String(value).replace(/[^0-9.]/g, '');
     if (numericValue === "") {
-      return ""; // Return empty if the field is empty
+      return "";
     }
 
     const dotIndex = numericValue.indexOf('.');
-    if (numericValue.length <= 3 && dotIndex === -1) {
-      numericValue += ".00"; // Append .00 if there are 1-3 digits and no decimal point
-    } else if (dotIndex !== -1 && dotIndex > 3) {
-      numericValue = numericValue.slice(0, 3) + '.' + numericValue.slice(3);
+    if (numericValue.length <= 4 && dotIndex === -1) {
+      numericValue += ".00";
+    } else if (dotIndex !== -1 && dotIndex > 4) {
+      numericValue = numericValue.slice(0, 4) + '.' + numericValue.slice(4);
     }
 
     return numericValue;
@@ -588,6 +585,7 @@ function EditInvoice() {
                             value={formUpdateData.installer}
                             onChange={(e) => handleInputChange(undefined, e)}
                             onKeyDown={(event) => handleEnterKeyPress(event, 'installer')}
+                            autoComplete="off"
                             InputProps={{
                               disableUnderline: true
                             }}
@@ -617,6 +615,7 @@ function EditInvoice() {
                             }}
                             onFocus={(e) => e.target.style.borderBottomColor = "white"}
                             onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                            autoComplete="off"
                           />
                         </div>
                         <div className="col-md-2 text-center">
@@ -633,6 +632,7 @@ function EditInvoice() {
                             value={formUpdateData.PO_date || ""}
                             onChange={handleDateChange}
                             onKeyDown={(event) => handleEnterKeyPress(event, 'PO_date')}
+                            autoComplete="off"
                           />
                         </div>
 
@@ -654,6 +654,7 @@ function EditInvoice() {
                             }}
                             onFocus={(e) => e.target.style.borderBottomColor = "white"}
                             onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                            autoComplete="off"
                           />
                         </div>
                         <div className="col-md-2 text-center">
@@ -666,15 +667,14 @@ function EditInvoice() {
                             onChange={(e) => handleInputChange(undefined, e)}
                             onKeyDown={(event) => handleEnterKeyPress(event, 'job_site_num')}
                             style={{
-
                               width: "100%",
                               border: "none",
                               textAlign: "center",
                               outline: "none",
-
                             }}
                             onFocus={(e) => e.target.style.borderBottomColor = "white"}
                             onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                            autoComplete="off"
                           />
                         </div>
                         <div className="col-md-2 text-center">
@@ -691,10 +691,10 @@ function EditInvoice() {
                               border: "none",
                               textAlign: "center",
                               outline: "none",
-
                             }}
                             onFocus={(e) => e.target.style.borderBottomColor = "white"}
                             onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                            autoComplete="off"
                           />
                         </div>
                         <div className="col-md-3 text-center">
@@ -711,10 +711,10 @@ function EditInvoice() {
                               border: "none",
                               textAlign: "center",
                               outline: "none",
-
                             }}
                             onFocus={(e) => e.target.style.borderBottomColor = "white"}
                             onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
+                            autoComplete="off"
                           />
 
                         </div>
@@ -724,15 +724,15 @@ function EditInvoice() {
                         <span className="plus-icon" onClick={handleAddItem}>
                         </span>
                         &nbsp;
-                        <div className="col-md-2">
+                        <div className="col-md-3" style={{marginLeft: "-5px"}}>
                           <b>Lot No.</b>
                         </div>
-                        <div className="col-md-6 text-center">
+                        <div className="col-md-5 text-center">
                           <b>Description</b>
                         </div>
-                        <div className="col-md-1" style={{ marginLeft: "-2px" }}><b>Quantity</b></div>
-                        <div className="col-md-2" style={{ marginLeft: "25px" }}><b>Price Each</b></div>
-                        <div className="col-md-1" style={{ marginLeft: "-60px" }}> <b>Amount</b></div>
+                        <div className="col-md-1" style={{ marginLeft: "40px" }}><b>Quantity</b></div>
+                        <div className="col-md-2" style={{ marginLeft: "16px" }}><b>Price Each</b></div>
+                        <div className="col-md-1" style={{ marginLeft: "-80px" }}> <b>Amount</b></div>
                       </div>
 
                       {outerItem.items.map((item, innerIndex) => {
@@ -759,8 +759,9 @@ function EditInvoice() {
                                   )
                                 }
                                 style={{
-                                  width: `${Math.max(30, Math.min(10 + ((item.lot_no ? item?.lot_no?.length : 0) * 8), 100))}%`,
-                                  marginLeft: "6px"
+                                  width: `150%`,
+                                  marginTop: "-9px"
+                                  // marginLeft: "6px"
                                 }}
                                 InputProps={{
                                   disableUnderline: true,
@@ -802,6 +803,7 @@ function EditInvoice() {
                                       marginTop:
                                         actualIndex === 0 ? '-10px' : '-10px',
                                       width: '100%',
+                                      marginLeft: "120px"
                                     }}
                                     onKeyDown={(event) =>
                                       handleEnterKeyPress(
@@ -829,7 +831,7 @@ function EditInvoice() {
                                   disableUnderline: true,
                                   style: { textAlign: 'center' },
                                 }}
-                                style={{ width: "100%", marginLeft: "30px" }}
+                                style={{ width: "100%", marginLeft: "80px" }}
                                 onKeyDown={(event) =>
                                   handleEnterKeyPress(
                                     event,
@@ -840,26 +842,60 @@ function EditInvoice() {
                               />
                             </div>
                             <div
-                              className='col-md-2 text-center'
+                              className='col-md-2'
                               style={{ position: 'relative' }}
                             >
-                              <TextField
+                              <input
+                                id={`price_each_${actualIndex}`}
+                                type="text"
+                                name="price_each"
+                                value={item.price_each ? `$${item.price_each}` : ''}
+                                onChange={(e) => handleInputChange(actualIndex, e)}
+                                onBlur={(e) => handleInputBlur(actualIndex, e)}
+                                style={{
+                                  width: '65%',
+                                  padding: "0px",
+                                  marginTop: "-6px",
+                                  textAlign: 'right',
+                                  border: 'none',
+                                  outline: 'none',
+                                  marginLeft: "20px"
+                                }}
+                                autoComplete="off"
+                                onKeyPress={(e) => {
+                                  if (
+                                    index == chunkedArray()?.length - 1 &&
+                                    outerItem.items?.length - 1 == actualIndex
+                                  )
+                                    handleLotNoKeyPress(e, actualIndex);
+                                }}
+                                onKeyDown={(event) => {
+                                  handleEnterKeyPress(
+                                    event,
+                                    'price_each',
+                                    actualIndex,
+                                    chunkedArray(),
+                                    index,
+                                    outerItem.items
+                                  );
+                                }}
+                              />
+
+                              {/* <TextField
                                 id={`price_each_${actualIndex}`}
                                 variant='standard'
                                 type='text'
                                 name='price_each'
                                 value={item.price_each}
-                                onChange={(e) =>
-                                  handleInputChange(actualIndex, e)
-                                }
+                                onChange={(e) => handleInputChange(actualIndex, e)}
                                 onBlur={(e) => handleInputBlur(actualIndex, e)}
-                                style={{ width: "60%", marginLeft: "-10px" }}
+                                style={{ width: "60%", marginLeft: "40px" }}
                                 autoComplete='off'
                                 InputProps={{
                                   startAdornment:
                                     item.price_each &&
                                       item.price_each !== '' ? (
-                                      <InputAdornment position='start'>
+                                      <InputAdornment position='end'>
                                         <span
                                           style={{
                                             fontSize: '20px',
@@ -889,12 +925,13 @@ function EditInvoice() {
                                     outerItem.items
                                   );
                                 }}
-                              />
+                              /> */}
+
                             </div>
                             <div
                               className='col-md-1'
                               style={{
-                                marginLeft: '-70px',
+                                marginLeft: '-62px',
                                 width: '150px',
                                 textAlign: 'right',
                               }}
@@ -949,11 +986,17 @@ function EditInvoice() {
                           <p
                             style={{
                               marginRight: '70px',
-                              marginTop: '35px',
+                              marginTop: '55px',
                             }}
                           >
-                            Total Due: {`$${formUpdateData?.total_amount?.toFixed(2) || ''}`}
+                            Total Due: {formUpdateData?.total_amount?.toLocaleString('en-US', {
+                              style: 'currency',
+                              currency: 'USD',
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            }) || '$0.00'}
                           </p>
+
                           <h5
                             style={{
                               fontSize: '25px',
@@ -970,12 +1013,11 @@ function EditInvoice() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '50px',
+                              marginTop: '70px',
                             }}
                           >
                             Thank You! We truly appreciate your business!
                           </h5>
-
                         </div>
                       )}
                     </div>

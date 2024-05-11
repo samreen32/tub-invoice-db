@@ -432,7 +432,12 @@ export default function CustomerReport() {
                                     : column.id === "bill_to"
                                       ? invoice.bill_to.length > 0 ? invoice.bill_to[0] : "-"
                                       : column.id === "total_amount"
-                                        ? `$${invoice.total_amount.toFixed(2)}`
+                                        ? `${invoice.total_amount.toLocaleString('en-US', {
+                                          style: 'currency',
+                                          currency: 'USD',
+                                          minimumFractionDigits: 2,
+                                          maximumFractionDigits: 2
+                                        }) || '$0.00'}`
                                         : column.id === "payments"
                                           ? `$${'0.00'}`
                                           : invoice[column.id]
@@ -448,7 +453,12 @@ export default function CustomerReport() {
                 </TableContainer>
                 <div className="amount-container">
                   <div className="total_amount_invoices">
-                    <p className="py-1">Total: &nbsp; &nbsp; ${filteredTotalAmount.toFixed(2)}
+                    <p className="py-1">Total: &nbsp; &nbsp; {filteredTotalAmount?.toLocaleString('en-US', {
+                      style: 'currency',
+                      currency: 'USD',
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    }) || '$0.00'}
                     </p>
                   </div>
                 </div>
@@ -484,7 +494,12 @@ export default function CustomerReport() {
                     <tr style={{ fontSize: "18px" }}>
                       {handleTimeRangeTotal().map((total, index) => (
                         <td key={index} style={{ padding: "25px" }}>
-                          ${total.toFixed(2)}
+                          {total.toLocaleString('en-US', {
+                            style: 'currency',
+                            currency: 'USD',
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                          }) || '$0.00'}
                         </td>
                       ))}
                     </tr>

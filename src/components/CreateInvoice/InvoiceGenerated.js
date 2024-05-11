@@ -57,11 +57,11 @@ function InvoiceGenerated() {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
     const year = date.getFullYear().toString();
-    return `${month}-${day}-${year}`;
+    return `${month}/${day}/${year}`;
   }
 
   const baseInvoiceSectionStyle = {
-    marginTop: "160px",
+    marginTop: "170px",
     border: "2px solid white",
   };
 
@@ -185,7 +185,7 @@ function InvoiceGenerated() {
                     >
                       <div className="col-md-10">
                         <div>
-                        <span style={{ fontWeight: "700", marginLeft: "0px" }}>Bill To</span>
+                          <span style={{ fontWeight: "700", marginLeft: "0px" }}>Bill To</span>
                           {[1, 2, 3].map((fieldIndex) => (
                             fieldIndex <= visibleBillToFields && (
                               <React.Fragment key={`bill_to_${fieldIndex}`}>
@@ -250,31 +250,15 @@ function InvoiceGenerated() {
                         <span className='plus-icon'>
                         </span>
                         &nbsp;
-                        <div className='col-md-2'>
+                        <div className='col-md-3' style={{ marginLeft: "-5px" }}>
                           <b>Lot No.</b>
                         </div>
-                        <div className='col-md-6 text-center'>
+                        <div className='col-md-5 text-center'>
                           <b>Description</b>
                         </div>
-                        <div
-                          className='col-md-1'
-                          style={{ marginLeft: '-2px' }}
-                        >
-                          <b>Quantity</b>
-                        </div>
-                        <div
-                          className='col-md-2'
-                          style={{ marginLeft: '20px' }}
-                        >
-                          <b>Price Each</b>
-                        </div>
-                        <div
-                          className='col-md-1'
-                          style={{ marginLeft: "-60px" }}
-                        >
-                          {' '}
-                          <b>Amount</b>
-                        </div>
+                        <div className="col-md-1" style={{ marginLeft: "40px" }}><b>Quantity</b></div>
+                        <div className="col-md-2" style={{ marginLeft: "16px" }}><b>Price Each</b></div>
+                        <div className="col-md-1" style={{ marginLeft: "-80px" }}> <b>Amount</b></div>
                       </div>
 
                       {outerItem.items.map((item, innerIndex) => {
@@ -285,7 +269,7 @@ function InvoiceGenerated() {
                               marginTop: innerIndex === 0 ? '10px' : '0px',
                             }}
                           >
-                            <div className="col-md-2">
+                            <div className="col-md-3">
                               <TextField
                                 id={`lot_no_${innerIndex}`}
                                 key={innerIndex}
@@ -295,14 +279,15 @@ function InvoiceGenerated() {
                                 value={item.lot_no}
                                 aria-readonly
                                 style={{
-                                  width: `${Math.max(30, Math.min(10 + ((item.lot_no ? item?.lot_no?.length : 0) * 8), 100))}%`
+                                  width: `150%`,
+                                  marginTop: "-9px"
                                 }}
                                 InputProps={{
                                   disableUnderline: true
                                 }}
                               />
                             </div>
-                            <div className="col-md-6">
+                            <div className="col-md-5">
                               <TextField
                                 id={`description_${innerIndex}`}
                                 variant="standard"
@@ -310,7 +295,11 @@ function InvoiceGenerated() {
                                 name="description"
                                 value={item.description}
                                 aria-readonly
-                                style={{ marginTop: innerIndex === 0 ? '-10px' : '-10px', width: '100%', }}
+                                style={{
+                                  marginTop: innerIndex === 0 ? '-10px' : '-10px',
+                                  width: '100%',
+                                  marginLeft: "120px"
+                                }}
                                 InputProps={{
                                   disableUnderline: true
                                 }}
@@ -328,38 +317,30 @@ function InvoiceGenerated() {
                                   disableUnderline: true,
                                   style: { textAlign: 'center' }
                                 }}
-                                style={{ width: "100%", marginLeft: "30px" }}
+                                style={{ width: "100%", marginLeft: "78px" }}
                               />
                             </div>
-                            <div className="col-md-2 text-center" style={{ position: "relative" }}>
-                              <TextField
+                            <div className="col-md-2" style={{ position: "relative" }}>
+                              <input
                                 id={`price_each_${innerIndex}`}
-                                variant="standard"
                                 type="text"
                                 name="price_each"
-                                aria-readonly
-                                value={item.price_each}
-                                style={{ width: "60%", marginLeft: "0px" }}
-                                InputProps={{
-                                  startAdornment: item.price_each && item.price_each !== '' ?
-                                    <InputAdornment position="start">
-                                      <span
-                                        style={{
-                                          fontSize: "20px",
-                                          color: "black"
-                                        }}
-                                      >
-                                        $
-                                      </span>
-                                    </InputAdornment> : null,
-                                  disableUnderline: true
+                                value={item.price_each ? `$${item.price_each}` : ''}
+                                style={{
+                                  width: '65%',
+                                  padding: "0px",
+                                  textAlign: 'right',
+                                  border: 'none',
+                                  outline: 'none',
+                                  marginLeft: "30px"
                                 }}
+                                readOnly
                               />
                             </div>
                             <div
                               className='col-md-1'
                               style={{
-                                marginLeft: '-75px',
+                                marginLeft: '-62px',
                                 width: '150px',
                                 textAlign: 'right',
                               }}
@@ -413,16 +394,21 @@ function InvoiceGenerated() {
                           <p
                             style={{
                               marginRight: '70px',
-                              marginTop: '0px',
+                              marginTop: '55px',
                             }}
                           >
-                            Total Due: {`$${formData?.total_amount?.toFixed(2) || ''}`}
+                            Total Due: {formData?.total_amount?.toLocaleString('en-US', {
+                              style: 'currency',
+                              currency: 'USD',
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2
+                            }) || '$0.00'}
                           </p>
                           <h5
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '-55px',
+                              marginTop: '-40px',
                             }}
                           >
                             Thank You! We truly appreciate your business!
@@ -434,7 +420,7 @@ function InvoiceGenerated() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '-30px',
+                              marginTop: '70px',
                             }}
                           >
                             Thank You! We truly appreciate your business!

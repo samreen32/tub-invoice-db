@@ -125,7 +125,7 @@ export default function SalesStatement() {
         { id: "PO_Invoice_date", label: "Invoice Date", minWidth: 100 },
         { id: "PO_number", label: "P.O", minWidth: 100 },
         { id: "job_site_name", label: "Job Site Name", minWidth: 100 },
-        { id: "lot_no", label: "Lots", minWidth: 100 },
+        // { id: "lot_no", label: "Lots", minWidth: 100 },
         { id: "job_location", label: "Job Location", minWidth: 100 },
         { id: "total_amount", label: "Amount", minWidth: 100 },
         { id: "payment_date", label: "Paid Date", minWidth: 100 },
@@ -420,7 +420,12 @@ export default function SalesStatement() {
                                                                     ) : column.id === "payment_status" ? (
                                                                         invoice.payment_status.toString()
                                                                     ) : column.id === "total_amount" ? (
-                                                                        `$${invoice.total_amount.toFixed(2)}`
+                                                                        `${invoice.total_amount.toLocaleString('en-US', {
+                                                                            style: 'currency',
+                                                                            currency: 'USD',
+                                                                            minimumFractionDigits: 2,
+                                                                            maximumFractionDigits: 2
+                                                                        }) || '$0.00'}`
                                                                     ) : column.id === "payment_date" ? (
                                                                         invoice.payments.length > 0 ? (
                                                                             invoice.payments[invoice.payments.length - 1].payment_date ? new Date(invoice.payments[invoice.payments.length - 1].payment_date).toLocaleDateString("en-US", {
@@ -453,7 +458,14 @@ export default function SalesStatement() {
                                 <div className="amount-container">
                                     <div className="total_amount_invoices">
                                         <p className="py-1">Grand Total: &nbsp; &nbsp; <span style={{ marginRight: "30%" }}>
-                                            ${filteredTotalAmount.toFixed(2)}</span></p>
+                                            {filteredTotalAmount?.toLocaleString('en-US', {
+                                                style: 'currency',
+                                                currency: 'USD',
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2
+                                            }) || '$0.00'}
+                                        </span>
+                                        </p>
                                     </div>
                                 </div>
 

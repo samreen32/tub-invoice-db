@@ -319,7 +319,7 @@ export default function SalesReport() {
                                                                 {columns.map((column, colIndex) => (
                                                                     <TableCell
                                                                         key={column.id}
-                                                                        align="left"
+                                                                        align="center"
                                                                         style={{
                                                                             minWidth: column.minWidth,
                                                                             backgroundColor: "#08a0d1",
@@ -348,9 +348,19 @@ export default function SalesReport() {
                                                                     {column.id === "bill_to" ? (
                                                                         invoice.bill_to.length > 0 ? invoice.bill_to[0] : "-"
                                                                     ) : column.id.startsWith("month_") ? (
-                                                                        invoice[column.id] ? `$${invoice[column.id].toFixed(2)}` : "-"
+                                                                        invoice[column.id] ? `${invoice[column.id].toLocaleString('en-US', {
+                                                                            style: 'currency',
+                                                                            currency: 'USD',
+                                                                            minimumFractionDigits: 2,
+                                                                            maximumFractionDigits: 2
+                                                                        }) || '$0.00'}` : "-"
                                                                     ) : column.id === "total_amount" ? (
-                                                                        `$${invoice[column.id].toFixed(2)}`
+                                                                        `${invoice[column.id].toLocaleString('en-US', {
+                                                                            style: 'currency',
+                                                                            currency: 'USD',
+                                                                            minimumFractionDigits: 2,
+                                                                            maximumFractionDigits: 2
+                                                                        }) || '$0.00'}`
                                                                     ) : (
                                                                         invoice[column.id]
                                                                     )}
@@ -367,7 +377,12 @@ export default function SalesReport() {
 
                                 <div className="amount-container">
                                     <div className="total_amount_invoices">
-                                        <p className="py-1">Total: &nbsp; &nbsp; ${filteredTotalAmount.toFixed(2)}
+                                        <p className="py-1">Total: &nbsp; &nbsp; {filteredTotalAmount?.toLocaleString('en-US', {
+                                            style: 'currency',
+                                            currency: 'USD',
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        }) || '$0.00'}
                                         </p>
                                     </div>
                                 </div>

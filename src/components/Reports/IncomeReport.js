@@ -349,7 +349,12 @@ export default function IncomeReport() {
 
                 <div className="amount-container">
                   <div className="total_amount_invoices">
-                    <p className="py-1">Total: &nbsp; &nbsp; ${filteredTotalAmount.toFixed(2)}
+                    <p className="py-1">Total: &nbsp; &nbsp; {filteredTotalAmount?.toLocaleString('en-US', {
+                      style: 'currency',
+                      currency: 'USD',
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    }) || '$0.00'}
                     </p>
                   </div>
                 </div>
