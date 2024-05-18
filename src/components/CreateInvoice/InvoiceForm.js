@@ -702,8 +702,8 @@ function InvoiceForm() {
                                 }
                                 style={{
                                   width: `150%`,
-                                  // marginLeft: "6px",
-                                  marginTop: "-9px"
+                                  marginTop:
+                                    actualIndex === 0 ? '-6px' : '-10px',
                                 }}
                                 InputProps={{
                                   disableUnderline: true,
@@ -744,7 +744,7 @@ function InvoiceForm() {
                                     variant='standard'
                                     style={{
                                       marginTop:
-                                        actualIndex === 0 ? '-10px' : '-10px',
+                                        actualIndex === 0 ? '-8px' : '-9px',
                                       width: '100%',
                                       marginLeft: "120px"
                                     }}
@@ -774,7 +774,11 @@ function InvoiceForm() {
                                   disableUnderline: true,
                                   style: { textAlign: 'center' },
                                 }}
-                                style={{ width: "100%", marginLeft: "80px" }}
+                                style={{
+                                  width: "100%", marginLeft: "80px",
+                                  marginTop:
+                                    actualIndex === 0 ? '6px' : '-2px',
+                                }}
                                 onKeyDown={(event) =>
                                   handleEnterKeyPress(
                                     event,
@@ -801,7 +805,9 @@ function InvoiceForm() {
                                   textAlign: 'right',
                                   border: 'none',
                                   outline: 'none',
-                                  marginLeft: "30px"
+                                  marginLeft: "30px",
+                                  marginTop:
+                                    actualIndex === 0 ? '10px' : '3px',
                                 }}
                                 autoComplete="off"
                                 onKeyPress={(e) => {
@@ -829,6 +835,8 @@ function InvoiceForm() {
                                 marginLeft: '-65px',
                                 width: '150px',
                                 textAlign: 'right',
+                                marginTop:
+                                  actualIndex === 0 ? '5px' : '2px',
                               }}
                             >
                               <p style={{ height: '20px', margin: '0' }}>
@@ -880,7 +888,7 @@ function InvoiceForm() {
                           <p
                             style={{
                               marginRight: '70px',
-                              marginTop: '35px',
+                              marginTop: '55px',
                             }}
                           >
                             Total Due: {formData?.total_amount?.toLocaleString('en-US', {
@@ -894,7 +902,7 @@ function InvoiceForm() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '-20px',
+                              marginTop: '-40px',
                             }}
                           >
                             Thank You! We truly appreciate your business!
@@ -906,7 +914,7 @@ function InvoiceForm() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '50px',
+                              marginTop: '70px',
                             }}
                           >
                             Thank You! We truly appreciate your business!

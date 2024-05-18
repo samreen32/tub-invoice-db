@@ -61,7 +61,7 @@ function InvoiceGenerated() {
   }
 
   const baseInvoiceSectionStyle = {
-    marginTop: "170px",
+    marginTop: "150px",
     border: "2px solid white",
   };
 
@@ -280,7 +280,8 @@ function InvoiceGenerated() {
                                 aria-readonly
                                 style={{
                                   width: `150%`,
-                                  marginTop: "-9px"
+                                  marginTop:
+                                    innerIndex === 0 ? '-6px' : '-10px',
                                 }}
                                 InputProps={{
                                   disableUnderline: true
@@ -296,7 +297,8 @@ function InvoiceGenerated() {
                                 value={item.description}
                                 aria-readonly
                                 style={{
-                                  marginTop: innerIndex === 0 ? '-10px' : '-10px',
+                                  marginTop:
+                                    innerIndex === 0 ? '-10px' : '-10px',
                                   width: '100%',
                                   marginLeft: "120px"
                                 }}
@@ -317,7 +319,11 @@ function InvoiceGenerated() {
                                   disableUnderline: true,
                                   style: { textAlign: 'center' }
                                 }}
-                                style={{ width: "100%", marginLeft: "78px" }}
+                                style={{
+                                  width: "100%", marginLeft: "78px",
+                                  marginTop:
+                                    innerIndex === 0 ? '2px' : '-2px',
+                                }}
                               />
                             </div>
                             <div className="col-md-2" style={{ position: "relative" }}>
@@ -332,7 +338,9 @@ function InvoiceGenerated() {
                                   textAlign: 'right',
                                   border: 'none',
                                   outline: 'none',
-                                  marginLeft: "30px"
+                                  marginLeft: "30px",
+                                  marginTop:
+                                    innerIndex === 0 ? '6px' : '6px',
                                 }}
                                 readOnly
                               />
@@ -343,6 +351,8 @@ function InvoiceGenerated() {
                                 marginLeft: '-62px',
                                 width: '150px',
                                 textAlign: 'right',
+                                marginTop:
+                                  innerIndex === 0 ? '0px' : '-2px',
                               }}
                             >
                               <p style={{ margin: "0" }}>
@@ -394,7 +404,7 @@ function InvoiceGenerated() {
                           <p
                             style={{
                               marginRight: '70px',
-                              marginTop: '55px',
+                              marginTop: '15px',
                             }}
                           >
                             Total Due: {formData?.total_amount?.toLocaleString('en-US', {
@@ -408,7 +418,7 @@ function InvoiceGenerated() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '-40px',
+                              marginTop: '-55px',
                             }}
                           >
                             Thank You! We truly appreciate your business!
@@ -420,7 +430,7 @@ function InvoiceGenerated() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '70px',
+                              marginTop: '10px',
                             }}
                           >
                             Thank You! We truly appreciate your business!
@@ -429,7 +439,6 @@ function InvoiceGenerated() {
                         </div>
                       )}
                     </div>{' '}
-
                   </>
                 ))}
               </div>

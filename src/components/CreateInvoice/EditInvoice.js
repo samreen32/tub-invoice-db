@@ -7,9 +7,9 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { EDIT_INVOICE, FETCH_BILL_TO, FETCH_DESCRIPPTION, GET_INVOICE } from "../../Auth_API";
 import generatePDF from "react-to-pdf";
-import InputAdornment from '@mui/material/InputAdornment';
 import Autocomplete from '@mui/material/Autocomplete';
 import { divideArrayIntoChunks } from "../../utils";
+import { InputAdornment } from "@mui/material";
 
 const CHUNK_SIZE = 31;
 
@@ -343,7 +343,7 @@ function EditInvoice() {
   }
 
   const baseInvoiceSectionStyle = {
-    marginTop: "180px",
+    marginTop: "150px",
     border: "2px solid white",
   };
 
@@ -724,7 +724,7 @@ function EditInvoice() {
                         <span className="plus-icon" onClick={handleAddItem}>
                         </span>
                         &nbsp;
-                        <div className="col-md-3" style={{marginLeft: "-5px"}}>
+                        <div className="col-md-3" style={{ marginLeft: "-5px" }}>
                           <b>Lot No.</b>
                         </div>
                         <div className="col-md-5 text-center">
@@ -739,8 +739,8 @@ function EditInvoice() {
                         const actualIndex = index * CHUNK_SIZE + innerIndex;
                         return (
                           <div className='row' key={actualIndex}
-                            style={{ marginTop: actualIndex === 0 ? '10px' : '0px' }}>
-
+                            style={{ marginTop: actualIndex === 0 ? '10px' : '0px' }}
+                          >
                             <div className='col-md-3'>
                               <TextField
                                 id={`lot_no_${actualIndex}`}
@@ -760,8 +760,8 @@ function EditInvoice() {
                                 }
                                 style={{
                                   width: `150%`,
-                                  marginTop: "-9px"
-                                  // marginLeft: "6px"
+                                  marginTop:
+                                    actualIndex === 0 ? '-6px' : '-10px',
                                 }}
                                 InputProps={{
                                   disableUnderline: true,
@@ -801,7 +801,7 @@ function EditInvoice() {
                                     variant='standard'
                                     style={{
                                       marginTop:
-                                        actualIndex === 0 ? '-10px' : '-10px',
+                                        actualIndex === 0 ? '-8px' : '-9px',
                                       width: '100%',
                                       marginLeft: "120px"
                                     }}
@@ -831,7 +831,11 @@ function EditInvoice() {
                                   disableUnderline: true,
                                   style: { textAlign: 'center' },
                                 }}
-                                style={{ width: "100%", marginLeft: "80px" }}
+                                style={{
+                                  width: "100%", marginLeft: "70px",
+                                  marginTop:
+                                    actualIndex === 0 ? '6px' : '-2px',
+                                }}
                                 onKeyDown={(event) =>
                                   handleEnterKeyPress(
                                     event,
@@ -841,6 +845,7 @@ function EditInvoice() {
                                 }
                               />
                             </div>
+
                             <div
                               className='col-md-2'
                               style={{ position: 'relative' }}
@@ -855,7 +860,8 @@ function EditInvoice() {
                                 style={{
                                   width: '65%',
                                   padding: "0px",
-                                  marginTop: "-6px",
+                                  marginTop:
+                                    actualIndex === 0 ? '10px' : '5px',
                                   textAlign: 'right',
                                   border: 'none',
                                   outline: 'none',
@@ -880,60 +886,16 @@ function EditInvoice() {
                                   );
                                 }}
                               />
-
-                              {/* <TextField
-                                id={`price_each_${actualIndex}`}
-                                variant='standard'
-                                type='text'
-                                name='price_each'
-                                value={item.price_each}
-                                onChange={(e) => handleInputChange(actualIndex, e)}
-                                onBlur={(e) => handleInputBlur(actualIndex, e)}
-                                style={{ width: "60%", marginLeft: "40px" }}
-                                autoComplete='off'
-                                InputProps={{
-                                  startAdornment:
-                                    item.price_each &&
-                                      item.price_each !== '' ? (
-                                      <InputAdornment position='end'>
-                                        <span
-                                          style={{
-                                            fontSize: '20px',
-                                            color: 'black',
-                                          }}
-                                        >
-                                          $
-                                        </span>
-                                      </InputAdornment>
-                                    ) : null,
-                                  disableUnderline: true,
-                                }}
-                                onKeyPress={(e) => {
-                                  if (
-                                    index == chunkedArray()?.length - 1 &&
-                                    outerItem.items?.length - 1 == actualIndex
-                                  )
-                                    handleLotNoKeyPress(e, actualIndex);
-                                }}
-                                onKeyDown={(event) => {
-                                  handleEnterKeyPress(
-                                    event,
-                                    'price_each',
-                                    actualIndex,
-                                    chunkedArray(),
-                                    index,
-                                    outerItem.items
-                                  );
-                                }}
-                              /> */}
-
                             </div>
+
                             <div
                               className='col-md-1'
                               style={{
                                 marginLeft: '-62px',
                                 width: '150px',
                                 textAlign: 'right',
+                                marginTop:
+                                  actualIndex === 0 ? '5px' : '0px',
                               }}
                             >
                               <p style={{ height: '20px', margin: '0' }}>
@@ -986,7 +948,7 @@ function EditInvoice() {
                           <p
                             style={{
                               marginRight: '70px',
-                              marginTop: '55px',
+                              marginTop: '10px',
                             }}
                           >
                             Total Due: {formUpdateData?.total_amount?.toLocaleString('en-US', {
@@ -996,7 +958,6 @@ function EditInvoice() {
                               maximumFractionDigits: 2
                             }) || '$0.00'}
                           </p>
-
                           <h5
                             style={{
                               fontSize: '25px',
@@ -1013,7 +974,7 @@ function EditInvoice() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '70px',
+                              marginTop: '5px',
                             }}
                           >
                             Thank You! We truly appreciate your business!

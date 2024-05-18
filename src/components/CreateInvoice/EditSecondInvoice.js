@@ -89,10 +89,18 @@ function EditSecondInvoice() {
     const formattedDate = formatDateInput(value);
     setFormUpdateData(prevData => ({
       ...prevData,
-      PO_Invoice_date: formattedDate
+      PO_date: formattedDate
     }));
   };
 
+  const handleDateInvoiceChange = (e) => {
+    const { value } = e.target;
+    const formattedDate = formatDateInput(value);
+    setFormUpdateData(prevData => ({
+      ...prevData,
+      PO_Invoice_date: formattedDate
+    }));
+  };
 
   const handleInputChange = (index, e) => {
     const { name, value } = e.target;
@@ -230,11 +238,11 @@ function EditSecondInvoice() {
         if (response.data.success) {
           const invoiceData = response.data.invoice;
           // console.log(invoiceData, "dshfsj")
-          // const validDate = invoiceData.PO_Invoice_date ? new Date(invoiceData.PO_Invoice_date) : null;
+          // const validDate = invoiceData.PO_date ? new Date(invoiceData.PO_date) : null;
           setFormUpdateData({
             ...formUpdateData,
             ...invoiceData,
-            // PO_Invoice_date: validDate
+            // PO_date: validDate
           });
         } else {
           console.error(response.data.message);
@@ -265,7 +273,7 @@ function EditSecondInvoice() {
           installer: "",
           PO_number: "",
           PO_date: "",
-          PO_Invoice_date: "",
+          PO_date: "",
           type_of_work: "",
           job_site_num: "",
           job_site_name: "",
@@ -307,7 +315,7 @@ function EditSecondInvoice() {
       installer: "",
       PO_number: "",
       PO_date: "",
-      PO_Invoice_date: "",
+      PO_date: "",
       type_of_work: "",
       job_site_num: "",
       job_site_name: "",
@@ -346,9 +354,8 @@ function EditSecondInvoice() {
   }
 
   const baseInvoiceSectionStyle = {
-    marginTop: "170px",
+    marginTop: "150px",
     border: "2px solid white",
-    // height: "1200px"
   };
 
   const handleEnterKeyPress = (event, currentField, currentIndex) => {
@@ -359,9 +366,9 @@ function EditSecondInvoice() {
       let nextIndex = currentIndex;
       switch (currentField) {
         case "PO_number":
-          nextFieldId = "PO_Invoice_date";
+          nextFieldId = "PO_date";
           break;
-        case "PO_Invoice_date":
+        case "PO_date":
           nextFieldId = "type_of_work";
           break;
         case "type_of_work":
@@ -532,10 +539,21 @@ function EditSecondInvoice() {
                             {formUpdateData.invoice_num}
                           </p>
 
-                          <p>
+                          <p style={{ display: "flex" }}>
                             Date
-                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                            {formatDate(formUpdateData.date)}
+                            <TextField
+                              id="PO_Invoice_date"
+                              variant="standard"
+                              placeholder="mm/dd/yyyy"
+                              autoComplete='off'
+                              type="text"
+                              style={{ width: "75%", marginLeft: "80px" }}
+                              InputProps={{
+                                disableUnderline: true
+                              }}
+                              value={formUpdateData.PO_Invoice_date || ""}
+                              onChange={handleDateInvoiceChange}
+                            />
                           </p>
                         </div>
                       </div>
@@ -604,7 +622,7 @@ function EditSecondInvoice() {
                         <div className="col-md-2 text-center">
                           <b>PO Date</b>
                           <TextField
-                            id="PO_Invoice_date"
+                            id="PO_date"
                             variant="standard"
                             placeholder="mm/dd/yyyy"
                             autoComplete='off'
@@ -613,9 +631,9 @@ function EditSecondInvoice() {
                             InputProps={{
                               disableUnderline: true
                             }}
-                            value={formUpdateData.PO_Invoice_date || ""}
+                            value={formUpdateData.PO_date || ""}
                             onChange={handleDateChange}
-                            onKeyDown={(event) => handleEnterKeyPress(event, 'PO_Invoice_date')}
+                            onKeyDown={(event) => handleEnterKeyPress(event, 'PO_date')}
                           />
                         </div>
 
@@ -706,7 +724,7 @@ function EditSecondInvoice() {
                         <span className="plus-icon" onClick={handleAddItem}>
                         </span>
                         &nbsp;
-                        <div className="col-md-3" style={{marginLeft: "-5px"}}>
+                        <div className="col-md-3" style={{ marginLeft: "-5px" }}>
                           <b>Lot No.</b>
                         </div>
                         <div className="col-md-5 text-center">
@@ -742,8 +760,8 @@ function EditSecondInvoice() {
                                 }
                                 style={{
                                   width: `150%`,
-                                  marginTop: "-9px"
-                                  // marginLeft: "6px"
+                                  marginTop:
+                                    actualIndex === 0 ? '-6px' : '-10px',
                                 }}
                                 InputProps={{
                                   disableUnderline: true,
@@ -783,7 +801,7 @@ function EditSecondInvoice() {
                                     variant='standard'
                                     style={{
                                       marginTop:
-                                        actualIndex === 0 ? '-10px' : '-10px',
+                                        actualIndex === 0 ? '-8px' : '-9px',
                                       width: '100%',
                                       marginLeft: "120px"
                                     }}
@@ -813,7 +831,11 @@ function EditSecondInvoice() {
                                   disableUnderline: true,
                                   style: { textAlign: 'center' },
                                 }}
-                                style={{ width: "100%", marginLeft: "75px" }}
+                                style={{
+                                  width: "100%", marginLeft: "70px",
+                                  marginTop:
+                                    actualIndex === 0 ? '6px' : '-2px',
+                                }}
                                 onKeyDown={(event) =>
                                   handleEnterKeyPress(
                                     event,
@@ -837,7 +859,8 @@ function EditSecondInvoice() {
                                 style={{
                                   width: '65%',
                                   padding: "0px",
-                                  marginTop: "-6px",
+                                  marginTop:
+                                    actualIndex === 0 ? '10px' : '5px',
                                   textAlign: 'right',
                                   border: 'none',
                                   outline: 'none',
@@ -869,6 +892,8 @@ function EditSecondInvoice() {
                                 marginLeft: '-62px',
                                 width: '150px',
                                 textAlign: 'right',
+                                marginTop:
+                                  actualIndex === 0 ? '5px' : '0px',
                               }}
                             >
                               <p style={{ height: '20px', margin: '0' }}>
@@ -921,7 +946,7 @@ function EditSecondInvoice() {
                           <p
                             style={{
                               marginRight: '70px',
-                              marginTop: '55px',
+                              marginTop: '10px',
                             }}
                           >
                             Total Due: {formUpdateData?.total_amount?.toLocaleString('en-US', {
@@ -947,7 +972,7 @@ function EditSecondInvoice() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '70px',
+                              marginTop: '5px',
                             }}
                           >
                             Thank You! We truly appreciate your business!

@@ -11,7 +11,7 @@ function Login() {
     const handleSubmit = (event) => {
         event.preventDefault();
         const hardcodedEmail = "rivera_tubpros@yahoo.com";
-        const hardcodedPassword = "Tubpr@s131";
+        const hardcodedPassword = "adminTubPr@s";
 
         if (email === hardcodedEmail && password === hardcodedPassword) {
             console.log("Login successful");
