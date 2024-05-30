@@ -58,9 +58,21 @@ export default function InvoiceReport() {
     const fetchAllInvoices = async () => {
       try {
         const response = await axios.get(`${GET_ALL_INVOICES}`);
-        console.log(response.data.invoices);
-
-        const filteredInvoices = response.data.invoices
+        console.log("Fetched Invoices:", response.data.invoices);
+  
+        // Ensure date is correctly formatted and exists
+        const invoicesWithCreationDate = response.data.invoices.map((invoice) => {
+          return {
+            ...invoice,
+            date: new Date(invoice.date), // Ensure date is a Date object
+          };
+        });
+  
+        // Sort invoices by date in descending order
+        const sortedInvoices = invoicesWithCreationDate.sort((a, b) => b.date - a.date);
+        console.log("Sorted Invoices:", sortedInvoices);
+  
+        const filteredInvoices = sortedInvoices
           .map((invoice) => ({
             ...invoice,
             date: new Date(invoice.date).toLocaleDateString(),
@@ -68,13 +80,13 @@ export default function InvoiceReport() {
           .filter((invoice) => {
             const yearFromPODate = new Date(invoice.PO_date).getFullYear();
             const monthFromPODate = new Date(invoice.PO_date).getMonth();
-
+  
             const yearMatches = selectedYear === "" || yearFromPODate.toString() === selectedYear;
             const monthMatches = selectedMonth === "" || monthFromPODate.toString() === months.indexOf(selectedMonth).toString();
-
+  
             return yearMatches && monthMatches;
           });
-
+  
         const searchedInvoices = filteredInvoices.filter((invoice) => {
           const searchString = searchWords.map((word) => word.toLowerCase());
           return (
@@ -82,43 +94,43 @@ export default function InvoiceReport() {
               (word) =>
                 invoice.bill_to.join(", ").toLowerCase().includes(word) ||
                 invoice.job_site_name.toLowerCase().includes(word) ||
-                invoice.invoice_num.toString().includes(word)  // Add this line for searching based on invoice number
+                invoice.invoice_num.toString().includes(word)
             ) ||
             searchString.every(
               (word) =>
                 invoice.bill_to.join(", ").toLowerCase().includes(word) ||
                 invoice.job_site_name.toLowerCase().includes(word) ||
-                invoice.invoice_num.toString().includes(word)  // Add this line for searching based on invoice number
+                invoice.invoice_num.toString().includes(word)
             )
           );
         });
-
+  
         setInvoices(searchedInvoices);
         const paidInvoices = searchedInvoices.filter((invoice) => invoice.payment_status);
         console.log("Paid Invoices:", paidInvoices);
-
+  
         const totalSum = paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
         console.log("Total Amount of Paid Invoices:", totalSum);
-
+  
         setTotalAmount(totalAmount + totalSum);
         const slicedInvoices = searchedInvoices.slice(
           page * rowsPerPage,
           page * rowsPerPage + rowsPerPage
         );
         const filteredTotal = slicedInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
-
+  
         console.log("Filtered Total Amount:", filteredTotal);
-
+  
         setFilteredTotalAmount(filteredTotal);
       } catch (error) {
         console.error(error.message);
       }
     };
-
+  
     fetchAllInvoices();
-
+  
   }, [selectedYear, selectedMonth, page, rowsPerPage, searchQuery, searchWords]);
-
+  
 
   const downloadExcel = () => {
     const filteredData = invoices.map(invoice => ({

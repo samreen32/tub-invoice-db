@@ -58,11 +58,20 @@ export default function SecondInvoiceReport() {
         const fetchAllInvoices = async () => {
             try {
                 const response = await axios.get(`${GET_ALL_INVOICES}`);
-                const filteredInvoices = response.data.invoices
+                console.log("Fetched Invoices:", response.data.invoices);
+
+                // Sort invoices by date in descending order
+                const sortedInvoices = response.data.invoices
                     .map((invoice) => ({
                         ...invoice,
                         date: new Date(invoice.date).toLocaleDateString(),
+                        date: new Date(invoice.date), // Ensure date is a Date object
                     }))
+                    .sort((a, b) => b.date - a.date);
+
+                console.log("Sorted Invoices:", sortedInvoices);
+
+                const filteredInvoices = sortedInvoices
                     .filter((invoice) => {
                         const yearFromPODate = new Date(invoice.PO_Invoice_date).getFullYear();
                         const monthFromPODate = new Date(invoice.PO_Invoice_date).getMonth();
@@ -86,25 +95,31 @@ export default function SecondInvoiceReport() {
                             (word) =>
                                 invoice.bill_to.join(", ").toLowerCase().includes(word) ||
                                 invoice.job_site_name.toLowerCase().includes(word) ||
-                                invoice.invoice_num.toString().includes(word))
+                                invoice.invoice_num.toString().includes(word)
+                        )
                     );
                 });
 
                 setInvoices(searchedInvoices);
+
                 const paidInvoices = searchedInvoices.filter((invoice) => invoice.payment_status);
                 const totalSum = paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
                 setTotalAmount(totalAmount + totalSum);
+
                 const slicedInvoices = searchedInvoices.slice(
                     page * rowsPerPage,
                     page * rowsPerPage + rowsPerPage
                 );
+
                 const filteredTotal = slicedInvoices.reduce((sum, invoice) => {
                     if (invoice.payment_status) {
                         return sum + invoice.total_amount;
                     }
                     return sum;
                 }, 0);
+
                 setFilteredTotalAmount(filteredTotal);
+
             } catch (error) {
                 console.error(error.message);
             }
@@ -112,7 +127,6 @@ export default function SecondInvoiceReport() {
 
         fetchAllInvoices();
     }, [selectedYear, selectedMonth, page, rowsPerPage, searchQuery, searchWords]);
-
 
     const columns = [
         { id: "invoice_num", label: "Invoice No.", minWidth: 100 },
