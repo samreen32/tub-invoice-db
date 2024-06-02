@@ -21,7 +21,7 @@ export default function CustomerReport() {
   let navigate = useNavigate();
   const targetRef = useRef();
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
   const [invoices, setInvoices] = useState([]);
   const { setInvoiceDetails } = UserLogin();
   const [searchQuery, setSearchQuery] = useState("");

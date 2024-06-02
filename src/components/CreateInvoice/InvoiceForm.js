@@ -48,7 +48,6 @@ function InvoiceForm() {
     fetchDescriptions();
   }, []);
 
-
   const createDefaultItems = (numItems = 31) => {
     return Array.from({ length: numItems }, () => ({
       lot_no: "",
@@ -128,7 +127,6 @@ function InvoiceForm() {
           return total + (parseFloat(item.quantity || 0) * priceEach);
         }, 0);
 
-
         return {
           ...prevData,
           items: updatedItems,
@@ -189,48 +187,12 @@ function InvoiceForm() {
     }
   };
 
-
   const updateBillToField = (index, value) => {
     setFormData((prevData) => {
       const updatedBillTo = [...prevData.bill_to];
       updatedBillTo[index] = value || '';
       return { ...prevData, bill_to: updatedBillTo };
     });
-  };
-
-  /* Endpoint integration */
-  const handleCreateInvoice = async (e) => {
-    e.preventDefault()
-    try {
-      const response = await axios.post(`${INVOICE}`, formData);
-      console.log("Estimate generated successfully:", response.data);
-      navigate(`/estimate_generated`);
-      console.log(response, "hsgfjsdfs");
-      setFormData((prevData) => ({
-        ...prevData,
-        invoice: {
-          ...prevData.invoice,
-          invoice_num: response.data.invoice.invoice_num,
-          date: response.data.invoice.date,
-          total_amount: response.data.invoice.total_amount,
-        },
-      }));
-      {
-        Swal.fire({
-          icon: "success",
-          title: "Success...",
-          text: "Estimate Generated!",
-        });
-        return;
-      }
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Failed to create invoice. Please try again later.",
-      });
-      console.error("Failed to create invoice:", error.message);
-    }
   };
 
   const handleGenerateNew = () => {
@@ -311,7 +273,7 @@ function InvoiceForm() {
           }
           break;
         default:
-          return; // Do nothing if it's not one of the expected fields
+          return;
       }
 
       const nextFieldElement = document.getElementById(nextFieldId);
@@ -340,7 +302,6 @@ function InvoiceForm() {
     }
   };
 
-
   const formatPriceEach = (value) => {
     let numericValue = String(value).replace(/[^0-9.]/g, '');
 
@@ -361,8 +322,42 @@ function InvoiceForm() {
     return divideArrayIntoChunks(formData, CHUNK_SIZE);
   };
 
-  console.log("formData sent to API:", formData);
-
+  /* Endpoint integration */
+  const handleCreateInvoice = async (e) => {
+    e.preventDefault();
+    console.log(formData, "dsfhjs")
+    try {
+      const response = await axios.post(`${INVOICE}`,
+        formData
+      );
+      console.log("Estimate generated successfully:", response.data);
+      navigate(`/estimate_generated`);
+      setFormData((prevData) => ({
+        ...prevData,
+        invoice: {
+          ...prevData.invoice,
+          invoice_num: response.data.invoice.invoice_num,
+          date: response.data.invoice.date,
+          total_amount: response.data.invoice.total_amount,
+        },
+      }));
+      {
+        Swal.fire({
+          icon: "success",
+          title: "Success...",
+          text: "Estimate Generated!",
+        });
+        return;
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to create invoice. Please try again later.",
+      });
+      console.error("Failed to create invoice:", error.message);
+    }
+  };
 
   return (
     <div id="invoice-generated">
@@ -458,9 +453,6 @@ function InvoiceForm() {
                                       inputRef={el => fieldRefs.current[fieldIndex] = el}
                                       onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
                                       style={{ marginTop: "-20px", width: "100%", }}
-                                    // InputProps={{
-                                    //   disableUnderline: true
-                                    // }}
                                     />
                                   )}
                                 />
@@ -492,7 +484,6 @@ function InvoiceForm() {
                       <div className='row po_details_div'>
                         <div className='col-md-1 '>
                           <span style={{ fontWeight: "700", marginLeft: "7px" }}>PO No.</span>
-                          {/* <br /> */}
                           <input
                             id='PO_number'
                             type='text'

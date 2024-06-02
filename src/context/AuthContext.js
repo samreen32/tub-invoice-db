@@ -25,6 +25,7 @@ const AuthProvider = ({ children }) => {
 
   // Set the initial state with 15 default items
   const [formData, setFormData] = useState({
+    installer: "",
     bill_to: [""],
     PO_number: "",
     PO_date: "",
@@ -33,12 +34,9 @@ const AuthProvider = ({ children }) => {
     job_site_num: "",
     job_site_name: "",
     job_location: "",
-    items: createDefaultItems(),
-    invoice: {
-      invoice_num: null,
-      date: null,
-      total_amount: null,
-    },
+    lot_no: "",
+    items: Array(31).fill({ description: "", quantity: 0, price_each: 0 }),
+    invoice: { invoice_num: null, date: null, total_amount: null },
   });
 
   const createDefaultUpdateItems = () => {

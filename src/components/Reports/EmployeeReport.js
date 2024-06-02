@@ -21,7 +21,7 @@ export default function EmployeeReport() {
     let navigate = useNavigate();
     const [page, setPage] = useState(0);
     const targetRef = useRef();
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(20);
     const [invoices, setInvoices] = useState([]);
     const [totalAmount, setTotalAmount] = useState(0);
     const { setInvoiceDetails } = UserLogin();

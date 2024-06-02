@@ -21,7 +21,7 @@ export default function SalesReport() {
     let navigate = useNavigate();
     const targetRef = useRef();
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(20);
     const [invoices, setInvoices] = useState([]);
     const [totalAmount, setTotalAmount] = useState(0);
     const { setInvoiceDetails } = UserLogin();
