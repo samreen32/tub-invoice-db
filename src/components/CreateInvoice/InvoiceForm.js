@@ -229,7 +229,7 @@ function InvoiceForm() {
   const handleEnterKeyPress = (event, currentField, currentIndex) => {
     if (event.key === "Enter") {
       event.preventDefault();
-
+  
       let nextFieldId;
       let nextIndex = currentIndex;
       switch (currentField) {
@@ -273,15 +273,16 @@ function InvoiceForm() {
           }
           break;
         default:
-          return;
+          return; // Do nothing if it's not one of the expected fields
       }
-
+  
       const nextFieldElement = document.getElementById(nextFieldId);
       if (nextFieldElement) {
         nextFieldElement.focus();
       }
     }
   };
+  
 
   const handleInputBlur = (index, e) => {
     const { name, value } = e.target;
@@ -353,9 +354,9 @@ function InvoiceForm() {
       Swal.fire({
         icon: "error",
         title: "Oops...",
-        text: "Failed to create invoice. Please try again later.",
+        text: "Failed to create estimate. Please try again later.",
       });
-      console.error("Failed to create invoice:", error.message);
+      console.error("Failed to create estimate:", error.message);
     }
   };
 
@@ -673,28 +674,17 @@ function InvoiceForm() {
                               <TextField
                                 id={`lot_no_${actualIndex}`}
                                 key={actualIndex}
-                                ref={(el) =>
-                                  (inputRefs.current[actualIndex] = el)
-                                }
+                                ref={(el) => (inputRefs.current[actualIndex] = el)}
                                 variant='standard'
                                 type='text'
                                 name='lot_no'
                                 value={item.lot_no}
                                 autoComplete='off'
-                                onKeyDown={(event) =>
-                                  handleEnterKeyPress(
-                                    event,
-                                    'lot_no',
-                                    actualIndex
-                                  )
-                                }
-                                onChange={(e) =>
-                                  handleInputChange(actualIndex, e)
-                                }
+                                onKeyDown={(event) => handleEnterKeyPress(event, 'lot_no', actualIndex)}
+                                onChange={(e) => handleInputChange(actualIndex, e)}
                                 style={{
                                   width: `150%`,
-                                  marginTop:
-                                    actualIndex === 0 ? '-6px' : '-10px',
+                                  marginTop: actualIndex === 0 ? '-6px' : '-10px',
                                 }}
                                 InputProps={{
                                   disableUnderline: true,
@@ -728,24 +718,16 @@ function InvoiceForm() {
                                     });
                                   }
                                 }}
-
                                 renderInput={(params) => (
                                   <TextField
                                     {...params}
                                     variant='standard'
                                     style={{
-                                      marginTop:
-                                        actualIndex === 0 ? '-8px' : '-9px',
+                                      marginTop: actualIndex === 0 ? '-8px' : '-9px',
                                       width: '100%',
                                       marginLeft: "120px"
                                     }}
-                                    onKeyDown={(event) =>
-                                      handleEnterKeyPress(
-                                        event,
-                                        'description',
-                                        actualIndex
-                                      )
-                                    }
+                                    onKeyDown={(event) => handleEnterKeyPress(event, 'description', actualIndex)}
                                   />
                                 )}
                               />
@@ -758,31 +740,19 @@ function InvoiceForm() {
                                 name='quantity'
                                 value={item.quantity}
                                 autoComplete='off'
-                                onChange={(e) =>
-                                  handleInputChange(actualIndex, e)
-                                }
+                                onChange={(e) => handleInputChange(actualIndex, e)}
                                 InputProps={{
                                   disableUnderline: true,
                                   style: { textAlign: 'center' },
                                 }}
                                 style={{
                                   width: "100%", marginLeft: "80px",
-                                  marginTop:
-                                    actualIndex === 0 ? '6px' : '-2px',
+                                  marginTop: actualIndex === 0 ? '6px' : '-2px',
                                 }}
-                                onKeyDown={(event) =>
-                                  handleEnterKeyPress(
-                                    event,
-                                    'quantity',
-                                    actualIndex
-                                  )
-                                }
+                                onKeyDown={(event) => handleEnterKeyPress(event, 'quantity', actualIndex)}
                               />
                             </div>
-                            <div
-                              className='col-md-2'
-                              style={{ position: 'relative' }}
-                            >
+                            <div className='col-md-2' style={{ position: 'relative' }}>
                               <input
                                 id={`price_each_${actualIndex}`}
                                 type="text"
@@ -797,51 +767,33 @@ function InvoiceForm() {
                                   border: 'none',
                                   outline: 'none',
                                   marginLeft: "30px",
-                                  marginTop:
-                                    actualIndex === 0 ? '10px' : '3px',
+                                  marginTop: actualIndex === 0 ? '10px' : '3px',
                                 }}
                                 autoComplete="off"
                                 onKeyPress={(e) => {
-                                  if (
-                                    index == chunkedArray()?.length - 1 &&
-                                    outerItem.items?.length - 1 == actualIndex
-                                  )
+                                  if (index == chunkedArray()?.length - 1 && outerItem.items?.length - 1 == actualIndex) {
                                     handleLotNoKeyPress(e, actualIndex);
+                                  }
                                 }}
-                                onKeyDown={(event) => {
-                                  handleEnterKeyPress(
-                                    event,
-                                    'price_each',
-                                    actualIndex,
-                                    chunkedArray(),
-                                    index,
-                                    outerItem.items
-                                  );
-                                }}
+                                onKeyDown={(event) => handleEnterKeyPress(event, 'price_each', actualIndex)}
                               />
                             </div>
-                            <div
-                              className='col-md-1'
-                              style={{
-                                marginLeft: '-65px',
-                                width: '150px',
-                                textAlign: 'right',
-                                marginTop:
-                                  actualIndex === 0 ? '5px' : '2px',
-                              }}
-                            >
+                            <div className='col-md-1' style={{
+                              marginLeft: '-65px',
+                              width: '150px',
+                              textAlign: 'right',
+                              marginTop: actualIndex === 0 ? '5px' : '2px',
+                            }}>
                               <p style={{ height: '20px', margin: '0' }}>
                                 {item.quantity && item.price_each
-                                  ? `$${(
-                                    (item.quantity || 0) *
-                                    (parseFloat(item.price_each) || 0)
-                                  ).toFixed(2)}`
+                                  ? `$${(item.quantity * parseFloat(item.price_each)).toFixed(2)}`
                                   : ''}
                               </p>
                             </div>
                           </div>
                         );
                       })}
+
                       {index === chunkedArray().length - 1 ? (
                         <div
                           className='invoice-last-div px-3'
