@@ -51,9 +51,10 @@ function InvoiceGenerated() {
     }
   }, [focusedField]);
 
-
   function formatDate(dateString) {
+    if (!dateString) return "";
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "";
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
     const year = date.getFullYear().toString();
@@ -216,7 +217,7 @@ function InvoiceGenerated() {
                         <div className="col-md-2 text-center">
                           <b>PO Date</b>
                           <div className="mt-2">
-                            {formatDate(formData.PO_date)}
+                            {formData.PO_date ? formatDate(formData.PO_date) : ""}
                           </div>
                         </div>
                         <div className="col-md-2 text-center">

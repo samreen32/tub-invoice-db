@@ -9,7 +9,6 @@ import { EDIT_INVOICE, FETCH_BILL_TO, FETCH_DESCRIPPTION, GET_INVOICE } from "..
 import generatePDF from "react-to-pdf";
 import Autocomplete from '@mui/material/Autocomplete';
 import { divideArrayIntoChunks } from "../../utils";
-import { InputAdornment } from "@mui/material";
 
 const CHUNK_SIZE = 31;
 
@@ -212,7 +211,6 @@ function EditInvoice() {
     }
   };
 
-
   const updateBillToField = (index, value) => {
     setFormUpdateData((prevData) => {
       const updatedBillTo = [...prevData.bill_to];
@@ -347,54 +345,111 @@ function EditInvoice() {
     border: "2px solid white",
   };
 
-  const handleEnterKeyPress = (event, currentField, currentIndex) => {
-    if (event.key === "Enter") {
+  const handleNavigationKeyPress = (event, currentField, currentIndex) => {
+    if (
+      event.key === "Enter" ||
+      event.key === "ArrowRight" ||
+      event.key === "ArrowLeft" ||
+      event.key === "ArrowDown" ||
+      event.key === "ArrowUp"
+    ) {
       event.preventDefault();
 
       let nextFieldId;
       let nextIndex = currentIndex;
-      switch (currentField) {
-        case "installer":
-          nextFieldId = "PO_number";
-          break;
-        case "PO_number":
-          nextFieldId = "PO_date";
-          break;
-        case "PO_date":
-          nextFieldId = "type_of_work";
-          break;
-        case "type_of_work":
-          nextFieldId = "job_site_num";
-          break;
-        case "job_site_num":
-          nextFieldId = "job_site_name";
-          break;
-        case "job_site_name":
-          nextFieldId = "job_location";
-          break;
-        case "job_location":
-          nextFieldId = `lot_no_0`;
-          break;
-        case "lot_no":
-          nextFieldId = `description_${currentIndex}`;
-          break;
-        case "description":
-          nextFieldId = `quantity_${currentIndex}`;
-          break;
-        case "quantity":
-          nextFieldId = `price_each_${currentIndex}`;
-          break;
-        case "price_each":
-          if (currentIndex === formUpdateData.items.length - 1) {
-            handleAddItem();
+
+      if (event.key === "Enter" || event.key === "ArrowRight") {
+        switch (currentField) {
+          case "installer":
+            nextFieldId = "PO_number";
+            break;
+          case "PO_number":
+            nextFieldId = "PO_date";
+            break;
+          case "PO_date":
+            nextFieldId = "type_of_work";
+            break;
+          case "type_of_work":
+            nextFieldId = "job_site_num";
+            break;
+          case "job_site_num":
+            nextFieldId = "job_site_name";
+            break;
+          case "job_site_name":
+            nextFieldId = "job_location";
+            break;
+          case "job_location":
+            nextFieldId = `lot_no_0`;
+            break;
+          case "lot_no":
+            nextFieldId = `description_${currentIndex}`;
+            break;
+          case "description":
+            nextFieldId = `quantity_${currentIndex}`;
+            break;
+          case "quantity":
+            nextFieldId = `price_each_${currentIndex}`;
+            break;
+          case "price_each":
+            if (currentIndex === formUpdateData.items.length - 1) {
+              handleAddItem();
+              return;
+            } else {
+              nextIndex = currentIndex + 1;
+              nextFieldId = `lot_no_${nextIndex}`;
+            }
+            break;
+          default:
             return;
-          } else {
-            nextIndex = currentIndex + 1;
-            nextFieldId = `lot_no_${nextIndex}`;
-          }
-          break;
-        default:
-          return; // Do nothing if it's not one of the expected fields
+        }
+      } else if (event.key === "ArrowLeft") {
+        switch (currentField) {
+          case "PO_number":
+            nextFieldId = "installer";
+            break;
+          case "PO_date":
+            nextFieldId = "PO_number";
+            break;
+          case "type_of_work":
+            nextFieldId = "PO_date";
+            break;
+          case "job_site_num":
+            nextFieldId = "type_of_work";
+            break;
+          case "job_site_name":
+            nextFieldId = "job_site_num";
+            break;
+          case "job_location":
+            nextFieldId = "job_site_name";
+            break;
+          case "description":
+            nextFieldId = `lot_no_${currentIndex}`;
+            break;
+          case "quantity":
+            nextFieldId = `description_${currentIndex}`;
+            break;
+          case "price_each":
+            nextFieldId = `quantity_${currentIndex}`;
+            break;
+          case "lot_no":
+            if (currentIndex > 0) {
+              nextIndex = currentIndex - 1;
+              nextFieldId = `price_each_${nextIndex}`;
+            }
+            break;
+          default:
+            return;
+        }
+      } else if (event.key === "ArrowDown") {
+        if (currentIndex + 1 < formUpdateData.items.length) {
+          nextIndex = currentIndex + 1;
+          nextFieldId = `${currentField}_${nextIndex}`;
+        }
+      } else if (event.key === "ArrowUp") {
+        if (currentIndex > 0) {
+          nextIndex = currentIndex - 1;
+          nextFieldId = `${currentField}_${nextIndex}`;
+        }
       }
 
       const nextFieldElement = document.getElementById(nextFieldId);
@@ -403,7 +458,6 @@ function EditInvoice() {
       }
     }
   };
-
 
   const formatPriceEach = (value) => {
     let numericValue = String(value).replace(/[^0-9.]/g, '');
@@ -450,7 +504,6 @@ function EditInvoice() {
     }
   };
 
-
   return (
     <div id="invoice-generated">
       <div className="row">
@@ -484,7 +537,6 @@ function EditInvoice() {
           </span>
           <span
             onClick={handleUpdateAndGeneratePDF}
-            // onClick={handleUpdateInvoiceAndGeneratePDF}
             className="new-invoice-btn"
             style={{ background: "green", border: "none" }}
           >
@@ -585,7 +637,7 @@ function EditInvoice() {
                             name="installer"
                             value={formUpdateData.installer}
                             onChange={(e) => handleInputChange(undefined, e)}
-                            onKeyDown={(event) => handleEnterKeyPress(event, 'installer')}
+                            onKeyDown={(event) => handleNavigationKeyPress(event, 'installer')}
                             autoComplete="off"
                             InputProps={{
                               disableUnderline: true
@@ -605,7 +657,7 @@ function EditInvoice() {
                             name="PO_number"
                             value={formUpdateData.PO_number}
                             onChange={(e) => handleInputChange(undefined, e)}
-                            onKeyDown={(event) => handleEnterKeyPress(event, 'PO_number')}
+                            onKeyDown={(event) => handleNavigationKeyPress(event, 'PO_number')}
                             style={{
                               width: "120%",
                               border: "none",
@@ -624,7 +676,6 @@ function EditInvoice() {
                           <TextField
                             id="PO_date"
                             variant="standard"
-                            placeholder="mm/dd/yyyy"
                             type="text"
                             style={{ width: "75%", marginTop: "10px", marginLeft: "30px" }}
                             InputProps={{
@@ -632,7 +683,7 @@ function EditInvoice() {
                             }}
                             value={formUpdateData.PO_date || ""}
                             onChange={handleDateChange}
-                            onKeyDown={(event) => handleEnterKeyPress(event, 'PO_date')}
+                            onKeyDown={(event) => handleNavigationKeyPress(event, 'PO_date')}
                             autoComplete="off"
                           />
                         </div>
@@ -645,13 +696,12 @@ function EditInvoice() {
                             name="type_of_work"
                             value={formUpdateData.type_of_work}
                             onChange={(e) => handleInputChange(undefined, e)}
-                            onKeyDown={(event) => handleEnterKeyPress(event, 'type_of_work')}
+                            onKeyDown={(event) => handleNavigationKeyPress(event, 'type_of_work')}
                             style={{
                               width: "100%",
                               border: "none",
                               textAlign: "center",
                               outline: "none",
-
                             }}
                             onFocus={(e) => e.target.style.borderBottomColor = "white"}
                             onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
@@ -666,7 +716,7 @@ function EditInvoice() {
                             name="job_site_num"
                             value={formUpdateData.job_site_num}
                             onChange={(e) => handleInputChange(undefined, e)}
-                            onKeyDown={(event) => handleEnterKeyPress(event, 'job_site_num')}
+                            onKeyDown={(event) => handleNavigationKeyPress(event, 'job_site_num')}
                             style={{
                               width: "100%",
                               border: "none",
@@ -686,7 +736,7 @@ function EditInvoice() {
                             name="job_site_name"
                             value={formUpdateData.job_site_name}
                             onChange={(e) => handleInputChange(undefined, e)}
-                            onKeyDown={(event) => handleEnterKeyPress(event, 'job_site_name')}
+                            onKeyDown={(event) => handleNavigationKeyPress(event, 'job_site_name')}
                             style={{
                               width: "130%",
                               border: "none",
@@ -706,7 +756,7 @@ function EditInvoice() {
                             name="job_location"
                             value={formUpdateData.job_location}
                             onChange={(e) => handleInputChange(undefined, e)}
-                            onKeyDown={(event) => handleEnterKeyPress(event, 'job_location')}
+                            onKeyDown={(event) => handleNavigationKeyPress(event, 'job_location')}
                             style={{
                               width: "100%",
                               border: "none",
@@ -752,7 +802,7 @@ function EditInvoice() {
                                 name='lot_no'
                                 value={item.lot_no}
                                 autoComplete='off'
-                                onKeyDown={(event) => handleEnterKeyPress(event, 'lot_no', actualIndex)}
+                                onKeyDown={(event) => handleNavigationKeyPress(event, 'lot_no', actualIndex)}
                                 onChange={(e) => handleInputChange(actualIndex, e)}
                                 style={{
                                   width: `150%`,
@@ -799,7 +849,7 @@ function EditInvoice() {
                                       width: '100%',
                                       marginLeft: "120px"
                                     }}
-                                    onKeyDown={(event) => handleEnterKeyPress(event, 'description', actualIndex)}
+                                    onKeyDown={(event) => handleNavigationKeyPress(event, 'description', actualIndex)}
                                   />
                                 )}
                               />
@@ -821,7 +871,7 @@ function EditInvoice() {
                                   width: "100%", marginLeft: "80px",
                                   marginTop: actualIndex === 0 ? '6px' : '-2px',
                                 }}
-                                onKeyDown={(event) => handleEnterKeyPress(event, 'quantity', actualIndex)}
+                                onKeyDown={(event) => handleNavigationKeyPress(event, 'quantity', actualIndex)}
                               />
                             </div>
                             <div className='col-md-2' style={{ position: 'relative' }}>
@@ -847,7 +897,7 @@ function EditInvoice() {
                                     handleLotNoKeyPress(e, actualIndex);
                                   }
                                 }}
-                                onKeyDown={(event) => handleEnterKeyPress(event, 'price_each', actualIndex)}
+                                onKeyDown={(event) => handleNavigationKeyPress(event, 'price_each', actualIndex)}
                               />
                             </div>
                             <div className='col-md-1' style={{
@@ -930,7 +980,7 @@ function EditInvoice() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '5px',
+                              marginTop: '45px',
                             }}
                           >
                             Thank You! We truly appreciate your business!
