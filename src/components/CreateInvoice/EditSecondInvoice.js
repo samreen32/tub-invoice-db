@@ -336,24 +336,8 @@ function EditSecondInvoice() {
     navigate("/invoice");
   };
 
-  function formatDate(date) {
-    if (!date) {
-      return "";
-    }
-
-    const d = new Date(date);
-    let month = '' + (d.getMonth() + 1),
-      day = '' + d.getDate(),
-      year = d.getFullYear();
-
-    if (month.length < 2) month = '0' + month;
-    if (day.length < 2) day = '0' + day;
-
-    return [month, day, year].join('/');
-  }
-
   const baseInvoiceSectionStyle = {
-    marginTop: "150px",
+    marginTop: "160px",
     border: "2px solid white",
   };
 
@@ -853,7 +837,7 @@ function EditSecondInvoice() {
                                     {...params}
                                     variant='standard'
                                     style={{
-                                      marginTop: actualIndex === 0 ? '-8px' : '-9px',
+                                      marginTop: actualIndex === 0 ? '-8px' : '-13px',
                                       width: '100%',
                                       marginLeft: "120px"
                                     }}
@@ -877,7 +861,7 @@ function EditSecondInvoice() {
                                 }}
                                 style={{
                                   width: "100%", marginLeft: "80px",
-                                  marginTop: actualIndex === 0 ? '6px' : '-2px',
+                                  marginTop: actualIndex === 0 ? '6px' : '0px',
                                 }}
                                 onKeyDown={(event) => handleNavigationKeyPress(event, 'quantity', actualIndex)}
                               />
@@ -897,7 +881,7 @@ function EditSecondInvoice() {
                                   border: 'none',
                                   outline: 'none',
                                   marginLeft: "30px",
-                                  marginTop: actualIndex === 0 ? '10px' : '3px',
+                                  marginTop: actualIndex === 0 ? '10px' : '6px',
                                 }}
                                 autoComplete="off"
                                 onKeyPress={(e) => {
@@ -912,7 +896,7 @@ function EditSecondInvoice() {
                               marginLeft: '-65px',
                               width: '150px',
                               textAlign: 'right',
-                              marginTop: actualIndex === 0 ? '5px' : '2px',
+                              marginTop: actualIndex === 0 ? '5px' : '-2px',
                             }}>
                               <p style={{ height: '20px', margin: '0' }}>
                                 {item.quantity && item.price_each
@@ -961,7 +945,7 @@ function EditSecondInvoice() {
                           <p
                             style={{
                               marginRight: '70px',
-                              marginTop: '10px',
+                              marginTop: '0px',
                             }}
                           >
                             Total Due: {formUpdateData?.total_amount?.toLocaleString('en-US', {
@@ -975,7 +959,7 @@ function EditSecondInvoice() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '-40px',
+                              marginTop: '-50px',
                             }}
                           >
                             Thank You! We truly appreciate your business!
@@ -987,7 +971,7 @@ function EditSecondInvoice() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '45px',
+                              marginTop: '-25px',
                             }}
                           >
                             Thank You! We truly appreciate your business!

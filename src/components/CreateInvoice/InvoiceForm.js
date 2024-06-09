@@ -572,7 +572,7 @@ function InvoiceForm() {
                           <TextField
                             id="PO_date"
                             variant="standard"
-
+                            // placeholder="mm/dd/yyyy"
                             type="text"
                             autoComplete='off'
                             style={{ width: "75%", marginTop: "23px", marginLeft: "30px" }}

@@ -341,7 +341,7 @@ function EditInvoice() {
   }
 
   const baseInvoiceSectionStyle = {
-    marginTop: "150px",
+    marginTop: "160px",
     border: "2px solid white",
   };
 
@@ -676,6 +676,7 @@ function EditInvoice() {
                           <TextField
                             id="PO_date"
                             variant="standard"
+                            // placeholder="mm/dd/yyyy"
                             type="text"
                             style={{ width: "75%", marginTop: "10px", marginLeft: "30px" }}
                             InputProps={{
@@ -845,7 +846,7 @@ function EditInvoice() {
                                     {...params}
                                     variant='standard'
                                     style={{
-                                      marginTop: actualIndex === 0 ? '-8px' : '-9px',
+                                      marginTop: actualIndex === 0 ? '-8px' : '-13px',
                                       width: '100%',
                                       marginLeft: "120px"
                                     }}
@@ -869,7 +870,7 @@ function EditInvoice() {
                                 }}
                                 style={{
                                   width: "100%", marginLeft: "80px",
-                                  marginTop: actualIndex === 0 ? '6px' : '-2px',
+                                  marginTop: actualIndex === 0 ? '6px' : '0px',
                                 }}
                                 onKeyDown={(event) => handleNavigationKeyPress(event, 'quantity', actualIndex)}
                               />
@@ -889,7 +890,7 @@ function EditInvoice() {
                                   border: 'none',
                                   outline: 'none',
                                   marginLeft: "30px",
-                                  marginTop: actualIndex === 0 ? '10px' : '3px',
+                                  marginTop: actualIndex === 0 ? '10px' : '6px',
                                 }}
                                 autoComplete="off"
                                 onKeyPress={(e) => {
@@ -904,7 +905,7 @@ function EditInvoice() {
                               marginLeft: '-65px',
                               width: '150px',
                               textAlign: 'right',
-                              marginTop: actualIndex === 0 ? '5px' : '2px',
+                              marginTop: actualIndex === 0 ? '5px' : '-2px',
                             }}>
                               <p style={{ height: '20px', margin: '0' }}>
                                 {item.quantity && item.price_each
@@ -954,7 +955,7 @@ function EditInvoice() {
                           <p
                             style={{
                               marginRight: '70px',
-                              marginTop: '10px',
+                              marginTop: '0px',
                             }}
                           >
                             Total Due: {formUpdateData?.total_amount?.toLocaleString('en-US', {
@@ -968,7 +969,7 @@ function EditInvoice() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '-40px',
+                              marginTop: '-50px',
                             }}
                           >
                             Thank You! We truly appreciate your business!
@@ -980,7 +981,7 @@ function EditInvoice() {
                             style={{
                               fontSize: '25px',
                               fontWeight: '600',
-                              marginTop: '45px',
+                              marginTop: '-25px',
                             }}
                           >
                             Thank You! We truly appreciate your business!

@@ -62,7 +62,7 @@ function InvoiceGenerated() {
   }
 
   const baseInvoiceSectionStyle = {
-    marginTop: "150px",
+    marginTop: "170px",
     border: "2px solid white",
   };
 
@@ -217,6 +217,7 @@ function InvoiceGenerated() {
                         <div className="col-md-2 text-center">
                           <b>PO Date</b>
                           <div className="mt-2">
+                          {/* {formatDate(formData.PO_date)} */}
                             {formData.PO_date ? formatDate(formData.PO_date) : ""}
                           </div>
                         </div>
@@ -282,7 +283,7 @@ function InvoiceGenerated() {
                                 style={{
                                   width: `150%`,
                                   marginTop:
-                                    innerIndex === 0 ? '-6px' : '-10px',
+                                    innerIndex === 0 ? '-8px' : '-10px',
                                 }}
                                 InputProps={{
                                   disableUnderline: true
@@ -353,7 +354,7 @@ function InvoiceGenerated() {
                                 width: '150px',
                                 textAlign: 'right',
                                 marginTop:
-                                  innerIndex === 0 ? '0px' : '-2px',
+                                  innerIndex === 0 ? '0px' : '0px',
                               }}
                             >
                               <p style={{ margin: "0" }}>
