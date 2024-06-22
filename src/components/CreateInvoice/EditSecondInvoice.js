@@ -587,7 +587,7 @@ function EditSecondInvoice() {
                             <TextField
                               id="PO_Invoice_date"
                               variant="standard"
-                              // placeholder="mm/dd/yyyy"
+                              placeholder="mm/dd/yyyy"
                               autoComplete='off'
                               type="text"
                               style={{ width: "75%", marginLeft: "80px" }}
@@ -896,7 +896,7 @@ function EditSecondInvoice() {
                               marginLeft: '-65px',
                               width: '150px',
                               textAlign: 'right',
-                              marginTop: actualIndex === 0 ? '5px' : '-2px',
+                              marginTop: actualIndex === 0 ? '3px' : '-2px',
                             }}>
                               <p style={{ height: '20px', margin: '0' }}>
                                 {item.quantity && item.price_each
@@ -960,6 +960,7 @@ function EditSecondInvoice() {
                               fontSize: '25px',
                               fontWeight: '600',
                               marginTop: '-50px',
+                              paddingBottom: "20px"
                             }}
                           >
                             Thank You! We truly appreciate your business!
