@@ -60,27 +60,26 @@ export default function SecondInvoiceReport() {
                 const response = await axios.get(`${GET_ALL_INVOICES}`);
                 console.log("Fetched Invoices:", response.data.invoices);
 
-                // Sort invoices by date in descending order
                 const sortedInvoices = response.data.invoices
                     .map((invoice) => ({
                         ...invoice,
                         date: new Date(invoice.date).toLocaleDateString(),
                         date: new Date(invoice.date), // Ensure date is a Date object
+                        adjustedInvoiceNum: 38494 + (invoice.invoice_num - 100)
                     }))
                     .sort((a, b) => b.date - a.date);
 
                 console.log("Sorted Invoices:", sortedInvoices);
 
-                const filteredInvoices = sortedInvoices
-                    .filter((invoice) => {
-                        const yearFromPODate = new Date(invoice.PO_Invoice_date).getFullYear();
-                        const monthFromPODate = new Date(invoice.PO_Invoice_date).getMonth();
+                const filteredInvoices = sortedInvoices.filter((invoice) => {
+                    const yearFromPODate = new Date(invoice.PO_Invoice_date).getFullYear();
+                    const monthFromPODate = new Date(invoice.PO_Invoice_date).getMonth();
 
-                        const yearMatches = selectedYear === "" || yearFromPODate.toString() === selectedYear;
-                        const monthMatches = selectedMonth === "" || monthFromPODate.toString() === months.indexOf(selectedMonth).toString();
+                    const yearMatches = selectedYear === "" || yearFromPODate.toString() === selectedYear;
+                    const monthMatches = selectedMonth === "" || monthFromPODate.toString() === months.indexOf(selectedMonth).toString();
 
-                        return yearMatches && monthMatches;
-                    });
+                    return yearMatches && monthMatches;
+                });
 
                 const searchedInvoices = filteredInvoices.filter((invoice) => {
                     const searchString = searchWords.map((word) => word.toLowerCase());
@@ -195,8 +194,8 @@ export default function SecondInvoiceReport() {
         }
     };
 
-    const handleEditInvoice = (invoiceNum) => {
-        navigate(`/edit_invoice`, { state: { invoiceNum } });
+    const handleEditInvoice = (invoiceNum, adjustedInvoiceNum) => {
+        navigate(`/edit_invoice`, { state: { invoiceNum, adjustedInvoiceNum } });
     };
 
     const handleReversePayment = async (invoiceNum) => {
@@ -406,29 +405,6 @@ export default function SecondInvoiceReport() {
                                     </TableHead>
                                     <TableBody>
                                         {invoices
-                                            .filter((invoice) => {
-                                                const searchString = searchWords.map((word) =>
-                                                    word.toLowerCase()
-                                                );
-                                                return (
-                                                    searchString.some(
-                                                        (word) =>
-                                                            invoice.bill_to
-                                                                .join(", ")
-                                                                .toLowerCase()
-                                                                .includes(word) ||
-                                                            invoice.job_site_name.toLowerCase().includes(word)
-                                                    ) ||
-                                                    searchString.every(
-                                                        (word) =>
-                                                            invoice.bill_to
-                                                                .join(", ")
-                                                                .toLowerCase()
-                                                                .includes(word) ||
-                                                            invoice.job_site_name.toLowerCase().includes(word)
-                                                    )
-                                                );
-                                            })
                                             .slice(
                                                 page * rowsPerPage,
                                                 page * rowsPerPage + rowsPerPage
@@ -441,7 +417,9 @@ export default function SecondInvoiceReport() {
                                                 >
                                                     {columns.map((column) => (
                                                         <TableCell key={column.id} align="left">
-                                                            {column.id === "date" ? (
+                                                            {column.id === "invoice_num" ? (
+                                                                invoice.adjustedInvoiceNum
+                                                            ) : column.id === "date" ? (
                                                                 new Date(invoice.date).toLocaleDateString()
                                                             ) : column.id === "bill_to" ? (
                                                                 invoice.bill_to.length > 0 ? invoice.bill_to[0] : "-"
@@ -495,7 +473,7 @@ export default function SecondInvoiceReport() {
                                                                 <Button
                                                                     variant="contained"
                                                                     style={{ background: "green" }}
-                                                                    onClick={() => handleEditInvoice(invoice.invoice_num)}
+                                                                    onClick={() => handleEditInvoice(invoice.invoice_num, invoice.adjustedInvoiceNum)}
                                                                 >
                                                                     Generate
                                                                 </Button>

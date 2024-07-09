@@ -67,6 +67,7 @@ export default function NonPayment_Report() {
           .map((invoice) => ({
             ...invoice,
             date: new Date(invoice.date).toLocaleDateString(),
+            adjustedInvoiceNum: 38494 + (invoice.invoice_num - 100)
           }));
 
         // Filter invoices based on the search query
@@ -102,7 +103,6 @@ export default function NonPayment_Report() {
     fetchUnpaidInvoices();
   }, [selectedMonth, searchQuery, searchWords]);
 
-
   const columns = [
     { id: "invoice_num", label: "Invoice No.", minWidth: 170 },
     { id: "date", label: "Date", minWidth: 170 },
@@ -121,8 +121,8 @@ export default function NonPayment_Report() {
     setPage(0);
   };
 
-  const handleEditInvoice = (invoiceNum) => {
-    navigate(`/unpaid_invoice_details`, { state: { invoiceNum } });
+  const handleEditInvoice = (invoiceNum, adjustedInvoiceNum) => {
+    navigate(`/unpaid_invoice_details`, { state: { invoiceNum, adjustedInvoiceNum } });
   };
 
   const filteredInvoices = invoices.filter((invoice) =>
@@ -326,16 +326,18 @@ export default function NonPayment_Report() {
                               </TableRow>
                             </>
                           )}
-                          <TableRow key={invoice._id} onClick={() => handleEditInvoice(invoice.invoice_num)}>
+                          <TableRow key={invoice._id} onClick={() => handleEditInvoice(invoice.invoice_num, invoice.adjustedInvoiceNum)}>
                             {columns.map((column) => (
                               <TableCell key={column.id} align="left">
-                                {column.id === "paid_to_date"
-                                  ? `$${(invoice.paid_to_date || 0).toFixed(2)}`
-                                  : column.id === "total_amount"
-                                    ? `$${invoice.total_amount.toFixed(2)}`
-                                    : column.format && typeof invoice[column.id] === "number"
-                                      ? column.format(invoice[column.id])
-                                      : invoice[column.id]}
+                                {column.id === "invoice_num"
+                                  ? invoice.adjustedInvoiceNum
+                                  : column.id === "paid_to_date"
+                                    ? `$${(invoice.paid_to_date || 0).toFixed(2)}`
+                                    : column.id === "total_amount"
+                                      ? `$${invoice.total_amount.toFixed(2)}`
+                                      : column.format && typeof invoice[column.id] === "number"
+                                        ? column.format(invoice[column.id])
+                                        : invoice[column.id]}
                               </TableCell>
                             ))}
                           </TableRow>

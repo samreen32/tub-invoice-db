@@ -16,7 +16,8 @@ function EditSecondInvoice() {
   let navigate = useNavigate();
   const targetRef = useRef();
   const { state } = useLocation();
-  const { invoiceNum } = state;
+  const { invoiceNum, adjustedInvoiceNum } = state;
+  console.log(invoiceNum, adjustedInvoiceNum, "dhfdj")
   const { formUpdateData, setFormUpdateData, addresses, descriptions, setAddresses,
     setDescriptions } = UserLogin();
   const [visibleBillToFields, setVisibleBillToFields] = useState(3);
@@ -579,7 +580,7 @@ function EditSecondInvoice() {
                           </p>
                           <p>
                             Number &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                            {formUpdateData.invoice_num}
+                            {adjustedInvoiceNum}
                           </p>
 
                           <p style={{ display: "flex" }}>
