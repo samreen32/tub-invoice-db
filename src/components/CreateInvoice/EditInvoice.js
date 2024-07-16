@@ -17,9 +17,9 @@ function EditInvoice() {
   const targetRef = useRef();
   const { state } = useLocation();
   const { invoiceNum } = state;
-  const { formUpdateData, setFormUpdateData, addresses, descriptions, setAddresses,
-    setDescriptions } = UserLogin();
+  const { formUpdateData, setFormUpdateData, addresses, descriptions, setAddresses, setDescriptions } = UserLogin();
   const [visibleBillToFields, setVisibleBillToFields] = useState(3);
+  const [draggingIndex, setDraggingIndex] = useState(null);
 
   useEffect(() => {
     const fetchAddresses = async () => {
@@ -187,7 +187,6 @@ function EditInvoice() {
   }, [formUpdateData.items.length]);
 
   useEffect(() => {
-    // Re-adjust the references to only keep as many as there are items
     inputRefs.current = inputRefs.current.slice(0, formUpdateData.items.length);
   }, [formUpdateData.items]);
 
@@ -790,9 +789,30 @@ function EditInvoice() {
                       {outerItem.items.map((item, innerIndex) => {
                         const actualIndex = index * CHUNK_SIZE + innerIndex;
                         return (
-                          <div className='row' key={actualIndex}
-                            style={{ marginTop: actualIndex === 0 ? '0px' : '0px' }}>
-
+                          <div
+                            className='row'
+                            key={actualIndex}
+                            style={{ marginTop: actualIndex === 0 ? '0px' : '0px' }}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('text/plain', actualIndex);
+                              setDraggingIndex(actualIndex);
+                            }}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                              if (draggedIndex !== actualIndex) {
+                                const updatedItems = [...formUpdateData.items];
+                                const [draggedItem] = updatedItems.splice(draggedIndex, 1);
+                                updatedItems.splice(actualIndex, 0, draggedItem);
+                                setFormUpdateData((prevData) => ({
+                                  ...prevData,
+                                  items: updatedItems,
+                                }));
+                              }
+                              setDraggingIndex(null);
+                            }}
+                          >
                             <div className='col-md-3'>
                               <TextField
                                 id={`lot_no_${actualIndex}`}
@@ -819,7 +839,7 @@ function EditInvoice() {
                                 id={`description_${actualIndex}`}
                                 freeSolo
                                 options={descriptions || []}
-                                getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                                getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
                                 ref={(el) => (inputRefs.current[actualIndex] = el)}
                                 value={item.description || ''}
                                 onChange={(event, newValue) => {

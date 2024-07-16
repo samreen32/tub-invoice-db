@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { UserLogin } from "../../context/AuthContext";
-import logo from "../../assets/img/logo.png";
 import TextField from "@mui/material/TextField";
 import { useLocation, useNavigate } from "react-router";
 import axios from "axios";
@@ -9,6 +8,7 @@ import { EDIT_INVOICE, FETCH_BILL_TO, FETCH_DESCRIPPTION, GET_INVOICE } from "..
 import generatePDF from "react-to-pdf";
 import Autocomplete from '@mui/material/Autocomplete';
 import { divideArrayIntoChunks } from "../../utils";
+import logo from "../../assets/img/logo.png";
 
 const CHUNK_SIZE = 31;
 
@@ -17,10 +17,10 @@ function EditSecondInvoice() {
   const targetRef = useRef();
   const { state } = useLocation();
   const { invoiceNum, adjustedInvoiceNum } = state;
-  console.log(invoiceNum, adjustedInvoiceNum, "dhfdj")
   const { formUpdateData, setFormUpdateData, addresses, descriptions, setAddresses,
     setDescriptions } = UserLogin();
   const [visibleBillToFields, setVisibleBillToFields] = useState(3);
+  const [draggingIndex, setDraggingIndex] = useState(null);
 
   useEffect(() => {
     const fetchAddresses = async () => {
@@ -238,12 +238,9 @@ function EditSecondInvoice() {
         const response = await axios.get(`${GET_INVOICE}/${invoiceNum}`);
         if (response.data.success) {
           const invoiceData = response.data.invoice;
-          // console.log(invoiceData, "dshfsj")
-          // const validDate = invoiceData.PO_date ? new Date(invoiceData.PO_date) : null;
           setFormUpdateData({
             ...formUpdateData,
             ...invoiceData,
-            // PO_date: validDate
           });
         } else {
           console.error(response.data.message);
@@ -483,7 +480,7 @@ function EditSecondInvoice() {
         formUpdateData
       );
       if (response.data.success) {
-        generatePDF(targetRef, { filename: "invoice.pdf" })
+        generatePDF(targetRef, { filename: "invoice.pdf" });
       } else {
         Swal.fire({
           icon: "error",
@@ -782,9 +779,30 @@ function EditSecondInvoice() {
                       {outerItem.items.map((item, innerIndex) => {
                         const actualIndex = index * CHUNK_SIZE + innerIndex;
                         return (
-                          <div className='row' key={actualIndex}
-                            style={{ marginTop: actualIndex === 0 ? '0px' : '0px' }}>
-
+                          <div
+                            className='row'
+                            key={actualIndex}
+                            style={{ marginTop: actualIndex === 0 ? '0px' : '0px' }}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('text/plain', actualIndex);
+                              setDraggingIndex(actualIndex);
+                            }}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                              if (draggedIndex !== actualIndex) {
+                                const updatedItems = [...formUpdateData.items];
+                                const [draggedItem] = updatedItems.splice(draggedIndex, 1);
+                                updatedItems.splice(actualIndex, 0, draggedItem);
+                                setFormUpdateData((prevData) => ({
+                                  ...prevData,
+                                  items: updatedItems,
+                                }));
+                              }
+                              setDraggingIndex(null);
+                            }}
+                          >
                             <div className='col-md-3'>
                               <TextField
                                 id={`lot_no_${actualIndex}`}
@@ -811,7 +829,7 @@ function EditSecondInvoice() {
                                 id={`description_${actualIndex}`}
                                 freeSolo
                                 options={descriptions || []}
-                                getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                                getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
                                 ref={(el) => (inputRefs.current[actualIndex] = el)}
                                 value={item.description || ''}
                                 onChange={(event, newValue) => {

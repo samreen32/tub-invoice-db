@@ -65,7 +65,7 @@ export default function SecondInvoiceReport() {
                         ...invoice,
                         date: new Date(invoice.date).toLocaleDateString(),
                         date: new Date(invoice.date), // Ensure date is a Date object
-                        adjustedInvoiceNum: 38494 + (invoice.invoice_num - 100)
+                        adjustedInvoiceNum: 38492 + (invoice.invoice_num - 100)
                     }))
                     .sort((a, b) => b.date - a.date);
 
@@ -132,10 +132,14 @@ export default function SecondInvoiceReport() {
         { id: "bill_to", label: "Bill To", minWidth: 100 },
         { id: "PO_number", label: "PO No.", minWidth: 100 },
         { id: "PO_Invoice_date", label: "PO Invoice Date", minWidth: 100 },
-        // { id: "type_of_work", label: "Type of Work", minWidth: 100 },
         { id: "job_site_num", label: "Job Site Number", minWidth: 100 },
         { id: "total_amount", label: "Invoice Amount", minWidth: 100 },
-        { id: "payment_status", label: "Payment Status", minWidth: 100 },
+        { id: "payment_status", label: "Payment Status", minWidth: 10 },
+        // {
+        //     id: "invoice_generated",
+        //     label: "Invoice Generated",
+        //     minWidth: 10,
+        // },
         {
             id: "add_payment",
             label: "Payment",
@@ -143,7 +147,7 @@ export default function SecondInvoiceReport() {
         },
         {
             id: "edit",
-            label: "Generate",
+            label: "Invoice Generated",
             minWidth: 100,
         },
         {
@@ -413,7 +417,10 @@ export default function SecondInvoiceReport() {
                                                 <TableRow
                                                     key={invoice.invoice_num}
                                                     onClick={() => setInvoiceDetails(invoice.invoice_num)}
-                                                    style={{ cursor: "pointer" }}
+                                                    style={{
+                                                        cursor: "pointer",
+                                                        backgroundColor: invoice.PO_Invoice_date ? "orange" : "white"
+                                                    }}
                                                 >
                                                     {columns.map((column) => (
                                                         <TableCell key={column.id} align="left">
@@ -438,6 +445,10 @@ export default function SecondInvoiceReport() {
                                                                     month: "2-digit",
                                                                     day: "2-digit",
                                                                 })
+                                                            ) : column.id === "invoice_generated" ? (
+                                                                <Button variant="contained" color={invoice.PO_Invoice_date ? "primary" : "secondary"}>
+                                                                    {invoice.PO_Invoice_date ? "Yes" : "No"}
+                                                                </Button>
                                                             ) : column.id === "add_payment" ? (
                                                                 invoice.payment_status ? (
                                                                     <div style={{ textAlign: "center", margin: "auto" }}>
@@ -470,13 +481,23 @@ export default function SecondInvoiceReport() {
                                                                 invoice[column.id]
                                                             )}
                                                             {column.id === "edit" && (
-                                                                <Button
-                                                                    variant="contained"
-                                                                    style={{ background: "green" }}
-                                                                    onClick={() => handleEditInvoice(invoice.invoice_num, invoice.adjustedInvoiceNum)}
-                                                                >
-                                                                    Generate
-                                                                </Button>
+                                                                !invoice.PO_Invoice_date ? (
+                                                                    <Button
+                                                                        variant="contained"
+                                                                        style={{ background: "green" }}
+                                                                        onClick={() => handleEditInvoice(invoice.invoice_num, invoice.adjustedInvoiceNum)}
+                                                                    >
+                                                                        Generate
+                                                                    </Button>
+                                                                ) : (
+                                                                    <Button
+                                                                        variant="contained"
+                                                                        style={{ background: "gray" }}
+                                                                        onClick={() => handleEditInvoice(invoice.invoice_num, invoice.adjustedInvoiceNum)}
+                                                                    >
+                                                                        Generated
+                                                                    </Button>
+                                                                )
                                                             )}
                                                             {column.id === "delete" && (
                                                                 <Button
