@@ -1187,33 +1187,7 @@ input {
   padding: 3px !important;
 }
 
-/* .App {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: #f0f0f0;
+.css-ueukts-MuiButtonBase-root-MuiToggleButton-root,
+.css-q5cu77 {
+  text-transform: capitalize !important;
 }
-
-.container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  width: 60%;
-}
-
-.box {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 150px;
-  background-color: #fff;
-  border: 2px solid #ccc;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-}
-
-.dragging {
-  opacity: 0.5;
-} */

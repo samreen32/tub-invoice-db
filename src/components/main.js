@@ -64,6 +64,11 @@ export default function Main() {
                         </Link>
                       </li><hr />
                       <li class="nav-item">
+                        <Link class="nav-link" to="/uncreated_invoice" style={{ color: "black" }}>
+                          Uncreated Invoice
+                        </Link>
+                      </li><hr />
+                      <li class="nav-item">
                         <Link class="nav-link" to="/job_site_report" style={{ color: "black" }}>
                           Job Site Report
                         </Link>

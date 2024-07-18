@@ -9,17 +9,16 @@ import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import Button from "@mui/material/Button";
 import axios from "axios";
-import { DELETE_INVOICE, GET_ALL_INVOICES, REVERSE_PAYMENT } from "../../Auth_API";
+
 import { useNavigate } from "react-router-dom";
 import { UserLogin } from "../../context/AuthContext";
 import { Toolbar } from "@mui/material";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import * as XLSX from 'xlsx';
+import { GET_ALL_INVOICES } from "../../Auth_API";
 
-export default function SecondInvoiceReport() {
+export default function UncreatedInvoice() {
     let navigate = useNavigate();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(20);
@@ -32,7 +31,6 @@ export default function SecondInvoiceReport() {
     const [selectedYear, setSelectedYear] = useState("");
     const [selectedMonth, setSelectedMonth] = useState("");
     const [filteredTotalAmount, setFilteredTotalAmount] = useState(0);
-    const [showUncreatedInvoices, setShowUncreatedInvoices] = useState(false);
 
     const months = [
         "January",
@@ -57,10 +55,6 @@ export default function SecondInvoiceReport() {
         setSelectedYear(event.target.value);
     };
 
-    const handleToggleUncreatedInvoices = (event, newAlignment) => {
-        setShowUncreatedInvoices(newAlignment);
-    };
-
     useEffect(() => {
         const fetchAllInvoices = async () => {
             try {
@@ -79,13 +73,7 @@ export default function SecondInvoiceReport() {
                 console.log("Sorted Invoices:", sortedInvoices);
 
                 const filteredInvoices = sortedInvoices.filter((invoice) => {
-                    const yearFromPODate = new Date(invoice.PO_Invoice_date).getFullYear();
-                    const monthFromPODate = new Date(invoice.PO_Invoice_date).getMonth();
-
-                    const yearMatches = selectedYear === "" || yearFromPODate.toString() === selectedYear;
-                    const monthMatches = selectedMonth === "" || monthFromPODate.toString() === months.indexOf(selectedMonth).toString();
-
-                    return yearMatches && monthMatches;
+                    return !invoice.PO_Invoice_date;
                 });
 
                 const searchedInvoices = filteredInvoices.filter((invoice) => {
@@ -106,15 +94,13 @@ export default function SecondInvoiceReport() {
                     );
                 });
 
-                const uncreatedInvoices = searchedInvoices.filter((invoice) => !invoice.PO_Invoice_date);
-
-                setInvoices(showUncreatedInvoices ? uncreatedInvoices : searchedInvoices);
+                setInvoices(searchedInvoices);
 
                 const paidInvoices = searchedInvoices.filter((invoice) => invoice.payment_status);
                 const totalSum = paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
                 setTotalAmount(totalAmount + totalSum);
 
-                const slicedInvoices = (showUncreatedInvoices ? uncreatedInvoices : searchedInvoices).slice(
+                const slicedInvoices = searchedInvoices.slice(
                     page * rowsPerPage,
                     page * rowsPerPage + rowsPerPage
                 );
@@ -134,7 +120,7 @@ export default function SecondInvoiceReport() {
         };
 
         fetchAllInvoices();
-    }, [selectedYear, selectedMonth, page, rowsPerPage, searchQuery, searchWords, showUncreatedInvoices]);
+    }, [selectedYear, selectedMonth, page, rowsPerPage, searchQuery, searchWords]);
 
     const columns = [
         { id: "invoice_num", label: "Invoice No.", minWidth: 100 },
@@ -144,21 +130,6 @@ export default function SecondInvoiceReport() {
         { id: "job_site_num", label: "Job Site Number", minWidth: 100 },
         { id: "total_amount", label: "Invoice Amount", minWidth: 100 },
         { id: "payment_status", label: "Payment Status", minWidth: 10 },
-        {
-            id: "add_payment",
-            label: "Payment",
-            minWidth: 100,
-        },
-        {
-            id: "edit",
-            label: "Invoice Generated",
-            minWidth: 100,
-        },
-        {
-            id: "delete",
-            label: "Void",
-            minWidth: 100,
-        },
     ];
 
     /* Table pagination */
@@ -181,50 +152,8 @@ export default function SecondInvoiceReport() {
         setSearchQuery("");
     };
 
-    /* Functions for delete invoice */
-    const handleDeleteInvoice = async (invoiceNum) => {
-        try {
-            const response = await axios.delete(`${DELETE_INVOICE}/${invoiceNum}`);
-
-            if (response.data.success) {
-                setInvoices((prevInvoices) =>
-                    prevInvoices.filter((invoice) => invoice.invoice_num !== invoiceNum)
-                );
-                setTotalAmount(
-                    (prevTotal) => prevTotal - response.data.invoice.total_amount
-                );
-                console.log(response.data.success);
-            } else {
-                console.error(response.data.message);
-            }
-        } catch (error) {
-            console.error(error.message);
-        }
-    };
-
     const handleEditInvoice = (invoiceNum, adjustedInvoiceNum) => {
         navigate(`/edit_invoice`, { state: { invoiceNum, adjustedInvoiceNum } });
-    };
-
-    const handleReversePayment = async (invoiceNum) => {
-        try {
-            const response = await axios.put(`${REVERSE_PAYMENT}/${invoiceNum}`);
-            if (response.data.success) {
-                setInvoices((prevInvoices) =>
-                    prevInvoices.map((invoice) =>
-                        invoice.invoice_num === invoiceNum
-                            ? { ...invoice, payment_status: false }
-                            : invoice
-                    )
-                );
-                setTotalAmount((prevTotal) => prevTotal - response.data.invoice.total_amount);
-                console.log(response.data.success);
-            } else {
-                console.error(response.data.message);
-            }
-        } catch (error) {
-            console.error(error.message);
-        }
     };
 
     const downloadExcel = () => {
@@ -299,13 +228,13 @@ export default function SecondInvoiceReport() {
                                 onClick={() => {
                                     navigate("/main");
                                 }}
-                                style={{ cursor: "pointer", marginLeft: "-40%" }}
+                                style={{ cursor: "pointer", marginLeft: "-20%" }}
                             >
                                 <i class="fa fa-chevron-left fa-1x" aria-hidden="true"></i>
                             </span>
-                            <span style={{ cursor: "pointer", marginLeft: "40%", fontWeight: "600" }}>
+                            <span style={{ cursor: "pointer", marginLeft: "20%", fontWeight: "600" }}>
                                 {" "}
-                                Invoice Report
+                                Uncreated Invoice Report
                             </span>
                         </h2>
 
@@ -386,24 +315,6 @@ export default function SecondInvoiceReport() {
                                     ))}
 
                                 </Select>
-
-                                <ToggleButtonGroup
-                                    value={showUncreatedInvoices}
-                                    exclusive
-                                    onChange={handleToggleUncreatedInvoices}
-                                    aria-label="Show uncreated invoices"
-                                    style={{
-                                        marginRight: "20px", marginTop: "20px",
-                                        // textTransform: "lowercase"
-                                    }}
-                                >
-                                    <ToggleButton value={true} aria-label="show uncreated">
-                                        UnCreated Invoices
-                                    </ToggleButton>
-                                    <ToggleButton value={false} aria-label="show all">
-                                        All Invoices
-                                    </ToggleButton>
-                                </ToggleButtonGroup>
                             </div>
                         </div>
 
@@ -470,64 +381,8 @@ export default function SecondInvoiceReport() {
                                                                 <Button variant="contained" color={invoice.PO_Invoice_date ? "primary" : "secondary"}>
                                                                     {invoice.PO_Invoice_date ? "Yes" : "No"}
                                                                 </Button>
-                                                            ) : column.id === "add_payment" ? (
-                                                                invoice.payment_status ? (
-                                                                    <div style={{ textAlign: "center", margin: "auto" }}>
-                                                                        <i class="fa fa-check fa-2x" aria-hidden="true"></i>
-                                                                        <Button
-                                                                            variant="contained"
-                                                                            style={{ background: "gray" }}
-                                                                            onClick={() => handleReversePayment(invoice.invoice_num)}
-                                                                        >
-                                                                            Reverse
-                                                                        </Button>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div style={{ textAlign: "center", margin: "auto" }}>
-                                                                        <Button
-                                                                            variant="contained"
-                                                                            color="primary"
-                                                                            onClick={() =>
-                                                                                handleInvoicePayment(
-                                                                                    invoice.invoice_num,
-                                                                                    invoice.total_amount
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            Recieve
-                                                                        </Button>
-                                                                    </div>
-                                                                )
                                                             ) : (
                                                                 invoice[column.id]
-                                                            )}
-                                                            {column.id === "edit" && (
-                                                                !invoice.PO_Invoice_date ? (
-                                                                    <Button
-                                                                        variant="contained"
-                                                                        style={{ background: "green" }}
-                                                                        onClick={() => handleEditInvoice(invoice.invoice_num, invoice.adjustedInvoiceNum)}
-                                                                    >
-                                                                        Generate
-                                                                    </Button>
-                                                                ) : (
-                                                                    <Button
-                                                                        variant="contained"
-                                                                        style={{ background: "gray" }}
-                                                                        onClick={() => handleEditInvoice(invoice.invoice_num, invoice.adjustedInvoiceNum)}
-                                                                    >
-                                                                        Generated
-                                                                    </Button>
-                                                                )
-                                                            )}
-                                                            {column.id === "delete" && (
-                                                                <Button
-                                                                    variant="contained"
-                                                                    style={{ background: "red" }}
-                                                                    onClick={() => handleDeleteInvoice(invoice.invoice_num)}
-                                                                >
-                                                                    Void
-                                                                </Button>
                                                             )}
                                                         </TableCell>
                                                     ))}

@@ -18,6 +18,7 @@ import EditSecondInvoice from "./components/CreateInvoice/EditSecondInvoice";
 import SalesReport from "./components/Reports/SalesReport";
 import SalesStatement from "./components/Reports/SalesStatement";
 import Login from "./components/Login";
+import UncreatedIncoice from "./components/Reports/UncreatedIncoice";
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
           <Route exact path="/income_report" element={<IncomeReport />} />
           <Route exact path="/customer_report" element={<CustomerReport />} />
           <Route exact path="/sales_statement" element={<SalesStatement />} />
+          <Route exact path="/uncreated_invoice" element={<UncreatedIncoice />} />
         </Routes>
       </Router>
     </AuthProvider>
