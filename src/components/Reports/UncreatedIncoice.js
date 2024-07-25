@@ -73,7 +73,7 @@ export default function UncreatedInvoice() {
                 console.log("Sorted Invoices:", sortedInvoices);
 
                 const filteredInvoices = sortedInvoices.filter((invoice) => {
-                    return !invoice.PO_Invoice_date;
+                    return invoice.PO_Invoice_date;
                 });
 
                 const searchedInvoices = filteredInvoices.filter((invoice) => {
@@ -234,7 +234,7 @@ export default function UncreatedInvoice() {
                             </span>
                             <span style={{ cursor: "pointer", marginLeft: "20%", fontWeight: "600" }}>
                                 {" "}
-                                Uncreated Invoice Report
+                                Invoice Report
                             </span>
                         </h2>
 
@@ -351,11 +351,13 @@ export default function UncreatedInvoice() {
                                                     onClick={() => setInvoiceDetails(invoice.invoice_num)}
                                                     style={{
                                                         cursor: "pointer",
-                                                        backgroundColor: invoice.PO_Invoice_date ? "orange" : "white"
+                                                        backgroundColor: invoice.PO_Invoice_date ? "white" : "white"
                                                     }}
                                                 >
                                                     {columns.map((column) => (
-                                                        <TableCell key={column.id} align="left">
+                                                        <TableCell key={column.id} align="left"
+                                                            onClick={() => handleEditInvoice(invoice.invoice_num, invoice.adjustedInvoiceNum)}
+                                                        >
                                                             {column.id === "invoice_num" ? (
                                                                 invoice.adjustedInvoiceNum
                                                             ) : column.id === "date" ? (

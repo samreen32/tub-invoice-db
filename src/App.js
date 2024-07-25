@@ -44,7 +44,7 @@ function App() {
           <Route exact path="/income_report" element={<IncomeReport />} />
           <Route exact path="/customer_report" element={<CustomerReport />} />
           <Route exact path="/sales_statement" element={<SalesStatement />} />
-          <Route exact path="/uncreated_invoice" element={<UncreatedIncoice />} />
+          <Route exact path="/invoice_report" element={<UncreatedIncoice />} />
         </Routes>
       </Router>
     </AuthProvider>

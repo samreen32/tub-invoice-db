@@ -106,7 +106,7 @@ export default function SecondInvoiceReport() {
                     );
                 });
 
-                const uncreatedInvoices = searchedInvoices.filter((invoice) => !invoice.PO_Invoice_date);
+                const uncreatedInvoices = searchedInvoices.filter((invoice) => invoice.PO_Invoice_date);
 
                 setInvoices(showUncreatedInvoices ? uncreatedInvoices : searchedInvoices);
 
@@ -299,13 +299,13 @@ export default function SecondInvoiceReport() {
                                 onClick={() => {
                                     navigate("/main");
                                 }}
-                                style={{ cursor: "pointer", marginLeft: "-40%" }}
+                                style={{ cursor: "pointer", marginLeft: "-30%" }}
                             >
                                 <i class="fa fa-chevron-left fa-1x" aria-hidden="true"></i>
                             </span>
-                            <span style={{ cursor: "pointer", marginLeft: "40%", fontWeight: "600" }}>
+                            <span style={{ cursor: "pointer", marginLeft: "30%", fontWeight: "600" }}>
                                 {" "}
-                                Invoice Report
+                                Estimate - Invoice Report
                             </span>
                         </h2>
 
@@ -398,10 +398,10 @@ export default function SecondInvoiceReport() {
                                     }}
                                 >
                                     <ToggleButton value={true} aria-label="show uncreated">
-                                        UnCreated Invoices
+                                        Invoice Reports
                                     </ToggleButton>
                                     <ToggleButton value={false} aria-label="show all">
-                                        All Invoices
+                                        All Reports
                                     </ToggleButton>
                                 </ToggleButtonGroup>
                             </div>
@@ -444,7 +444,9 @@ export default function SecondInvoiceReport() {
                                                     }}
                                                 >
                                                     {columns.map((column) => (
-                                                        <TableCell key={column.id} align="left">
+                                                        <TableCell key={column.id} align="left"
+                                                            onClick={() => handleEditInvoice(invoice.invoice_num, invoice.adjustedInvoiceNum)}
+                                                        >
                                                             {column.id === "invoice_num" ? (
                                                                 invoice.adjustedInvoiceNum
                                                             ) : column.id === "date" ? (

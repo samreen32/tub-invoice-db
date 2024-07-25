@@ -306,34 +306,6 @@ function EditSecondInvoice() {
     }
   };
 
-  const handleGenerateNew = () => {
-    setFormUpdateData({
-      bill_to: [""],
-      installer: "",
-      PO_number: "",
-      PO_date: "",
-      PO_date: "",
-      type_of_work: "",
-      job_site_num: "",
-      job_site_name: "",
-      job_location: "",
-      lot_no: "",
-      items: [
-        {
-          description: "",
-          quantity: "",
-          price_each: "",
-        },
-      ],
-      invoice: {
-        invoice_num: null,
-        date: null,
-        total_amount: null,
-      },
-    });
-    navigate("/invoice");
-  };
-
   const baseInvoiceSectionStyle = {
     marginTop: "160px",
     border: "2px solid white",
@@ -498,24 +470,92 @@ function EditSecondInvoice() {
     }
   };
 
+  const handleGenerateNew = () => {
+    setFormUpdateData({
+      bill_to: [""],
+      installer: "",
+      PO_number: "",
+      PO_date: "",
+      PO_date: "",
+      type_of_work: "",
+      job_site_num: "",
+      job_site_name: "",
+      job_location: "",
+      lot_no: "",
+      items: [
+        {
+          description: "",
+          quantity: "",
+          price_each: "",
+        },
+      ],
+      invoice: {
+        invoice_num: null,
+        date: null,
+        total_amount: null,
+      },
+    });
+    navigate("/invoice_report");
+  };
+
+  const handleNavigateConversion = () => {
+    setFormUpdateData({
+      bill_to: [""],
+      installer: "",
+      PO_number: "",
+      PO_date: "",
+      PO_date: "",
+      type_of_work: "",
+      job_site_num: "",
+      job_site_name: "",
+      job_location: "",
+      lot_no: "",
+      items: [
+        {
+          description: "",
+          quantity: "",
+          price_each: "",
+        },
+      ],
+      invoice: {
+        invoice_num: null,
+        date: null,
+        total_amount: null,
+      },
+    });
+    navigate("/invoice");
+  };
+
   return (
     <div id="invoice-generated">
       <div className="row">
         {/* Left side */}
         <div className="col-3" style={{ marginTop: "55px", marginLeft: "60px" }}>
           <div className="add-container">
-            <span onClick={() => {
-              navigate("/main")
-            }}
-              className="new-invoice-btn" style={{ marginRight: "20px", background: "grey" }}
+            <span
+              onClick={() => {
+                navigate("/main");
+              }}
+              className="new-invoice-btn"
+              style={{ marginRight: "20px", background: "grey", marginRight: "20px" }}
             >
-              <i class="fas fa-home fa-1x"></i>
+              <i className="fas fa-home fa-1x"></i>
             </span>
-            <span onClick={handleGenerateNew} className="new-invoice-btn">
+            <span
+              onClick={handleGenerateNew}
+              className="new-invoice-btn"
+              style={{ marginRight: "20px" }}
+            >
               Invoice Report
+            </span>
+            <span onClick={handleNavigateConversion} className="new-invoice-btn"
+              style={{ background: "red" }}
+            >
+              <i className="fas fa-sync-alt fa-1x"></i>
             </span>
           </div>
         </div>
+
 
         {/* Right side */}
         <div

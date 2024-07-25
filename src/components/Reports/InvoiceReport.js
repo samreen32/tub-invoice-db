@@ -59,7 +59,7 @@ export default function InvoiceReport() {
       try {
         const response = await axios.get(`${GET_ALL_INVOICES}`);
         console.log("Fetched Invoices:", response.data.invoices);
-  
+
         // Ensure date is correctly formatted and exists
         const invoicesWithCreationDate = response.data.invoices.map((invoice) => {
           return {
@@ -67,11 +67,11 @@ export default function InvoiceReport() {
             date: new Date(invoice.date), // Ensure date is a Date object
           };
         });
-  
+
         // Sort invoices by date in descending order
         const sortedInvoices = invoicesWithCreationDate.sort((a, b) => b.date - a.date);
         console.log("Sorted Invoices:", sortedInvoices);
-  
+
         const filteredInvoices = sortedInvoices
           .map((invoice) => ({
             ...invoice,
@@ -80,13 +80,13 @@ export default function InvoiceReport() {
           .filter((invoice) => {
             const yearFromPODate = new Date(invoice.PO_date).getFullYear();
             const monthFromPODate = new Date(invoice.PO_date).getMonth();
-  
+
             const yearMatches = selectedYear === "" || yearFromPODate.toString() === selectedYear;
             const monthMatches = selectedMonth === "" || monthFromPODate.toString() === months.indexOf(selectedMonth).toString();
-  
+
             return yearMatches && monthMatches;
           });
-  
+
         const searchedInvoices = filteredInvoices.filter((invoice) => {
           const searchString = searchWords.map((word) => word.toLowerCase());
           return (
@@ -104,33 +104,33 @@ export default function InvoiceReport() {
             )
           );
         });
-  
+
         setInvoices(searchedInvoices);
         const paidInvoices = searchedInvoices.filter((invoice) => invoice.payment_status);
         console.log("Paid Invoices:", paidInvoices);
-  
+
         const totalSum = paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
         console.log("Total Amount of Paid Invoices:", totalSum);
-  
+
         setTotalAmount(totalAmount + totalSum);
         const slicedInvoices = searchedInvoices.slice(
           page * rowsPerPage,
           page * rowsPerPage + rowsPerPage
         );
         const filteredTotal = slicedInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
-  
+
         console.log("Filtered Total Amount:", filteredTotal);
-  
+
         setFilteredTotalAmount(filteredTotal);
       } catch (error) {
         console.error(error.message);
       }
     };
-  
+
     fetchAllInvoices();
-  
+
   }, [selectedYear, selectedMonth, page, rowsPerPage, searchQuery, searchWords]);
-  
+
 
   const downloadExcel = () => {
     const filteredData = invoices.map(invoice => ({
@@ -426,7 +426,9 @@ export default function InvoiceReport() {
                           style={{ cursor: "pointer" }}
                         >
                           {columns.map((column) => (
-                            <TableCell key={column.id} align="left">
+                            <TableCell key={column.id} align="left"
+                              onClick={() => handleEditInvoice(invoice.invoice_num)}
+                            >
                               {column.id === "date" ? (
                                 new Date(invoice.date).toLocaleDateString()
                               ) : column.id === "bill_to" ? (
@@ -439,7 +441,7 @@ export default function InvoiceReport() {
                                   currency: 'USD',
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2
-                              }) || '$0.00'}`
+                                }) || '$0.00'}`
                               ) : column.id === "PO_date" ? (
                                 new Date(invoice.PO_date).toLocaleDateString("en-US", {
                                   year: "2-digit",
@@ -452,7 +454,6 @@ export default function InvoiceReport() {
                               {column.id === "edit" && (
                                 <Button
                                   variant="contained"
-                                  // color="primary"
                                   style={{ background: "green" }}
                                   onClick={() => handleEditInvoice(invoice.invoice_num)}
                                 >
