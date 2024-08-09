@@ -617,9 +617,8 @@ function EditSecondInvoice() {
                           </p>
                           <p>
                             Number &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                            {adjustedInvoiceNum}
+                            {formUpdateData.PO_Invoice_date ? adjustedInvoiceNum : invoiceNum}
                           </p>
-
                           <p style={{ display: "flex" }}>
                             Date
                             <TextField

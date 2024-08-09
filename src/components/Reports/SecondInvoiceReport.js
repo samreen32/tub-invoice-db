@@ -72,7 +72,7 @@ export default function SecondInvoiceReport() {
                         ...invoice,
                         date: new Date(invoice.date).toLocaleDateString(),
                         date: new Date(invoice.date), // Ensure date is a Date object
-                        adjustedInvoiceNum: 38492 + (invoice.invoice_num - 100)
+                        adjustedInvoiceNum: 38592 + (invoice.invoice_num - 100)
                     }))
                     .sort((a, b) => b.date - a.date);
 
@@ -445,10 +445,10 @@ export default function SecondInvoiceReport() {
                                                 >
                                                     {columns.map((column) => (
                                                         <TableCell key={column.id} align="left"
-                                                            onClick={() => handleEditInvoice(invoice.invoice_num, invoice.adjustedInvoiceNum)}
+                                                        // onClick={() => handleEditInvoice(invoice.invoice_num, invoice.adjustedInvoiceNum)}
                                                         >
                                                             {column.id === "invoice_num" ? (
-                                                                invoice.adjustedInvoiceNum
+                                                                invoice.PO_Invoice_date ? invoice.adjustedInvoiceNum : invoice.invoice_num
                                                             ) : column.id === "date" ? (
                                                                 new Date(invoice.date).toLocaleDateString()
                                                             ) : column.id === "bill_to" ? (

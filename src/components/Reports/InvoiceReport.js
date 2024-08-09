@@ -427,7 +427,7 @@ export default function InvoiceReport() {
                         >
                           {columns.map((column) => (
                             <TableCell key={column.id} align="left"
-                              onClick={() => handleEditInvoice(invoice.invoice_num)}
+                              // onClick={() => handleEditInvoice(invoice.invoice_num)}
                             >
                               {column.id === "date" ? (
                                 new Date(invoice.date).toLocaleDateString()
