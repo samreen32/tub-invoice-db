@@ -759,7 +759,7 @@ function EditSecondInvoice() {
                           />
                         </div>
                         <div className="col-md-2 text-center">
-                          <span style={{ marginLeft: "65px", fontWeight: "bold" }}>Job Name</span>
+                          <span style={{ marginLeft: "80px", fontWeight: "bold" }}>Job Name</span>
                           <input
                             id="job_site_name"
                             type="text"
@@ -768,7 +768,7 @@ function EditSecondInvoice() {
                             onChange={(e) => handleInputChange(undefined, e)}
                             onKeyDown={(event) => handleNavigationKeyPress(event, 'job_site_name')}
                             style={{
-                              width: "130%",
+                              width: "145%",
                               border: "none",
                               textAlign: "center",
                               outline: "none",

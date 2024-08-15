@@ -217,7 +217,7 @@ function InvoiceGenerated() {
                         <div className="col-md-2 text-center">
                           <b>PO Date</b>
                           <div className="mt-2">
-                          {/* {formatDate(formData.PO_date)} */}
+                            {/* {formatDate(formData.PO_date)} */}
                             {formData.PO_date ? formatDate(formData.PO_date) : ""}
                           </div>
                         </div>

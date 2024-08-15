@@ -643,7 +643,7 @@ function InvoiceForm() {
                         <div className='col-md-2 text-center'>
                           <span
                             style={{
-                              marginLeft: '50px',
+                              marginLeft: '70px',
                               fontWeight: 'bold',
                             }}
                           >
@@ -660,7 +660,7 @@ function InvoiceForm() {
                             onKeyDown={(event) => handleNavigationKeyPress(event, 'job_site_name')}
                             style={{
                               marginTop: '12px',
-                              width: '130%',
+                              width: "140%",
                               border: 'none',
                               textAlign: 'center',
                               outline: 'none',
