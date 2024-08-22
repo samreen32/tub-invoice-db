@@ -596,7 +596,7 @@ function EditInvoice() {
                     <div className="row bill_to_div" style={{ border: "2px solid white" }}>
                       <div className="col-md-6">
                         <div>
-                          <span style={{ fontWeight: "700", marginLeft: "0px" }}>Bill To</span>
+                          <span style={{ fontWeight: "700", marginLeft: "5px" }}>Bill To</span>
                           {[1, 2, 3].map(
                             (fieldIndex) =>
                               fieldIndex <= visibleBillToFields && (
@@ -649,7 +649,7 @@ function EditInvoice() {
                     <div className='last-row' style={{ marginLeft: "-25px" }}>
                       <div className="row po_details_div">
                         <div className="col-md-1 text-center">
-                          <span style={{ fontWeight: "700", marginLeft: "7px" }}>PO No.</span>
+                          <span style={{ fontWeight: "700", marginLeft: "9px" }}>PO No.</span>
                           <input
                             id="PO_number"
                             type="text"
@@ -658,12 +658,12 @@ function EditInvoice() {
                             onChange={(e) => handleInputChange(undefined, e)}
                             onKeyDown={(event) => handleNavigationKeyPress(event, 'PO_number')}
                             style={{
-                              width: "120%",
+                              width: "160%",
                               border: "none",
                               textAlign: "center",
                               outline: "none",
-                              marginLeft: "-9px"
-
+                              marginLeft: "-16px",
+                              // marginTop: "-2px"
                             }}
                             onFocus={(e) => e.target.style.borderBottomColor = "white"}
                             onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
@@ -687,7 +687,6 @@ function EditInvoice() {
                             autoComplete="off"
                           />
                         </div>
-
                         <div className="col-md-2" style={{ textAlign: "center" }}>
                           <span style={{ fontWeight: "700", marginLeft: "0px" }}>Type of Work</span>
                           <input
@@ -728,8 +727,8 @@ function EditInvoice() {
                             autoComplete="off"
                           />
                         </div>
-                        <div className="col-md-2 text-center">
-                          <span style={{marginLeft: "80px", fontWeight: "bold" }}>Job Name</span>
+                        <div className="col-md-3 text-center">
+                          <span style={{ marginLeft: "8px", fontWeight: "bold" }}>Job Name</span>
                           <input
                             id="job_site_name"
                             type="text"
@@ -738,17 +737,18 @@ function EditInvoice() {
                             onChange={(e) => handleInputChange(undefined, e)}
                             onKeyDown={(event) => handleNavigationKeyPress(event, 'job_site_name')}
                             style={{
-                              width: "145%",
+                              width: "150%",
                               border: "none",
                               textAlign: "center",
                               outline: "none",
+                              marginLeft: "-60px"
                             }}
                             onFocus={(e) => e.target.style.borderBottomColor = "white"}
                             onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
                             autoComplete="off"
                           />
                         </div>
-                        <div className="col-md-3 text-center">
+                        <div className="col-md-2 text-center">
                           <b>Job Location</b>
                           <input
                             id="job_location"
@@ -770,6 +770,7 @@ function EditInvoice() {
 
                         </div>
                       </div>
+
                       <div className='line'></div>
                       <div className="row item_details_div">
                         <span className="plus-icon" onClick={handleAddItem}>

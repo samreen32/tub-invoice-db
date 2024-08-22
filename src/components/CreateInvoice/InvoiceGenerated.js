@@ -217,7 +217,6 @@ function InvoiceGenerated() {
                         <div className="col-md-2 text-center">
                           <b>PO Date</b>
                           <div className="mt-2">
-                            {/* {formatDate(formData.PO_date)} */}
                             {formData.PO_date ? formatDate(formData.PO_date) : ""}
                           </div>
                         </div>
@@ -233,13 +232,13 @@ function InvoiceGenerated() {
                             {formData.job_site_num}
                           </div>
                         </div>
-                        <div className="col-md-2 text-center">
+                        <div className="col-md-3 text-center">
                           <span style={{ marginLeft: "10px", fontWeight: "bold" }}>Job Name</span>
                           <div className="mt-2">
                             {formData.job_site_name}
                           </div>
                         </div>
-                        <div className="col-md-3 text-center">
+                        <div className="col-md-2 text-center">
                           <b>Job Location</b>
                           <div className="mt-2">
                             {formData.job_location}

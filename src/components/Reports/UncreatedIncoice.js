@@ -9,7 +9,6 @@ import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import Button from "@mui/material/Button";
 import axios from "axios";
-
 import { useNavigate } from "react-router-dom";
 import { UserLogin } from "../../context/AuthContext";
 import { Toolbar } from "@mui/material";
@@ -31,6 +30,7 @@ export default function UncreatedInvoice() {
     const [selectedYear, setSelectedYear] = useState("");
     const [selectedMonth, setSelectedMonth] = useState("");
     const [filteredTotalAmount, setFilteredTotalAmount] = useState(0);
+    const [showUncreatedInvoices, setShowUncreatedInvoices] = useState(false);  
 
     const months = [
         "January",
@@ -59,68 +59,70 @@ export default function UncreatedInvoice() {
         const fetchAllInvoices = async () => {
             try {
                 const response = await axios.get(`${GET_ALL_INVOICES}`);
-                console.log("Fetched Invoices:", response.data.invoices);
-
-                const sortedInvoices = response.data.invoices
-                    .map((invoice) => ({
+                let adjustedInvoiceCounter = 38592;
+                const filteredInvoicesByPODate = response.data.invoices.filter(invoice => invoice.PO_Invoice_date);
+                const invoicesWithAdjustedNumbers = filteredInvoicesByPODate.map((invoice) => {
+                    return {
                         ...invoice,
-                        date: new Date(invoice.date).toLocaleDateString(),
-                        date: new Date(invoice.date), // Ensure date is a Date object
-                        adjustedInvoiceNum: 38592 + (invoice.invoice_num - 100)
-                    }))
-                    .sort((a, b) => b.date - a.date);
-
-                console.log("Sorted Invoices:", sortedInvoices);
-
-                const filteredInvoices = sortedInvoices.filter((invoice) => {
-                    return invoice.PO_Invoice_date;
+                        adjustedInvoiceNum: adjustedInvoiceCounter++,
+                    };
                 });
-
+                const sortedInvoices = invoicesWithAdjustedNumbers.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+                const filteredInvoices = sortedInvoices.filter((invoice) => {
+                    const yearFromPODate = new Date(invoice.PO_Invoice_date).getFullYear();
+                    const monthFromPODate = new Date(invoice.PO_Invoice_date).getMonth();
+    
+                    const yearMatches = selectedYear === '' || yearFromPODate.toString() === selectedYear;
+                    const monthMatches = selectedMonth === '' || monthFromPODate.toString() === months.indexOf(selectedMonth).toString();
+    
+                    return yearMatches && monthMatches;
+                });
+    
+                const searchString = searchWords.map((word) => word.toLowerCase());
                 const searchedInvoices = filteredInvoices.filter((invoice) => {
-                    const searchString = searchWords.map((word) => word.toLowerCase());
-                    return (
-                        searchString.some(
-                            (word) =>
-                                invoice.bill_to.join(", ").toLowerCase().includes(word) ||
-                                invoice.job_site_name.toLowerCase().includes(word) ||
-                                invoice.invoice_num.toString().includes(word)
-                        ) ||
-                        searchString.every(
-                            (word) =>
-                                invoice.bill_to.join(", ").toLowerCase().includes(word) ||
-                                invoice.job_site_name.toLowerCase().includes(word) ||
-                                invoice.invoice_num.toString().includes(word)
-                        )
+                    return searchString.some(
+                        (word) =>
+                            invoice.bill_to.join(', ').toLowerCase().includes(word) ||
+                            invoice.job_site_name.toLowerCase().includes(word) ||
+                            invoice.invoice_num.toString().includes(word) ||
+                            (invoice.adjustedInvoiceNum && invoice.adjustedInvoiceNum.toString().includes(word))
                     );
                 });
-
-                setInvoices(searchedInvoices);
-
+    
+                // Apply the showUncreatedInvoices filter if needed
+                const uncreatedInvoices = searchedInvoices.filter((invoice) => invoice.PO_Invoice_date);
+                setInvoices(showUncreatedInvoices ? uncreatedInvoices : searchedInvoices);
+    
+                // Calculate the total amount of paid invoices
                 const paidInvoices = searchedInvoices.filter((invoice) => invoice.payment_status);
                 const totalSum = paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
-                setTotalAmount(totalAmount + totalSum);
-
-                const slicedInvoices = searchedInvoices.slice(
+                setTotalAmount(totalSum);
+    
+                // Paginate the invoices
+                const slicedInvoices = (showUncreatedInvoices ? uncreatedInvoices : searchedInvoices).slice(
                     page * rowsPerPage,
                     page * rowsPerPage + rowsPerPage
                 );
-
+    
+                // Calculate the filtered total amount for the current page
                 const filteredTotal = slicedInvoices.reduce((sum, invoice) => {
                     if (invoice.payment_status) {
                         return sum + invoice.total_amount;
                     }
                     return sum;
                 }, 0);
-
+    
                 setFilteredTotalAmount(filteredTotal);
-
+    
             } catch (error) {
                 console.error(error.message);
             }
         };
-
+    
         fetchAllInvoices();
-    }, [selectedYear, selectedMonth, page, rowsPerPage, searchQuery, searchWords]);
+    }, [selectedYear, selectedMonth, page, rowsPerPage, searchQuery, searchWords, showUncreatedInvoices]);
+    
 
     const columns = [
         { id: "invoice_num", label: "Invoice No.", minWidth: 100 },
@@ -199,9 +201,9 @@ export default function UncreatedInvoice() {
         };
 
         // Ensure each header cell is styled
-        const headers = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1']; // Adjust as per your columns
+        const headers = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1']; 
         headers.forEach((cellRef) => {
-            if (workSheet[cellRef]) { // Check if cell exists
+            if (workSheet[cellRef]) { 
                 workSheet[cellRef].s = headerCellStyle;
             }
         });
