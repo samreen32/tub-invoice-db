@@ -658,11 +658,12 @@ function EditInvoice() {
                             onChange={(e) => handleInputChange(undefined, e)}
                             onKeyDown={(event) => handleNavigationKeyPress(event, 'PO_number')}
                             style={{
-                              width: "160%",
+                              width: "200%",
                               border: "none",
                               textAlign: "center",
                               outline: "none",
-                              marginLeft: "-16px",
+                              marginLeft: "-30px",
+                              background: "transparent"
                               // marginTop: "-2px"
                             }}
                             onFocus={(e) => e.target.style.borderBottomColor = "white"}
@@ -671,13 +672,12 @@ function EditInvoice() {
                           />
                         </div>
                         <div className="col-md-2 text-center">
-                          <b>PO Date</b>
+                          <b style={{ marginLeft: "60px" }}>PO Date</b>
                           <TextField
                             id="PO_date"
                             variant="standard"
-                            // placeholder="mm/dd/yyyy"
                             type="text"
-                            style={{ width: "75%", marginTop: "10px", marginLeft: "30px" }}
+                            style={{ width: "75%", marginTop: "10px", marginLeft: "70px" }}
                             InputProps={{
                               disableUnderline: true
                             }}
@@ -688,7 +688,7 @@ function EditInvoice() {
                           />
                         </div>
                         <div className="col-md-2" style={{ textAlign: "center" }}>
-                          <span style={{ fontWeight: "700", marginLeft: "0px" }}>Type of Work</span>
+                          <span style={{ fontWeight: "700", marginLeft: "40px" }}>Type of Work</span>
                           <input
                             id="type_of_work"
                             type="text"
@@ -701,6 +701,7 @@ function EditInvoice() {
                               border: "none",
                               textAlign: "center",
                               outline: "none",
+                              marginLeft: "10px"
                             }}
                             onFocus={(e) => e.target.style.borderBottomColor = "white"}
                             onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
@@ -708,7 +709,7 @@ function EditInvoice() {
                           />
                         </div>
                         <div className="col-md-2 text-center">
-                          <span style={{ fontWeight: "700", marginLeft: "20px" }}>Job Site No.</span>
+                          <span style={{ fontWeight: "700", marginLeft: "65px" }}>Job Site No.</span>
                           <input
                             id="job_site_num"
                             type="text"
@@ -717,10 +718,11 @@ function EditInvoice() {
                             onChange={(e) => handleInputChange(undefined, e)}
                             onKeyDown={(event) => handleNavigationKeyPress(event, 'job_site_num')}
                             style={{
-                              width: "100%",
+                              width: "120%",
                               border: "none",
                               textAlign: "center",
                               outline: "none",
+                              marginLeft: "0px"
                             }}
                             onFocus={(e) => e.target.style.borderBottomColor = "white"}
                             onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
@@ -728,7 +730,7 @@ function EditInvoice() {
                           />
                         </div>
                         <div className="col-md-3 text-center">
-                          <span style={{ marginLeft: "8px", fontWeight: "bold" }}>Job Name</span>
+                          <span style={{ marginLeft: "15px", fontWeight: "bold" }}>Job Name</span>
                           <input
                             id="job_site_name"
                             type="text"
@@ -737,7 +739,7 @@ function EditInvoice() {
                             onChange={(e) => handleInputChange(undefined, e)}
                             onKeyDown={(event) => handleNavigationKeyPress(event, 'job_site_name')}
                             style={{
-                              width: "150%",
+                              width: "145%",
                               border: "none",
                               textAlign: "center",
                               outline: "none",
@@ -767,10 +769,8 @@ function EditInvoice() {
                             onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
                             autoComplete="off"
                           />
-
                         </div>
                       </div>
-
                       <div className='line'></div>
                       <div className="row item_details_div">
                         <span className="plus-icon" onClick={handleAddItem}>

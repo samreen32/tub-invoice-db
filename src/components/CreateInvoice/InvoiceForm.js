@@ -538,8 +538,8 @@ function InvoiceForm() {
 
                     <div className='last-row'>
                       <div className='row po_details_div'>
-                        <div className='col-md-1 '>
-                          <span style={{ fontWeight: "700", marginLeft: "7px" }}>PO No.</span>
+                        <div className='col-md-1 text-center'>
+                          <span style={{ fontWeight: "700", marginLeft: "0px" }}>PO No.</span>
                           <input
                             id='PO_number'
                             type='text'

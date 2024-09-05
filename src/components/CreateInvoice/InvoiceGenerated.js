@@ -215,8 +215,8 @@ function InvoiceGenerated() {
                           </div>
                         </div>
                         <div className="col-md-2 text-center">
-                          <b>PO Date</b>
-                          <div className="mt-2">
+                          <b style={{ marginLeft: "50px" }}>PO Date</b>
+                          <div className="mt-2" style={{ marginLeft: "50px" }}>
                             {formData.PO_date ? formatDate(formData.PO_date) : ""}
                           </div>
                         </div>
