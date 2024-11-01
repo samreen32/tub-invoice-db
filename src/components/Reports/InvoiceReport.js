@@ -156,12 +156,12 @@ export default function InvoiceReport() {
   return (
     <div style={{ transform: "scale(0.7)" }}>
       <div id="invoice-generated">
-        <div className="container-report px-5" 
-         style={{
-          marginTop: "-80px",
-          height: "800px", 
-          overflowY: "auto", 
-        }}
+        <div className="container-report px-5"
+          style={{
+            marginTop: "-80px",
+            height: "800px",
+            overflowY: "auto",
+          }}
         >
           <h2 style={{ display: "flex", margin: "auto", justifyContent: "center" }}>
             <span onClick={() => navigate("/main")} style={{ cursor: "pointer", marginLeft: "-40%" }}>
@@ -294,11 +294,23 @@ export default function InvoiceReport() {
                 </TableBody>
               </Table>
             </TableContainer>
-            {/* <h3>Total Amount: {filteredTotalAmount}</h3> */}
+            <div className="amount-container">
+              <div className="total_amount_invoices">
+                <p className="py-1">Total: &nbsp; &nbsp; {filteredTotalAmount?.toLocaleString('en-US', {
+                  style: 'currency',
+                  currency: 'USD',
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                }) || '$0.00'}
+                </p>
+              </div>
+            </div>
             <div
               style={{
-                display: "flex", justifyContent: "center",
-                padding: "10px", position: "relative"
+                display: "flex",
+                justifyContent: "center",
+                padding: "10px",
+                position: "relative"
               }}
             >
               <Pagination
@@ -308,6 +320,8 @@ export default function InvoiceReport() {
                 color="primary"
                 variant="outlined"
                 shape="rounded"
+                hidePrevButton
+                hideNextButton
                 sx={{
                   "& .MuiPaginationItem-root": {
                     display: "flex",
@@ -329,6 +343,7 @@ export default function InvoiceReport() {
                 }}
               />
             </div>
+
           </Paper>
 
           <br />

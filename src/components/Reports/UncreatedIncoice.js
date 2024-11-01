@@ -12,8 +12,9 @@ import { UserLogin } from "../../context/AuthContext";
 import { LinearProgress, Pagination, Toolbar } from "@mui/material";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
-import * as XLSX from 'xlsx';
-import { GET_ALL_INVOICES } from "../../Auth_API";
+import * as XLSX from "xlsx";
+import { GET_ALL_INVOICES, GET_INVOICE_PO } from "../../Auth_API";
+
 
 export default function UncreatedInvoice() {
     let navigate = useNavigate();
@@ -43,63 +44,72 @@ export default function UncreatedInvoice() {
 
     useEffect(() => {
         const fetchAllInvoices = async () => {
-            setLoading(true); // Start loading indicator
+            setLoading(true);
             try {
-                const response = await axios.get(`${GET_ALL_INVOICES}`, {
+                const response = await axios.get(`${GET_INVOICE_PO}`, {
                     params: { page, limit: rowsPerPage }
                 });
-
+                
                 let adjustedInvoiceCounter = 38592;
-                const filteredInvoicesByPODate = response.data.invoices.filter(invoice => invoice.PO_Invoice_date);
-                const invoicesWithAdjustedNumbers = filteredInvoicesByPODate.map((invoice) => ({
-                    ...invoice,
-                    adjustedInvoiceNum: adjustedInvoiceCounter++,
-                }));
+                const invoicesWithAdjustedNumbers = response.data.invoices.map((invoice) => {
+                    if (invoice.PO_Invoice_date) {
+                        return { ...invoice, adjustedInvoiceNum: adjustedInvoiceCounter++ };
+                    }
+                    return invoice;
+                });
 
-                const sortedInvoices = invoicesWithAdjustedNumbers.sort((a, b) => new Date(b.date) - new Date(a.date));
+                const sortedInvoices = invoicesWithAdjustedNumbers
+                    .map((invoice) => ({
+                        ...invoice,
+                        date: new Date(invoice.date),
+                    }))
+                    .sort((a, b) => b.date - a.date);
 
                 const filteredInvoices = sortedInvoices.filter((invoice) => {
                     const yearFromPODate = new Date(invoice.PO_Invoice_date).getFullYear();
                     const monthFromPODate = new Date(invoice.PO_Invoice_date).getMonth();
-
-                    const yearMatches = selectedYear === '' || yearFromPODate.toString() === selectedYear;
-                    const monthMatches = selectedMonth === '' || monthFromPODate === months.indexOf(selectedMonth);
+                    const yearMatches = selectedYear === "" || yearFromPODate.toString() === selectedYear;
+                    const monthMatches = selectedMonth === "" || monthFromPODate === months.indexOf(selectedMonth);
                     return yearMatches && monthMatches;
                 });
 
-                const searchString = searchWords.map((word) => word.toLowerCase());
-                const searchedInvoices = filteredInvoices.filter((invoice) =>
-                    searchString.some(
-                        (word) =>
-                            invoice.bill_to.join(', ').toLowerCase().includes(word) ||
-                            invoice.job_site_name.toLowerCase().includes(word) ||
-                            invoice.invoice_num.toString().includes(word) ||
-                            (invoice.adjustedInvoiceNum && invoice.adjustedInvoiceNum.toString().includes(word))
-                    )
-                );
+                const searchedInvoices = filteredInvoices.filter((invoice) => {
+                    const searchString = searchWords.map((word) => word.toLowerCase());
+                    return (
+                        searchString.some(
+                            (word) =>
+                                invoice.bill_to.join(", ").toLowerCase().includes(word) ||
+                                invoice.job_site_name.toLowerCase().includes(word) ||
+                                invoice.invoice_num.toString().includes(word)
+                        ) ||
+                        searchString.every(
+                            (word) =>
+                                invoice.bill_to.join(", ").toLowerCase().includes(word) ||
+                                invoice.job_site_name.toLowerCase().includes(word) ||
+                                invoice.invoice_num.toString().includes(word)
+                        )
+                    );
+                });
 
                 const uncreatedInvoices = searchedInvoices.filter((invoice) => invoice.PO_Invoice_date);
                 setInvoices(showUncreatedInvoices ? uncreatedInvoices : searchedInvoices);
                 setTotalInvoices(response.data.totalInvoices);
-
                 const paidInvoices = searchedInvoices.filter((invoice) => invoice.payment_status);
                 const totalSum = paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
-                setTotalAmount(totalSum);
-
-                const filteredTotal = searchedInvoices.reduce((sum, invoice) =>
-                    invoice.payment_status ? sum + invoice.total_amount : sum, 0
-                );
+                setTotalAmount(totalAmount + totalSum);
+                const filteredTotal = searchedInvoices.reduce((sum, invoice) => {
+                    return invoice.payment_status ? sum + invoice.total_amount : sum;
+                }, 0);
                 setFilteredTotalAmount(filteredTotal);
-
             } catch (error) {
                 console.error(error.message);
             } finally {
-                setLoading(false); // Stop loading indicator regardless of success or error
+                setLoading(false); // Ensures loading stops regardless of success or error
             }
         };
 
         fetchAllInvoices();
-    }, [selectedYear, selectedMonth, searchQuery, showUncreatedInvoices, page]);
+    }, [selectedYear, selectedMonth, searchQuery, showUncreatedInvoices, page]); // `page` added as a dependency
 
     const columns = [
         { id: "invoice_num", label: "Invoice No.", minWidth: 100 },
@@ -108,12 +118,11 @@ export default function UncreatedInvoice() {
         { id: "PO_Invoice_date", label: "PO Invoice Date", minWidth: 100 },
         { id: "job_site_num", label: "Job Site Number", minWidth: 100 },
         { id: "total_amount", label: "Invoice Amount", minWidth: 100 },
-        { id: "payment_status", label: "Payment Status", minWidth: 10 },
     ];
 
     const downloadExcel = () => {
         const filteredData = invoices.map(invoice => ({
-            "Invoice No.": invoice.invoice_num,
+            "Invoice No.": invoice.newInvoiceNum || invoice.invoice_num,
             "Bill To": invoice.bill_to.join(", "),
             "PO No.": invoice.PO_number,
             "PO Date": new Date(invoice.PO_Invoice_date).toLocaleDateString("en-US", {
@@ -231,40 +240,111 @@ export default function UncreatedInvoice() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {invoices?.length === 0 ? 
-                                    <p>There is no invoice</p> :
-                                        <>
-                                            {invoices.map((invoice) => (
-                                                <TableRow key={invoice.invoice_num} onClick={() => setInvoiceDetails(invoice.invoice_num)}>
-                                                    {columns.map((column) => (
-                                                        <TableCell key={column.id} align="left">
-                                                            {column.id === "invoice_num" ? invoice.adjustedInvoiceNum || invoice.invoice_num : invoice[column.id]}
-                                                        </TableCell>
-                                                    ))}
-                                                </TableRow>
-                                            ))}
-                                        </>}
-
+                                {invoices.map((invoice) => {
+                                const displayedInvoiceNum = invoice.invoice_num >= 832 && invoice.PO_Invoice_date
+                                    ? invoice.newInvoiceNum
+                                    : invoice.PO_Invoice_date
+                                        ? invoice.adjustedInvoiceNum
+                                        : invoice.invoice_num
+                                        console.log(displayedInvoiceNum, "displayedInvoiceNum")
+                                return (
+                                    <TableRow
+                                        key={invoice.invoice_num}
+                                        onClick={() => setInvoiceDetails(invoice.invoice_num)}
+                                        style={{
+                                            cursor: "pointer",
+                                            backgroundColor: invoice.PO_Invoice_date ? "orange" : "white"
+                                        }}
+                                    >
+                                        {columns.map((column) => (
+                                            <TableCell key={column.id} align="left">
+                                                {column.id === "invoice_num" ? (
+                                                    displayedInvoiceNum
+                                                ) : column.id === "date" ? (
+                                                    new Date(invoice.date).toLocaleDateString()
+                                                ) : column.id === "bill_to" ? (
+                                                    invoice.bill_to.length > 0 ? invoice.bill_to[0] : "-"
+                                                ) : column.id === "payment_status" ? (
+                                                    invoice.payment_status.toString()
+                                                ) : column.id === "total_amount" ? (
+                                                    `${invoice.total_amount.toLocaleString('en-US', {
+                                                        style: 'currency',
+                                                        currency: 'USD',
+                                                        minimumFractionDigits: 2,
+                                                        maximumFractionDigits: 2
+                                                    }) || '$0.00'}`
+                                                ) : column.id === "PO_Invoice_date" ? (
+                                                    new Date(invoice.PO_Invoice_date).toLocaleDateString("en-US", {
+                                                        year: "2-digit",
+                                                        month: "2-digit",
+                                                        day: "2-digit",
+                                                    })
+                                                ) : (
+                                                    invoice[column.id]
+                                                )}
+                                               
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                );
+                            })}
                                 </TableBody>
                             </Table>
                         </TableContainer>
                         <div className="amount-container">
                             <div className="total_amount_invoices">
-                                <p className="py-1">Total: &nbsp; &nbsp; {filteredTotalAmount?.toLocaleString('en-US', {
-                                    style: 'currency',
-                                    currency: 'USD',
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                }) || '$0.00'}
+                                <p className="py-1">
+                                    Total: &nbsp; &nbsp;
+                                    {filteredTotalAmount?.toLocaleString("en-US", {
+                                        style: "currency",
+                                        currency: "USD",
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                    }) || "$0.00"}
                                 </p>
                             </div>
                         </div>
                     </Paper>
-                 {invoices?.length === 0 ? <></>:
-                 <div style={{ display: "flex", justifyContent: "center", padding: "10px" }}>
-                 <Pagination count={pageCount} page={page} onChange={handlePageChange} color="primary" variant="outlined" />
-             </div> }
-                    
+                    {invoices?.length > 0 && (
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "center",
+                                padding: "10px",
+                                position: "relative",
+                            }}
+                        >
+                            <Pagination
+                                count={pageCount}
+                                page={page}
+                                onChange={handlePageChange}
+                                color="primary"
+                                variant="outlined"
+                                shape="rounded"
+                                hidePrevButton
+                                hideNextButton
+                                sx={{
+                                    "& .MuiPaginationItem-root": {
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        minWidth: "36px",
+                                    },
+                                    "& .MuiPaginationItem-icon": {
+                                        fontSize: "1.2rem",
+                                    },
+                                    "& .Mui-selected": {
+                                        backgroundColor: "#1565c0",
+                                        color: "#ffffff",
+                                    },
+                                    "& .MuiPaginationItem-root:hover": {
+                                        color: "#ffffff",
+                                        backgroundColor: "#1565c0",
+                                    },
+                                }}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

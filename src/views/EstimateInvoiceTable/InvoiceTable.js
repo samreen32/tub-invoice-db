@@ -126,7 +126,7 @@ function InvoiceTable({
                         </TableHead>
                         <TableBody>
                             {invoices.map((invoice) => {
-                                const displayedInvoiceNum = invoice.invoice_num >= 479 && invoice.PO_Invoice_date
+                                const displayedInvoiceNum = invoice.invoice_num >= 832 && invoice.PO_Invoice_date
                                     ? invoice.newInvoiceNum
                                     : invoice.PO_Invoice_date
                                         ? invoice.adjustedInvoiceNum
@@ -238,8 +238,10 @@ function InvoiceTable({
                 </div>
                 <div
                     style={{
-                        display: "flex", justifyContent: "center",
-                        padding: "10px", position: "relative"
+                        display: "flex",
+                        justifyContent: "center",
+                        padding: "10px",
+                        position: "relative"
                     }}
                 >
                     <Pagination
@@ -249,6 +251,8 @@ function InvoiceTable({
                         color="primary"
                         variant="outlined"
                         shape="rounded"
+                        hidePrevButton
+                        hideNextButton
                         sx={{
                             "& .MuiPaginationItem-root": {
                                 display: "flex",
@@ -270,6 +274,7 @@ function InvoiceTable({
                         }}
                     />
                 </div>
+
             </Paper>
         </>
     );

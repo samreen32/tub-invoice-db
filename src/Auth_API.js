@@ -4,6 +4,9 @@ export const INVOICE =
 export const GET_INVOICE =
   "https://tubinvoice-bb7dgmc3.b4a.run/api/auth/getInvoice";
 
+  export const GET_INVOICE_PO =
+  "https://tubinvoice-bb7dgmc3.b4a.run/api/auth/getInvoicesWithPODate";
+
 export const RECIEVE_PAYMENT =
   "https://tubinvoice-bb7dgmc3.b4a.run/api/auth/recievePayment";
 
