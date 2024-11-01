@@ -16,7 +16,7 @@ function EditSecondInvoice() {
   let navigate = useNavigate();
   const targetRef = useRef();
   const { state } = useLocation();
-  const { invoiceNum, adjustedInvoiceNum } = state;
+  const { invoiceNum, displayedInvoiceNum } = state;
   const { formUpdateData, setFormUpdateData, addresses, descriptions, setAddresses,
     setDescriptions } = UserLogin();
   const [visibleBillToFields, setVisibleBillToFields] = useState(3);
@@ -73,14 +73,14 @@ function EditSecondInvoice() {
   const inputRefs = useRef([]);
 
   const formatDateInput = (value) => {
-    let numbers = value.replace(/[^\d]/g, '');  // Remove non-digit characters
+    let numbers = value.replace(/[^\d]/g, '');
     if (numbers.length > 8) {
-      numbers = numbers.slice(0, 8);  // Limit to MMDDYYYY
+      numbers = numbers.slice(0, 8);
     }
     if (numbers.length > 4) {
-      return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4)}`;  // Format as MM/DD/YYYY
+      return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4)}`;
     } else if (numbers.length > 2) {
-      return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;  // Format as MM/DD
+      return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
     }
     return numbers;
   };
@@ -618,7 +618,7 @@ function EditSecondInvoice() {
                           <p>
                             Number &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                             {/* {invoiceNum} */}
-                            {formUpdateData.PO_Invoice_date ? adjustedInvoiceNum : invoiceNum}
+                            {displayedInvoiceNum}
                           </p>
                           <p style={{ display: "flex" }}>
                             Date
@@ -678,128 +678,6 @@ function EditSecondInvoice() {
                     </div>
 
                     <div className='last-row' style={{ marginLeft: "-25px" }}>
-                      {/* <div className="row po_details_div">
-                        <div className="col-md-1 text-center">
-                          <span style={{ fontWeight: "700", marginLeft: "7px" }}>PO No.</span>
-                          <input
-                            id="PO_number"
-                            type="text"
-                            name="PO_number"
-                            autoComplete='off'
-                            value={formUpdateData.PO_number}
-                            onChange={(e) => handleInputChange(undefined, e)}
-                            onKeyDown={(event) => handleNavigationKeyPress(event, 'PO_number')}
-                            style={{
-                              width: "120%",
-                              border: "none",
-                              textAlign: "center",
-                              outline: "none",
-                              marginLeft: "-9px"
-                            }}
-                            onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                            onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                          />
-                        </div>
-                        <div className="col-md-2 text-center">
-                          <b>PO Date</b>
-                          <TextField
-                            id="PO_date"
-                            variant="standard"
-                            // placeholder="mm/dd/yyyy"
-                            autoComplete='off'
-                            type="text"
-                            style={{ width: "75%", marginTop: "10px", marginLeft: "30px" }}
-                            InputProps={{
-                              disableUnderline: true
-                            }}
-                            value={formUpdateData.PO_date || ""}
-                            onChange={handleDateChange}
-                            onKeyDown={(event) => handleNavigationKeyPress(event, 'PO_date')}
-                          />
-                        </div>
-
-                        <div className="col-md-2" style={{ textAlign: "center" }}>
-                          <span style={{ fontWeight: "700", marginLeft: "0px" }}>Type of Work</span>
-                          <input
-                            id="type_of_work"
-                            type="text"
-                            name="type_of_work"
-                            autoComplete='off'
-                            value={formUpdateData.type_of_work}
-                            onChange={(e) => handleInputChange(undefined, e)}
-                            onKeyDown={(event) => handleNavigationKeyPress(event, 'type_of_work')}
-                            style={{
-                              width: "100%",
-                              border: "none",
-                              textAlign: "center",
-                              outline: "none",
-
-                            }}
-                            onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                            onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                          />
-                        </div>
-                        <div className="col-md-2 text-center">
-                          <span style={{ fontWeight: "700", marginLeft: "20px" }}>Job Site No.</span>
-                          <input
-                            id="job_site_num"
-                            type="text"
-                            name="job_site_num"
-                            value={formUpdateData.job_site_num}
-                            onChange={(e) => handleInputChange(undefined, e)}
-                            onKeyDown={(event) => handleNavigationKeyPress(event, 'job_site_num')}
-                            style={{
-                              width: "100%",
-                              border: "none",
-                              textAlign: "center",
-                              outline: "none",
-                            }}
-                            onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                            onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                            autoComplete='off'
-                          />
-                        </div>
-                        <div className="col-md-2 text-center">
-                          <span style={{ marginLeft: "80px", fontWeight: "bold" }}>Job Name</span>
-                          <input
-                            id="job_site_name"
-                            type="text"
-                            name="job_site_name"
-                            value={formUpdateData.job_site_name}
-                            onChange={(e) => handleInputChange(undefined, e)}
-                            onKeyDown={(event) => handleNavigationKeyPress(event, 'job_site_name')}
-                            style={{
-                              width: "145%",
-                              border: "none",
-                              textAlign: "center",
-                              outline: "none",
-                            }}
-                            onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                            onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                            autoComplete='off'
-                          />
-                        </div>
-                        <div className="col-md-3 text-center">
-                          <span style={{ marginLeft: "20px", fontWeight: "bold" }}>Job Location</span>
-                          <input
-                            id="job_location"
-                            type="text"
-                            name="job_location"
-                            value={formUpdateData.job_location}
-                            onChange={(e) => handleInputChange(undefined, e)}
-                            onKeyDown={(event) => handleNavigationKeyPress(event, 'job_location')}
-                            style={{
-                              width: "100%",
-                              border: "none",
-                              textAlign: "center",
-                              outline: "none",
-                            }}
-                            onFocus={(e) => e.target.style.borderBottomColor = "white"}
-                            onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}
-                            autoComplete='off'
-                          />
-                        </div>
-                      </div> */}
 
                       <div className="row po_details_div">
                         <div className="col-md-1 text-center">
@@ -915,10 +793,12 @@ function EditSecondInvoice() {
                             onChange={(e) => handleInputChange(undefined, e)}
                             onKeyDown={(event) => handleNavigationKeyPress(event, 'job_location')}
                             style={{
-                              width: "100%",
+                              width: "150%",
                               border: "none",
                               textAlign: "center",
                               outline: "none",
+                              background: "transparent",
+                              marginLeft: "-50px"
                             }}
                             onFocus={(e) => e.target.style.borderBottomColor = "white"}
                             onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}

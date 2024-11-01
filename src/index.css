@@ -420,7 +420,7 @@ h3 {
 
 .total_amount_invoices p {
   font-size: 19px;
-  margin-top: 2%;
+  /* margin-top: 2%; */
 }
 
 /* Search field styling */

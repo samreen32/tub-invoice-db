@@ -5,9 +5,10 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
-import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import Button from "@mui/material/Button";
+import Pagination from "@mui/material/Pagination";
+import { LinearProgress } from "@mui/material";
 import axios from "axios";
 import { DELETE_INVOICE, GET_ALL_INVOICES } from "../../Auth_API";
 import { useNavigate } from "react-router-dom";
@@ -18,10 +19,12 @@ import MenuItem from "@mui/material/MenuItem";
 import * as XLSX from 'xlsx';
 
 export default function InvoiceReport() {
-  let navigate = useNavigate();
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(20);
+  const navigate = useNavigate();
   const [invoices, setInvoices] = useState([]);
+  const [totalInvoices, setTotalInvoices] = useState(0);
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 10;
+  const [loading, setLoading] = useState(false);
   const [totalAmount, setTotalAmount] = useState(0);
   const { setInvoiceDetails } = UserLogin();
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,18 +35,8 @@ export default function InvoiceReport() {
   const [filteredTotalAmount, setFilteredTotalAmount] = useState(0);
 
   const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+    "January", "February", "March", "April", "May", "June", "July", "August",
+    "September", "October", "November", "December"
   ];
 
   const handleMonthChange = (event) => {
@@ -54,83 +47,74 @@ export default function InvoiceReport() {
     setSelectedYear(event.target.value);
   };
 
-  useEffect(() => {
-    const fetchAllInvoices = async () => {
-      try {
-        const response = await axios.get(`${GET_ALL_INVOICES}`);
-        console.log("Fetched Invoices:", response.data.invoices);
-
-        // Ensure date is correctly formatted and exists
-        const invoicesWithCreationDate = response.data.invoices.map((invoice) => {
-          return {
-            ...invoice,
-            date: new Date(invoice.date), // Ensure date is a Date object
-          };
+  const fetchInvoices = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${GET_ALL_INVOICES}`, {
+        params: { page, limit: rowsPerPage }
+      });
+      const filteredInvoices = response.data.invoices
+        .map((invoice) => ({
+          ...invoice,
+          date: new Date(invoice.date).toLocaleDateString(),
+        }))
+        .filter((invoice) => {
+          const yearFromPODate = new Date(invoice.PO_date).getFullYear();
+          const monthFromPODate = new Date(invoice.PO_date).getMonth();
+          const yearMatches = selectedYear === "" || yearFromPODate.toString() === selectedYear;
+          const monthMatches = selectedMonth === "" || monthFromPODate.toString() === months.indexOf(selectedMonth).toString();
+          return yearMatches && monthMatches;
         });
 
-        // Sort invoices by date in descending order
-        const sortedInvoices = invoicesWithCreationDate.sort((a, b) => b.date - a.date);
-        console.log("Sorted Invoices:", sortedInvoices);
-
-        const filteredInvoices = sortedInvoices
-          .map((invoice) => ({
-            ...invoice,
-            date: new Date(invoice.date).toLocaleDateString(),
-          }))
-          .filter((invoice) => {
-            const yearFromPODate = new Date(invoice.PO_date).getFullYear();
-            const monthFromPODate = new Date(invoice.PO_date).getMonth();
-
-            const yearMatches = selectedYear === "" || yearFromPODate.toString() === selectedYear;
-            const monthMatches = selectedMonth === "" || monthFromPODate.toString() === months.indexOf(selectedMonth).toString();
-
-            return yearMatches && monthMatches;
-          });
-
-        const searchedInvoices = filteredInvoices.filter((invoice) => {
-          const searchString = searchWords.map((word) => word.toLowerCase());
-          return (
-            searchString.some(
-              (word) =>
-                invoice.bill_to.join(", ").toLowerCase().includes(word) ||
-                invoice.job_site_name.toLowerCase().includes(word) ||
-                invoice.invoice_num.toString().includes(word)
-            ) ||
-            searchString.every(
-              (word) =>
-                invoice.bill_to.join(", ").toLowerCase().includes(word) ||
-                invoice.job_site_name.toLowerCase().includes(word) ||
-                invoice.invoice_num.toString().includes(word)
-            )
-          );
-        });
-
-        setInvoices(searchedInvoices);
-        const paidInvoices = searchedInvoices.filter((invoice) => invoice.payment_status);
-        console.log("Paid Invoices:", paidInvoices);
-
-        const totalSum = paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
-        console.log("Total Amount of Paid Invoices:", totalSum);
-
-        setTotalAmount(totalAmount + totalSum);
-        const slicedInvoices = searchedInvoices.slice(
-          page * rowsPerPage,
-          page * rowsPerPage + rowsPerPage
+      const searchedInvoices = filteredInvoices.filter((invoice) => {
+        const searchString = searchWords.map((word) => word.toLowerCase());
+        return (
+          searchString.some(
+            (word) =>
+              invoice.bill_to.join(", ").toLowerCase().includes(word) ||
+              invoice.job_site_name.toLowerCase().includes(word) ||
+              invoice.invoice_num.toString().includes(word)
+          )
         );
-        const filteredTotal = slicedInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
+      });
+      setInvoices(searchedInvoices);
+      setTotalInvoices(response.data.totalInvoices);
+      const paidInvoices = searchedInvoices.filter((invoice) => invoice.payment_status);
+      const totalSum = paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
+      setTotalAmount(totalSum);
+      const filteredTotal = searchedInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
+      setFilteredTotalAmount(filteredTotal);
+    } catch (error) {
+      console.error(error.message);
+    }
+    setLoading(false);
+  };
 
-        console.log("Filtered Total Amount:", filteredTotal);
+  useEffect(() => {
+    fetchInvoices();
+  }, [page, selectedYear, selectedMonth, searchQuery]);
 
-        setFilteredTotalAmount(filteredTotal);
-      } catch (error) {
-        console.error(error.message);
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleDeleteInvoice = async (invoiceNum) => {
+    try {
+      const response = await axios.delete(`${DELETE_INVOICE}/${invoiceNum}`);
+      if (response.data.success) {
+        setInvoices((prevInvoices) => prevInvoices.filter((invoice) => invoice.invoice_num !== invoiceNum));
+        setTotalAmount((prevTotal) => prevTotal - response.data.invoice.total_amount);
+      } else {
+        console.error(response.data.message);
       }
-    };
+    } catch (error) {
+      console.error(error.message);
+    }
+  };
 
-    fetchAllInvoices();
-
-  }, [selectedYear, selectedMonth, page, rowsPerPage, searchQuery, searchWords]);
-
+  const handleEditInvoice = (invoiceNum) => {
+    navigate(`/edit_estimate`, { state: { invoiceNum } });
+  };
 
   const downloadExcel = () => {
     const filteredData = invoices.map(invoice => ({
@@ -149,359 +133,205 @@ export default function InvoiceReport() {
     }));
 
     const workSheet = XLSX.utils.json_to_sheet(filteredData);
-
-    // Set custom column widths
-    workSheet['!cols'] = [
-      { wch: 15 },
-      { wch: 25 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 20 },
-      { wch: 20 },
-      { wch: 10 },
-      { wch: 15 }
-    ];
-
-    // Applying styles to header row
-    const headerCellStyle = {
-      font: {
-        name: 'Calibri',
-        sz: 14,
-        bold: true
-      },
-      alignment: {
-        horizontal: "center",
-        vertical: "center"
-      }
-    };
-
-    // Ensure each header cell is styled
-    const headers = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1']; // Adjust as per your columns
-    headers.forEach((cellRef) => {
-      if (workSheet[cellRef]) { // Check if cell exists
-        workSheet[cellRef].s = headerCellStyle;
-      }
-    });
-
     const workBook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workBook, workSheet, "Invoices");
     XLSX.writeFile(workBook, "EstimateReport.xlsx");
   };
 
-
   const columns = [
-    { id: "invoice_num", label: "Estimate No.", minWidth: 100 },
-    { id: "bill_to", label: "Bill To", minWidth: 100 },
+    { id: "invoice_num", label: "Estimate #", minWidth: 10 },
+    { id: "bill_to", label: "Bill To", minWidth: 150 },
     { id: "PO_number", label: "PO No.", minWidth: 100 },
     { id: "PO_date", label: "PO Date", minWidth: 100 },
     { id: "type_of_work", label: "Type of Work", minWidth: 100 },
     { id: "job_site_num", label: "Job Site Number", minWidth: 100 },
     { id: "total_amount", label: "Amount", minWidth: 100 },
-    { id: "payment_status", label: "Payment Status", minWidth: 100 },
-    {
-      id: "edit",
-      label: "Edit",
-      minWidth: 100,
-    },
-    {
-      id: "delete",
-      label: "Delete",
-      minWidth: 100,
-    },
-    // {
-    //   id: "download",
-    //   label: "Download",
-    //   minWidth: 100,
-    //   align: "center",
-    //   format: () => (
-    //     <i className="fa fa-download fa-xl" aria-hidden="true" onClick={downloadExcel} style={{ cursor: 'pointer' }}></i>
-    //   )
-    // },    
+    { id: "payment_status", label: "Status", minWidth: 100 },
+    { id: "edit", label: "Edit", minWidth: 100 },
+    { id: "delete", label: "Delete", minWidth: 100 },
   ];
 
-
-  /* Table pagination */
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(+event.target.value);
-    setPage(0);
-  };
-
-  /* Functions for Search Input Field */
-  const handleSearchClick = () => {
-    setIsExpanded(!isExpanded);
-    setSearchQuery("");
-  };
-
-  /* Functions for delete invoice */
-  const handleDeleteInvoice = async (invoiceNum) => {
-    try {
-      const response = await axios.delete(`${DELETE_INVOICE}/${invoiceNum}`);
-
-      if (response.data.success) {
-        setInvoices((prevInvoices) =>
-          prevInvoices.filter((invoice) => invoice.invoice_num !== invoiceNum)
-        );
-        setTotalAmount(
-          (prevTotal) => prevTotal - response.data.invoice.total_amount
-        );
-        console.log(response.data.success);
-      } else {
-        console.error(response.data.message);
-      }
-    } catch (error) {
-      console.error(error.message);
-    }
-  };
-
-  const handleEditInvoice = (invoiceNum) => {
-    navigate(`/edit_estimate`, { state: { invoiceNum } });
-  };
+  const pageCount = Math.ceil(totalInvoices / rowsPerPage);
 
   return (
-    <div style={{ marginTop: "2%", padding: "0px 50px" }}>
+    <div style={{ transform: "scale(0.7)" }}>
       <div id="invoice-generated">
-        <div className="container-report px-5 py-5" style={{ width: "100%" }}>
-          <>
-            <h2
-              style={{
-                display: "flex",
-                margin: "auto",
-                justifyContent: "center",
-                marginBottom: "50px"
-              }}
-            >
-              <span
-                onClick={() => {
-                  navigate("/main");
-                }}
-                style={{ cursor: "pointer", marginLeft: "-40%" }}
-              >
-                <i class="fa fa-chevron-left fa-1x" aria-hidden="true"></i>
-              </span>
-              <span style={{ cursor: "pointer", marginLeft: "40%", fontWeight: "600" }}>
-                {" "}
-                Estimate Report
-              </span>
-            </h2>
+        <div className="container-report px-5" 
+         style={{
+          marginTop: "-80px",
+          height: "800px", 
+          overflowY: "auto", 
+        }}
+        >
+          <h2 style={{ display: "flex", margin: "auto", justifyContent: "center" }}>
+            <span onClick={() => navigate("/main")} style={{ cursor: "pointer", marginLeft: "-40%" }}>
+              <i className="fa fa-chevron-left fa-1x" aria-hidden="true"></i>
+            </span>
+            <span style={{ cursor: "pointer", marginLeft: "40%", fontWeight: "600" }}>Estimate Report</span>
+          </h2>
 
-            {/* Search field */}
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Toolbar className="toolbar-search" style={{ marginBottom: "-55px" }}>
-                <form className="d-flex search-form" role="search">
-                  <div
-                    className={`search-container ${isExpanded ? "expanded" : ""
-                      }`}
-                  >
-                    <button
-                      onClick={handleSearchClick}
-                      className="search-button"
-                    >
-                      <i className="fa fa-search"></i>
-                    </button>
-                    <input
-                      className="search-input"
-                      type="text"
-                      placeholder="Search here..."
-                      onClick={handleSearchClick}
-                      onBlur={() => setIsExpanded(false)}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                </form>
-              </Toolbar>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <Toolbar className="toolbar-search" style={{ marginBottom: "-55px" }}>
+              <form className="d-flex search-form" role="search">
+                <div className={`search-container ${isExpanded ? "expanded" : ""}`}>
+                  <button onClick={() => setIsExpanded(!isExpanded)} className="search-button">
+                    <i className="fa fa-search"></i>
+                  </button>
+                  <input
+                    className="search-input"
+                    type="text"
+                    placeholder="Search here..."
+                    onClick={() => setIsExpanded(true)}
+                    onBlur={() => setIsExpanded(false)}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              </form>
+            </Toolbar>
 
-              <div>
-                <button
-                  onClick={downloadExcel}
-                  style={{
-                    cursor: 'pointer',
-                    fontSize: "14px",
-                    padding: "12px",
-                    background: "#00bbf0",
-                    border: "none",
-                    color: "white",
-                  }}
-                >
-                  Download Excel
-                </button>
-                <Select
-                  value={selectedYear}
-                  onChange={handleYearChange}
-                  style={{
-                    marginLeft: "20px",
-                    marginRight: "10px",
-                    marginTop: "20px",
-                  }}
-                  displayEmpty
-                >
-                  <MenuItem value="">All Years... </MenuItem>
-                  {Array.from(
-                    { length: 10 },
-                    (_, index) => new Date().getFullYear() - index
-                  ).map((year) => (
-                    <MenuItem key={year} value={year.toString()}>
-                      {year}
-                    </MenuItem>
-                  ))}
+            <div>
+              <button onClick={downloadExcel} style={{
+                cursor: 'pointer',
+                fontSize: "14px",
+                padding: "12px",
+                background: "#00bbf0",
+                border: "none",
+                color: "white",
+              }}>Download Excel</button>
 
-                </Select>
+              <Select value={selectedYear} onChange={handleYearChange} displayEmpty style={{ marginLeft: "20px" }}>
+                <MenuItem value="">All Years...</MenuItem>
+                {Array.from({ length: 10 }, (_, index) => new Date().getFullYear() - index).map((year) => (
+                  <MenuItem key={year} value={year.toString()}>{year}</MenuItem>
+                ))}
+              </Select>
 
-                <Select
-                  value={selectedMonth}
-                  onChange={handleMonthChange}
-                  style={{ marginRight: "20px", marginTop: "20px" }}
-                  displayEmpty
-                >
-                  <MenuItem value="">All Months... </MenuItem>
-                  {months.map((month) => (
-                    <MenuItem key={month} value={month}>
-                      {month}
-                    </MenuItem>
-                  ))}
-
-                </Select>
-
-              </div>
+              <Select value={selectedMonth} onChange={handleMonthChange} displayEmpty style={{ marginLeft: "10px" }}>
+                <MenuItem value="">All Months...</MenuItem>
+                {months.map((month) => (
+                  <MenuItem key={month} value={month}>{month}</MenuItem>
+                ))}
+              </Select>
             </div>
+          </div>
 
-            <Paper sx={{ width: "100%", overflow: "hidden" }}>
-              <TableContainer>
-                <Table stickyHeader aria-label="sticky table">
-                  <TableHead>
-                    <TableRow>
+          <Paper sx={{ width: "100%" }}>
+            {loading && <LinearProgress color="error" />}
+            <TableContainer sx={{ maxHeight: 800 }}>
+              <Table stickyHeader aria-label="sticky table">
+                <TableHead>
+                  <TableRow>
+                    {columns.map((column) => (
+                      <TableCell
+                        key={column.id}
+                        align={column.align || "left"}
+                        style={{
+                          minWidth: column.minWidth,
+                          backgroundColor: "#08a0d1",
+                          color: "white",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {column.format ? column.format() : column.label}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {invoices.map((invoice) => (
+                    <TableRow
+                      key={invoice.invoice_num}
+                      onClick={() => setInvoiceDetails(invoice.invoice_num)}
+                      style={{ cursor: "pointer" }}
+                    >
                       {columns.map((column) => (
-                        <TableCell
-                          key={column.id}
-                          align={column.align || "left"}
-                          style={{
-                            minWidth: column.minWidth,
-                            backgroundColor: "#08a0d1",
-                            color: "white",
-                            fontWeight: "500"
-                          }}
-                        >
-                          {column.format ? column.format() : column.label}
+                        <TableCell key={column.id} align="left">
+                          {column.id === "date"
+                            ? new Date(invoice.date).toLocaleDateString()
+                            : column.id === "bill_to"
+                              ? invoice.bill_to.length > 0
+                                ? invoice.bill_to[0]
+                                : "-"
+                              : column.id === "payment_status"
+                                ? invoice.payment_status ? "Paid" : "Unpaid"
+                                : column.id === "total_amount"
+                                  ? `${invoice.total_amount.toLocaleString('en-US', {
+                                    style: 'currency',
+                                    currency: 'USD',
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                  }) || '$0.00'}`
+                                  : column.id === "PO_date"
+                                    ? new Date(invoice.PO_date).toLocaleDateString("en-US", {
+                                      year: "2-digit",
+                                      month: "2-digit",
+                                      day: "2-digit",
+                                    })
+                                    : invoice[column.id]}
+                          {column.id === "edit" && (
+                            <Button
+                              variant="contained"
+                              style={{ background: "green", textTransform: "capitalize" }}
+                              onClick={() => handleEditInvoice(invoice.invoice_num)}
+                            >
+                              <i className="fa fa-pencil" style={{ marginRight: "5px" }}></i> Edit
+                            </Button>
+
+                          )}
+                          {column.id === "delete" && (
+                            <Button
+                              variant="contained"
+                              style={{ background: "red", textTransform: "capitalize" }}
+                              onClick={() => handleDeleteInvoice(invoice.invoice_num)}
+                            >
+                              <i className="fa fa-trash" style={{ marginRight: "8px" }}></i> Delete
+                            </Button>
+                          )}
                         </TableCell>
                       ))}
                     </TableRow>
-
-                  </TableHead>
-                  <TableBody>
-                    {invoices
-                      .filter((invoice) => {
-                        const searchString = searchWords.map((word) =>
-                          word.toLowerCase()
-                        );
-                        return (
-                          searchString.some(
-                            (word) =>
-                              invoice.bill_to
-                                .join(", ")
-                                .toLowerCase()
-                                .includes(word) ||
-                              invoice.job_site_name.toLowerCase().includes(word)
-                          ) ||
-                          searchString.every(
-                            (word) =>
-                              invoice.bill_to
-                                .join(", ")
-                                .toLowerCase()
-                                .includes(word) ||
-                              invoice.job_site_name.toLowerCase().includes(word)
-                          )
-                        );
-                      })
-                      .slice(
-                        page * rowsPerPage,
-                        page * rowsPerPage + rowsPerPage
-                      )
-                      .map((invoice) => (
-                        <TableRow
-                          key={invoice.invoice_num}
-                          onClick={() => setInvoiceDetails(invoice.invoice_num)}
-                          style={{ cursor: "pointer" }}
-                        >
-                          {columns.map((column) => (
-                            <TableCell key={column.id} align="left"
-                              // onClick={() => handleEditInvoice(invoice.invoice_num)}
-                            >
-                              {column.id === "date" ? (
-                                new Date(invoice.date).toLocaleDateString()
-                              ) : column.id === "bill_to" ? (
-                                invoice.bill_to.length > 0 ? invoice.bill_to[0] : "-"
-                              ) : column.id === "payment_status" ? (
-                                invoice.payment_status.toString()
-                              ) : column.id === "total_amount" ? (
-                                `${invoice.total_amount.toLocaleString('en-US', {
-                                  style: 'currency',
-                                  currency: 'USD',
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2
-                                }) || '$0.00'}`
-                              ) : column.id === "PO_date" ? (
-                                new Date(invoice.PO_date).toLocaleDateString("en-US", {
-                                  year: "2-digit",
-                                  month: "2-digit",
-                                  day: "2-digit",
-                                })
-                              ) : (
-                                invoice[column.id]
-                              )}
-                              {column.id === "edit" && (
-                                <Button
-                                  variant="contained"
-                                  style={{ background: "green" }}
-                                  onClick={() => handleEditInvoice(invoice.invoice_num)}
-                                >
-                                  Edit
-                                </Button>
-                              )}
-                              {column.id === "delete" && (
-                                <Button
-                                  variant="contained"
-                                  // color="secondary"
-                                  style={{ background: "red" }}
-                                  onClick={() => handleDeleteInvoice(invoice.invoice_num)}
-                                >
-                                  Delete
-                                </Button>
-                              )}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                  </TableBody>
-
-                </Table>
-              </TableContainer>
-              <div className="amount-container">
-                <div className="total_amount_invoices">
-                  <p className="py-1">Total: &nbsp; &nbsp; {filteredTotalAmount?.toLocaleString('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                  }) || '$0.00'}
-                  </p>
-                </div>
-              </div>
-
-              <TablePagination
-                className="table-last-row-audio"
-                rowsPerPageOptions={[5, 10, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]}
-                component="div"
-                count={invoices.length}
-                rowsPerPage={rowsPerPage}
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            {/* <h3>Total Amount: {filteredTotalAmount}</h3> */}
+            <div
+              style={{
+                display: "flex", justifyContent: "center",
+                padding: "10px", position: "relative"
+              }}
+            >
+              <Pagination
+                count={pageCount}
                 page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
+                onChange={handlePageChange}
+                color="primary"
+                variant="outlined"
+                shape="rounded"
+                sx={{
+                  "& .MuiPaginationItem-root": {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minWidth: "36px",
+                  },
+                  "& .MuiPaginationItem-icon": {
+                    fontSize: "1.2rem",
+                  },
+                  "& .Mui-selected": {
+                    backgroundColor: "#1565c0",
+                    color: "#ffffff",
+                  },
+                  "& .MuiPaginationItem-root:hover": {
+                    color: "#ffffff",
+                    backgroundColor: "#1565c0",
+                  },
+                }}
               />
-            </Paper>
-          </>
+            </div>
+          </Paper>
+
+          <br />
         </div>
       </div>
     </div>

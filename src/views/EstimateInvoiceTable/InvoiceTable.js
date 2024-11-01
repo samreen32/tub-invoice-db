@@ -5,25 +5,32 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
-import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import Button from "@mui/material/Button";
 import { UserLogin } from "../../context/AuthContext";
 import { DELETE_INVOICE, REVERSE_PAYMENT } from "../../Auth_API";
 import { useNavigate } from "react-router";
 import axios from "axios";
+import { Pagination } from "@mui/material";
+import { LinearProgress } from "@mui/material";
 
 function InvoiceTable({
-    filteredTotalAmount, page,
-    setPage, setRowsPerPage,
-    setInvoices, setTotalAmount,
-    invoices, rowsPerPage
+    filteredTotalAmount,
+    setInvoices,
+    setTotalAmount,
+    invoices,
+    handlePageChange,
+    page,
+    totalInvoices,
+    rowsPerPage,
+    loading
 }) {
     let navigate = useNavigate();
     const { setInvoiceDetails } = UserLogin();
+    const pageCount = Math.ceil(totalInvoices / rowsPerPage);
 
     const columns = [
-        { id: "invoice_num", label: "Invoice No.", minWidth: 100 },
+        { id: "invoice_num", label: "Invoice #", minWidth: 100 },
         { id: "bill_to", label: "Bill To", minWidth: 100 },
         { id: "PO_number", label: "PO No.", minWidth: 100 },
         { id: "PO_Invoice_date", label: "PO Invoice Date", minWidth: 100 },
@@ -47,25 +54,13 @@ function InvoiceTable({
         },
     ];
 
-    /* Table pagination */
-    const handleChangePage = (event, newPage) => {
-        setPage(newPage);
-    };
-
-    const handleChangeRowsPerPage = (event) => {
-        setRowsPerPage(+event.target.value);
-        setPage(0);
-    };
-
     const handleInvoicePayment = (invoiceNum, totalAmount) => {
         navigate(`/pay_invoice`, { state: { invoiceNum, totalAmount } });
     };
 
-    /* Functions for delete invoice */
     const handleDeleteInvoice = async (invoiceNum) => {
         try {
             const response = await axios.delete(`${DELETE_INVOICE}/${invoiceNum}`);
-
             if (response.data.success) {
                 setInvoices((prevInvoices) =>
                     prevInvoices.filter((invoice) => invoice.invoice_num !== invoiceNum)
@@ -73,7 +68,6 @@ function InvoiceTable({
                 setTotalAmount(
                     (prevTotal) => prevTotal - response.data.invoice.total_amount
                 );
-                // console.log(response.data.success);
             } else {
                 console.error(response.data.message);
             }
@@ -82,9 +76,8 @@ function InvoiceTable({
         }
     };
 
-    const handleEditInvoice = (invoiceNum, adjustedInvoiceNum) => {
-        // console.log(adjustedInvoiceNum, "adjustedInvoiceNum")
-        navigate(`/edit_invoice`, { state: { invoiceNum, adjustedInvoiceNum } });
+    const handleEditInvoice = (displayedInvoiceNum, invoiceNum) => {
+        navigate(`/edit_invoice`, { state: { displayedInvoiceNum, invoiceNum } });
     };
 
     const handleReversePayment = async (invoiceNum) => {
@@ -99,7 +92,6 @@ function InvoiceTable({
                     )
                 );
                 setTotalAmount((prevTotal) => prevTotal - response.data.invoice.total_amount);
-                // console.log(response.data.success);
             } else {
                 console.error(response.data.message);
             }
@@ -110,8 +102,9 @@ function InvoiceTable({
 
     return (
         <>
-            <Paper sx={{ width: "100%", overflow: "hidden" }}>
-                <TableContainer>
+            <Paper sx={{ width: "100%" }}>
+                {loading && <LinearProgress color="error" />}
+                <TableContainer sx={{ maxHeight: 800 }}>
                     <Table stickyHeader aria-label="sticky table">
                         <TableHead>
                             <TableRow>
@@ -132,12 +125,13 @@ function InvoiceTable({
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {invoices
-                                .slice(
-                                    page * rowsPerPage,
-                                    page * rowsPerPage + rowsPerPage
-                                )
-                                .map((invoice) => (
+                            {invoices.map((invoice) => {
+                                const displayedInvoiceNum = invoice.invoice_num >= 479 && invoice.PO_Invoice_date
+                                    ? invoice.newInvoiceNum
+                                    : invoice.PO_Invoice_date
+                                        ? invoice.adjustedInvoiceNum
+                                        : invoice.invoice_num;
+                                return (
                                     <TableRow
                                         key={invoice.invoice_num}
                                         onClick={() => setInvoiceDetails(invoice.invoice_num)}
@@ -147,11 +141,9 @@ function InvoiceTable({
                                         }}
                                     >
                                         {columns.map((column) => (
-                                            <TableCell key={column.id} align="left"
-                                            // onClick={() => handleEditInvoice(invoice.invoice_num, invoice.adjustedInvoiceNum)}
-                                            >
+                                            <TableCell key={column.id} align="left">
                                                 {column.id === "invoice_num" ? (
-                                                    invoice.PO_Invoice_date ? invoice.adjustedInvoiceNum : invoice.invoice_num
+                                                    displayedInvoiceNum
                                                 ) : column.id === "date" ? (
                                                     new Date(invoice.date).toLocaleDateString()
                                                 ) : column.id === "bill_to" ? (
@@ -178,7 +170,7 @@ function InvoiceTable({
                                                 ) : column.id === "add_payment" ? (
                                                     invoice.payment_status ? (
                                                         <div style={{ textAlign: "center", margin: "auto" }}>
-                                                            <i class="fa fa-check fa-2x" aria-hidden="true"></i>
+                                                            <i className="fa fa-check fa-2x" aria-hidden="true"></i>
                                                             <Button
                                                                 variant="contained"
                                                                 style={{ background: "gray" }}
@@ -199,7 +191,7 @@ function InvoiceTable({
                                                                     )
                                                                 }
                                                             >
-                                                                Recieve
+                                                                Receive
                                                             </Button>
                                                         </div>
                                                     )
@@ -207,23 +199,13 @@ function InvoiceTable({
                                                     invoice[column.id]
                                                 )}
                                                 {column.id === "edit" && (
-                                                    !invoice.PO_Invoice_date ? (
-                                                        <Button
-                                                            variant="contained"
-                                                            style={{ background: "green" }}
-                                                            onClick={() => handleEditInvoice(invoice.invoice_num, invoice.adjustedInvoiceNum)}
-                                                        >
-                                                            Generate
-                                                        </Button>
-                                                    ) : (
-                                                        <Button
-                                                            variant="contained"
-                                                            style={{ background: "gray" }}
-                                                            onClick={() => handleEditInvoice(invoice.invoice_num, invoice.adjustedInvoiceNum)}
-                                                        >
-                                                            Generated
-                                                        </Button>
-                                                    )
+                                                    <Button
+                                                        variant="contained"
+                                                        style={{ background: invoice.PO_Invoice_date ? "gray" : "green" }}
+                                                        onClick={() => handleEditInvoice(displayedInvoiceNum, invoice.invoice_num)}
+                                                    >
+                                                        {invoice.PO_Invoice_date ? "Generated" : "Generate"}
+                                                    </Button>
                                                 )}
                                                 {column.id === "delete" && (
                                                     <Button
@@ -237,10 +219,11 @@ function InvoiceTable({
                                             </TableCell>
                                         ))}
                                     </TableRow>
-                                ))}
+                                );
+                            })}
                         </TableBody>
-
                     </Table>
+
                 </TableContainer>
                 <div className="amount-container">
                     <div className="total_amount_invoices">
@@ -253,20 +236,43 @@ function InvoiceTable({
                         </p>
                     </div>
                 </div>
-
-                <TablePagination
-                    className="table-last-row-audio"
-                    rowsPerPageOptions={[5, 10, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]}
-                    component="div"
-                    count={invoices.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                />
+                <div
+                    style={{
+                        display: "flex", justifyContent: "center",
+                        padding: "10px", position: "relative"
+                    }}
+                >
+                    <Pagination
+                        count={pageCount}
+                        page={page}
+                        onChange={handlePageChange}
+                        color="primary"
+                        variant="outlined"
+                        shape="rounded"
+                        sx={{
+                            "& .MuiPaginationItem-root": {
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                minWidth: "36px",
+                            },
+                            "& .MuiPaginationItem-icon": {
+                                fontSize: "1.2rem",
+                            },
+                            "& .Mui-selected": {
+                                backgroundColor: "#1565c0",
+                                color: "#ffffff",
+                            },
+                            "& .MuiPaginationItem-root:hover": {
+                                color: "#ffffff",
+                                backgroundColor: "#1565c0",
+                            },
+                        }}
+                    />
+                </div>
             </Paper>
         </>
-    )
+    );
 }
 
-export default InvoiceTable
+export default InvoiceTable;

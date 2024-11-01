@@ -760,10 +760,12 @@ function EditInvoice() {
                             onChange={(e) => handleInputChange(undefined, e)}
                             onKeyDown={(event) => handleNavigationKeyPress(event, 'job_location')}
                             style={{
-                              width: "100%",
+                              width: "150%",
                               border: "none",
                               textAlign: "center",
                               outline: "none",
+                              background: "transparent",
+                              marginLeft: "-50px"
                             }}
                             onFocus={(e) => e.target.style.borderBottomColor = "white"}
                             onBlur={(e) => e.target.style.borderBottomColor = "#ccc"}

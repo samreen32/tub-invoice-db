@@ -387,6 +387,7 @@ function InvoiceForm() {
       const response = await axios.post(`${INVOICE}`,
         formData
       );
+      console.log(response, "response")
       navigate(`/estimate_generated`);
       setFormData((prevData) => ({
         ...prevData,
