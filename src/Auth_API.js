@@ -8,7 +8,7 @@ export const GET_INVOICE_PO =
   "https://tubinvoice-bb7dgmc3.b4a.run/api/auth/getInvoicesWithPODate";
 
 export const RECIEVE_PAYMENT =
-  "https://tubinvoice-bb7dgmc3.b4a.run/api/auth/recievePayment";
+  "https://tubinvoice-bb7dgmc3.b4a.run/api/auth/recievePayment"; 
 
 export const GET_UNPAID_INVOICES =
   "https://tubinvoice-bb7dgmc3.b4a.run/api/auth/getUnpaidInvoices";
