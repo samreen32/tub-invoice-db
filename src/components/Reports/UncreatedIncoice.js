@@ -13,7 +13,7 @@ import { LinearProgress, Pagination, Toolbar } from "@mui/material";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import * as XLSX from "xlsx";
-import { GET_ALL_INVOICES, GET_INVOICE_PO } from "../../Auth_API";
+import { GET_INVOICE_PO } from "../../Auth_API";
 
 
 export default function UncreatedInvoice() {
@@ -33,6 +33,7 @@ export default function UncreatedInvoice() {
     const rowsPerPage = 10;
     const [totalInvoices, setTotalInvoices] = useState(0);
     const pageCount = Math.ceil(totalInvoices / rowsPerPage);
+    const [grandTotal, setGrandTotal] = useState(0); // New state for grand total
 
     const months = [
         "January", "February", "March", "April", "May", "June", "July",
@@ -49,11 +50,11 @@ export default function UncreatedInvoice() {
                 const response = await axios.get(`${GET_INVOICE_PO}`, {
                     params: { page, limit: rowsPerPage }
                 });
-                
-                let adjustedInvoiceCounter = 38592;
-                const invoicesWithAdjustedNumbers = response.data.invoices.map((invoice) => {
+                setGrandTotal(response.data.grandTotal || 0);
+                const startingAdjustedInvoiceCounter = 39223 - (page - 1) * rowsPerPage;
+                const invoicesWithAdjustedNumbers = response.data.invoices.map((invoice, index) => {
                     if (invoice.PO_Invoice_date) {
-                        return { ...invoice, adjustedInvoiceNum: adjustedInvoiceCounter++ };
+                        return { ...invoice, adjustedInvoiceNum: startingAdjustedInvoiceCounter - index };
                     }
                     return invoice;
                 });
@@ -94,9 +95,12 @@ export default function UncreatedInvoice() {
                 const uncreatedInvoices = searchedInvoices.filter((invoice) => invoice.PO_Invoice_date);
                 setInvoices(showUncreatedInvoices ? uncreatedInvoices : searchedInvoices);
                 setTotalInvoices(response.data.totalInvoices);
+
+                // Calculate filtered total and total of paid invoices for current search
                 const paidInvoices = searchedInvoices.filter((invoice) => invoice.payment_status);
                 const totalSum = paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
-                setTotalAmount(totalAmount + totalSum);
+                setTotalAmount(totalSum);
+
                 const filteredTotal = searchedInvoices.reduce((sum, invoice) => {
                     return invoice.payment_status ? sum + invoice.total_amount : sum;
                 }, 0);
@@ -104,12 +108,12 @@ export default function UncreatedInvoice() {
             } catch (error) {
                 console.error(error.message);
             } finally {
-                setLoading(false); // Ensures loading stops regardless of success or error
+                setLoading(false);
             }
         };
 
         fetchAllInvoices();
-    }, [selectedYear, selectedMonth, searchQuery, showUncreatedInvoices, page]); // `page` added as a dependency
+    }, [selectedYear, selectedMonth, searchQuery, showUncreatedInvoices, page]);
 
     const columns = [
         { id: "invoice_num", label: "Invoice No.", minWidth: 100 },
@@ -240,62 +244,61 @@ export default function UncreatedInvoice() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                {invoices.map((invoice) => {
-                                const displayedInvoiceNum = invoice.invoice_num >= 832 && invoice.PO_Invoice_date
-                                    ? invoice.newInvoiceNum
-                                    : invoice.PO_Invoice_date
-                                        ? invoice.adjustedInvoiceNum
-                                        : invoice.invoice_num
-                                        console.log(displayedInvoiceNum, "displayedInvoiceNum")
-                                return (
-                                    <TableRow
-                                        key={invoice.invoice_num}
-                                        onClick={() => setInvoiceDetails(invoice.invoice_num)}
-                                        style={{
-                                            cursor: "pointer",
-                                            backgroundColor: invoice.PO_Invoice_date ? "orange" : "white"
-                                        }}
-                                    >
-                                        {columns.map((column) => (
-                                            <TableCell key={column.id} align="left">
-                                                {column.id === "invoice_num" ? (
-                                                    displayedInvoiceNum
-                                                ) : column.id === "date" ? (
-                                                    new Date(invoice.date).toLocaleDateString()
-                                                ) : column.id === "bill_to" ? (
-                                                    invoice.bill_to.length > 0 ? invoice.bill_to[0] : "-"
-                                                ) : column.id === "payment_status" ? (
-                                                    invoice.payment_status.toString()
-                                                ) : column.id === "total_amount" ? (
-                                                    `${invoice.total_amount.toLocaleString('en-US', {
-                                                        style: 'currency',
-                                                        currency: 'USD',
-                                                        minimumFractionDigits: 2,
-                                                        maximumFractionDigits: 2
-                                                    }) || '$0.00'}`
-                                                ) : column.id === "PO_Invoice_date" ? (
-                                                    new Date(invoice.PO_Invoice_date).toLocaleDateString("en-US", {
-                                                        year: "2-digit",
-                                                        month: "2-digit",
-                                                        day: "2-digit",
-                                                    })
-                                                ) : (
-                                                    invoice[column.id]
-                                                )}
-                                               
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                );
-                            })}
+                                    {invoices.map((invoice) => {
+                                        const displayedInvoiceNum = invoice.invoice_num >= 832 && invoice.PO_Invoice_date
+                                            ? invoice.newInvoiceNum
+                                            : invoice.PO_Invoice_date
+                                                ? invoice.adjustedInvoiceNum
+                                                : invoice.invoice_num
+                                        return (
+                                            <TableRow
+                                                key={invoice.invoice_num}
+                                                onClick={() => setInvoiceDetails(invoice.invoice_num)}
+                                                style={{
+                                                    cursor: "pointer",
+                                                    backgroundColor: invoice.PO_Invoice_date ? "orange" : "white"
+                                                }}
+                                            >
+                                                {columns.map((column) => (
+                                                    <TableCell key={column.id} align="left">
+                                                        {column.id === "invoice_num" ? (
+                                                            displayedInvoiceNum
+                                                        ) : column.id === "date" ? (
+                                                            new Date(invoice.date).toLocaleDateString()
+                                                        ) : column.id === "bill_to" ? (
+                                                            invoice.bill_to.length > 0 ? invoice.bill_to[0] : "-"
+                                                        ) : column.id === "payment_status" ? (
+                                                            invoice.payment_status.toString()
+                                                        ) : column.id === "total_amount" ? (
+                                                            `${invoice.total_amount.toLocaleString('en-US', {
+                                                                style: 'currency',
+                                                                currency: 'USD',
+                                                                minimumFractionDigits: 2,
+                                                                maximumFractionDigits: 2
+                                                            }) || '$0.00'}`
+                                                        ) : column.id === "PO_Invoice_date" ? (
+                                                            new Date(invoice.PO_Invoice_date).toLocaleDateString("en-US", {
+                                                                year: "2-digit",
+                                                                month: "2-digit",
+                                                                day: "2-digit",
+                                                            })
+                                                        ) : (
+                                                            invoice[column.id]
+                                                        )}
+
+                                                    </TableCell>
+                                                ))}
+                                            </TableRow>
+                                        );
+                                    })}
                                 </TableBody>
                             </Table>
                         </TableContainer>
                         <div className="amount-container">
                             <div className="total_amount_invoices">
                                 <p className="py-1">
-                                    Total: &nbsp; &nbsp;
-                                    {filteredTotalAmount?.toLocaleString("en-US", {
+                                    Grand Total: &nbsp; &nbsp;
+                                    {grandTotal?.toLocaleString("en-US", {
                                         style: "currency",
                                         currency: "USD",
                                         minimumFractionDigits: 2,

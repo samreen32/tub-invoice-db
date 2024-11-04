@@ -23,7 +23,8 @@ function InvoiceTable({
     page,
     totalInvoices,
     rowsPerPage,
-    loading
+    loading,
+    grandTotal
 }) {
     let navigate = useNavigate();
     const { setInvoiceDetails } = UserLogin();
@@ -227,7 +228,7 @@ function InvoiceTable({
                 </TableContainer>
                 <div className="amount-container">
                     <div className="total_amount_invoices">
-                        <p className="py-1">Total: &nbsp; &nbsp; {filteredTotalAmount?.toLocaleString('en-US', {
+                        <p className="py-1">Grand Total: &nbsp; &nbsp; {grandTotal?.toLocaleString('en-US', {
                             style: 'currency',
                             currency: 'USD',
                             minimumFractionDigits: 2,
