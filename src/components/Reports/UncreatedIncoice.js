@@ -15,7 +15,6 @@ import MenuItem from "@mui/material/MenuItem";
 import * as XLSX from "xlsx";
 import { GET_INVOICE_PO } from "../../Auth_API";
 
-
 export default function UncreatedInvoice() {
     let navigate = useNavigate();
     const [invoices, setInvoices] = useState([]);
@@ -51,10 +50,9 @@ export default function UncreatedInvoice() {
                     params: { page, limit: rowsPerPage }
                 });
                 setGrandTotal(response.data.grandTotal || 0);
-                const startingAdjustedInvoiceCounter = 39223 - (page - 1) * rowsPerPage;
                 const invoicesWithAdjustedNumbers = response.data.invoices.map((invoice, index) => {
                     if (invoice.PO_Invoice_date) {
-                        return { ...invoice, adjustedInvoiceNum: startingAdjustedInvoiceCounter - index };
+                        return { ...invoice };
                     }
                     return invoice;
                 });
@@ -245,15 +243,16 @@ export default function UncreatedInvoice() {
                                 </TableHead>
                                 <TableBody>
                                     {invoices.map((invoice) => {
-                                        const displayedInvoiceNum = invoice.invoice_num >= 832 && invoice.PO_Invoice_date
+                                        const displayedInvoiceNum = invoice.PO_Invoice_date
                                             ? invoice.newInvoiceNum
-                                            : invoice.PO_Invoice_date
-                                                ? invoice.adjustedInvoiceNum
-                                                : invoice.invoice_num
+                                            : invoice.invoice_num;
                                         return (
                                             <TableRow
                                                 key={invoice.invoice_num}
-                                                onClick={() => setInvoiceDetails(invoice.invoice_num)}
+                                                onClick={() => {
+                                                    setInvoiceDetails(invoice.invoice_num);
+                                                    navigate(`/edit_invoice`, { state: { displayedInvoiceNum, invoiceNum: invoice.invoice_num } });
+                                                }}
                                                 style={{
                                                     cursor: "pointer",
                                                     backgroundColor: invoice.PO_Invoice_date ? "orange" : "white"

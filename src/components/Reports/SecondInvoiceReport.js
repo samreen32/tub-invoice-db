@@ -35,21 +35,20 @@ export default function SecondInvoiceReport() {
                 });
 
                 setGrandTotal(response.data.grandTotal || 0);
-                const startingAdjustedInvoiceCounter = 39223 - (page - 1) * rowsPerPage;
                 const invoicesWithAdjustedNumbers = response.data.invoices.map((invoice, index) => {
                     if (invoice.PO_Invoice_date) {
-                        return { ...invoice, adjustedInvoiceNum: startingAdjustedInvoiceCounter - index };
+                        return { ...invoice };
                     }
                     return invoice;
                 });
-    
+
                 const sortedInvoices = invoicesWithAdjustedNumbers
                     .map((invoice) => ({
                         ...invoice,
                         date: new Date(invoice.date),
                     }))
                     .sort((a, b) => b.date - a.date);
-    
+
                 const filteredInvoices = sortedInvoices.filter((invoice) => {
                     const yearFromPODate = new Date(invoice.PO_Invoice_date).getFullYear();
                     const monthFromPODate = new Date(invoice.PO_Invoice_date).getMonth();
@@ -57,7 +56,7 @@ export default function SecondInvoiceReport() {
                     const monthMatches = selectedMonth === "" || monthFromPODate === months.indexOf(selectedMonth);
                     return yearMatches && monthMatches;
                 });
-    
+
                 const searchedInvoices = filteredInvoices.filter((invoice) => {
                     const searchString = searchWords.map((word) => word.toLowerCase());
                     return (
@@ -75,7 +74,7 @@ export default function SecondInvoiceReport() {
                         )
                     );
                 });
-    
+
                 const uncreatedInvoices = searchedInvoices.filter((invoice) => invoice.PO_Invoice_date);
                 setInvoices(showUncreatedInvoices ? uncreatedInvoices : searchedInvoices);
                 setTotalInvoices(response.data.totalInvoices);
@@ -92,10 +91,10 @@ export default function SecondInvoiceReport() {
                 setLoading(false); // Ensures loading stops regardless of success or error
             }
         };
-    
+
         fetchAllInvoices();
     }, [selectedYear, selectedMonth, searchQuery, showUncreatedInvoices, page]); // `page` added as a dependency
-    
+
     const handlePageChange = (event, newPage) => {
         setPage(newPage); // Updates page and triggers re-fetch through useEffect
     };

@@ -17,6 +17,7 @@ function EditSecondInvoice() {
   const targetRef = useRef();
   const { state } = useLocation();
   const { invoiceNum, displayedInvoiceNum } = state;
+  console.log(invoiceNum)
   const { formUpdateData, setFormUpdateData, addresses, descriptions, setAddresses,
     setDescriptions } = UserLogin();
   const [visibleBillToFields, setVisibleBillToFields] = useState(3);

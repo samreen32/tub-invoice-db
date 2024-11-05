@@ -127,11 +127,9 @@ function InvoiceTable({
                         </TableHead>
                         <TableBody>
                             {invoices.map((invoice) => {
-                                const displayedInvoiceNum = invoice.invoice_num >= 832 && invoice.PO_Invoice_date
+                                const displayedInvoiceNum = invoice.PO_Invoice_date
                                     ? invoice.newInvoiceNum
-                                    : invoice.PO_Invoice_date
-                                        ? invoice.adjustedInvoiceNum
-                                        : invoice.invoice_num;
+                                    : invoice.invoice_num;
                                 return (
                                     <TableRow
                                         key={invoice.invoice_num}
