@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -9,6 +9,7 @@ import TableRow from "@mui/material/TableRow";
 import Button from "@mui/material/Button";
 import Pagination from "@mui/material/Pagination";
 import { LinearProgress } from "@mui/material";
+import { debounce } from 'lodash';
 import axios from "axios";
 import { DELETE_INVOICE, GET_ALL_INVOICES } from "../../Auth_API";
 import { useNavigate } from "react-router-dom";
@@ -47,42 +48,39 @@ export default function InvoiceReport() {
     setSelectedYear(event.target.value);
   };
 
+  const debouncedSetSearchQuery = useCallback(
+    debounce((query) => {
+      setSearchQuery(query);
+    }, 500),
+    []
+  );
+
+  const handleSearchInputChange = (event) => {
+    debouncedSetSearchQuery(event.target.value);
+  };
+
   const fetchInvoices = async () => {
     setLoading(true);
     try {
       const response = await axios.get(`${GET_ALL_INVOICES}`, {
-        params: { page, limit: rowsPerPage }
+        params: {
+          page,
+          pageSize: rowsPerPage,
+          search: searchQuery,
+          month: selectedMonth,
+          year: selectedYear
+        }
       });
-      const filteredInvoices = response.data.invoices
-        .map((invoice) => ({
-          ...invoice,
-          date: new Date(invoice.date).toLocaleDateString(),
-        }))
-        .filter((invoice) => {
-          const yearFromPODate = new Date(invoice.PO_date).getFullYear();
-          const monthFromPODate = new Date(invoice.PO_date).getMonth();
-          const yearMatches = selectedYear === "" || yearFromPODate.toString() === selectedYear;
-          const monthMatches = selectedMonth === "" || monthFromPODate.toString() === months.indexOf(selectedMonth).toString();
-          return yearMatches && monthMatches;
-        });
-
-      const searchedInvoices = filteredInvoices.filter((invoice) => {
-        const searchString = searchWords.map((word) => word.toLowerCase());
-        return (
-          searchString.some(
-            (word) =>
-              invoice.bill_to.join(", ").toLowerCase().includes(word) ||
-              invoice.job_site_name.toLowerCase().includes(word) ||
-              invoice.invoice_num.toString().includes(word)
-          )
-        );
-      });
-      setInvoices(searchedInvoices);
+      const filteredInvoices = response.data.invoices.map((invoice) => ({
+        ...invoice,
+        date: new Date(invoice.date).toLocaleDateString(),
+      }));
+      setInvoices(filteredInvoices);
       setTotalInvoices(response.data.totalInvoices);
-      const paidInvoices = searchedInvoices.filter((invoice) => invoice.payment_status);
+      const paidInvoices = filteredInvoices.filter((invoice) => invoice.payment_status);
       const totalSum = paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
       setTotalAmount(totalSum);
-      const filteredTotal = searchedInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
+      const filteredTotal = filteredInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
       setFilteredTotalAmount(filteredTotal);
     } catch (error) {
       console.error(error.message);
@@ -93,6 +91,10 @@ export default function InvoiceReport() {
   useEffect(() => {
     fetchInvoices();
   }, [page, selectedYear, selectedMonth, searchQuery]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, selectedYear, selectedMonth]);
 
   const handlePageChange = (event, newPage) => {
     setPage(newPage);
@@ -153,13 +155,18 @@ export default function InvoiceReport() {
 
   const pageCount = Math.ceil(totalInvoices / rowsPerPage);
 
+  const handleSearchClick = () => {
+    setIsExpanded(!isExpanded);
+    setSearchQuery("");
+  };
+
   return (
     <div style={{ transform: "scale(0.7)" }}>
       <div id="invoice-generated">
         <div className="container-report px-5"
           style={{
             marginTop: "-80px",
-            height: "800px",
+            height: "850px",
             overflowY: "auto",
           }}
         >
@@ -174,16 +181,19 @@ export default function InvoiceReport() {
             <Toolbar className="toolbar-search" style={{ marginBottom: "-55px" }}>
               <form className="d-flex search-form" role="search">
                 <div className={`search-container ${isExpanded ? "expanded" : ""}`}>
-                  <button onClick={() => setIsExpanded(!isExpanded)} className="search-button">
+                  <button
+                    onClick={handleSearchClick}
+                    className="search-button"
+                  >
                     <i className="fa fa-search"></i>
                   </button>
                   <input
                     className="search-input"
                     type="text"
                     placeholder="Search here..."
-                    onClick={() => setIsExpanded(true)}
+                    onClick={handleSearchClick}
                     onBlur={() => setIsExpanded(false)}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={handleSearchInputChange}
                   />
                 </div>
               </form>
@@ -238,60 +248,78 @@ export default function InvoiceReport() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {invoices.map((invoice) => (
-                    <TableRow
-                      key={invoice.invoice_num}
-                      onClick={() => setInvoiceDetails(invoice.invoice_num)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      {columns.map((column) => (
-                        <TableCell key={column.id} align="left">
-                          {column.id === "date"
-                            ? new Date(invoice.date).toLocaleDateString()
-                            : column.id === "bill_to"
-                              ? invoice.bill_to.length > 0
-                                ? invoice.bill_to[0]
-                                : "-"
-                              : column.id === "payment_status"
-                                ? invoice.payment_status ? "Paid" : "Unpaid"
-                                : column.id === "total_amount"
-                                  ? `${invoice.total_amount.toLocaleString('en-US', {
-                                    style: 'currency',
-                                    currency: 'USD',
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                  }) || '$0.00'}`
-                                  : column.id === "PO_date"
-                                    ? new Date(invoice.PO_date).toLocaleDateString("en-US", {
-                                      year: "2-digit",
-                                      month: "2-digit",
-                                      day: "2-digit",
-                                    })
-                                    : invoice[column.id]}
-                          {column.id === "edit" && (
-                            <Button
-                              variant="contained"
-                              style={{ background: "green", textTransform: "capitalize" }}
-                              onClick={() => handleEditInvoice(invoice.invoice_num)}
-                            >
-                              <i className="fa fa-pencil" style={{ marginRight: "5px" }}></i> Edit
-                            </Button>
-
-                          )}
-                          {column.id === "delete" && (
-                            <Button
-                              variant="contained"
-                              style={{ background: "red", textTransform: "capitalize" }}
-                              onClick={() => handleDeleteInvoice(invoice.invoice_num)}
-                            >
-                              <i className="fa fa-trash" style={{ marginRight: "8px" }}></i> Delete
-                            </Button>
-                          )}
-                        </TableCell>
-                      ))}
+                  {invoices.length > 0 ? (
+                    invoices.map((invoice) => (
+                      <TableRow
+                        key={invoice.invoice_num}
+                        onClick={() => setInvoiceDetails(invoice.invoice_num)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        {columns.map((column) => (
+                          <TableCell key={column.id} align="left">
+                            {column.id === "date"
+                              ? new Date(invoice.date).toLocaleDateString()
+                              : column.id === "bill_to"
+                                ? invoice.bill_to.length > 0
+                                  ? invoice.bill_to[0]
+                                  : "-"
+                                : column.id === "payment_status"
+                                  ? invoice.payment_status
+                                    ? "Paid"
+                                    : "Unpaid"
+                                  : column.id === "total_amount"
+                                    ? `${invoice.total_amount.toLocaleString("en-US", {
+                                      style: "currency",
+                                      currency: "USD",
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    }) || "$0.00"}`
+                                    : column.id === "PO_date"
+                                      ? new Date(invoice.PO_date).toLocaleDateString("en-US", {
+                                        year: "2-digit",
+                                        month: "2-digit",
+                                        day: "2-digit",
+                                      })
+                                      : invoice[column.id]}
+                            {column.id === "edit" && (
+                              <Button
+                                variant="contained"
+                                style={{ background: "green", textTransform: "capitalize" }}
+                                onClick={() => handleEditInvoice(invoice.invoice_num)}
+                              >
+                                <i
+                                  className="fa fa-pencil"
+                                  style={{ marginRight: "5px" }}
+                                ></i>{" "}
+                                Edit
+                              </Button>
+                            )}
+                            {column.id === "delete" && (
+                              <Button
+                                variant="contained"
+                                style={{ background: "red", textTransform: "capitalize" }}
+                                onClick={() => handleDeleteInvoice(invoice.invoice_num)}
+                              >
+                                <i
+                                  className="fa fa-trash"
+                                  style={{ marginRight: "8px" }}
+                                ></i>{" "}
+                                Delete
+                              </Button>
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={columns.length} align="center">
+                        No record found
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
+
               </Table>
             </TableContainer>
             <div className="amount-container">

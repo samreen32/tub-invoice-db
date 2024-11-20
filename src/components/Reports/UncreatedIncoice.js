@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -7,6 +7,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import axios from "axios";
+import { debounce } from 'lodash';
 import { useNavigate } from "react-router-dom";
 import { UserLogin } from "../../context/AuthContext";
 import { LinearProgress, Pagination, Toolbar } from "@mui/material";
@@ -22,17 +23,15 @@ export default function UncreatedInvoice() {
     const { setInvoiceDetails } = UserLogin();
     const [searchQuery, setSearchQuery] = useState("");
     const [isExpanded, setIsExpanded] = useState(false);
-    const searchWords = searchQuery.split(" ");
     const [selectedYear, setSelectedYear] = useState("");
     const [selectedMonth, setSelectedMonth] = useState("");
     const [filteredTotalAmount, setFilteredTotalAmount] = useState(0);
-    const [showUncreatedInvoices, setShowUncreatedInvoices] = useState(false);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const rowsPerPage = 10;
     const [totalInvoices, setTotalInvoices] = useState(0);
     const pageCount = Math.ceil(totalInvoices / rowsPerPage);
-    const [grandTotal, setGrandTotal] = useState(0); // New state for grand total
+    const [grandTotal, setGrandTotal] = useState(0);
 
     const months = [
         "January", "February", "March", "April", "May", "June", "July",
@@ -42,76 +41,53 @@ export default function UncreatedInvoice() {
     const handleMonthChange = (event) => setSelectedMonth(event.target.value);
     const handleYearChange = (event) => setSelectedYear(event.target.value);
 
+    const debouncedSetSearchQuery = useCallback(
+        debounce((query) => {
+            setSearchQuery(query);
+        }, 500),
+        []
+    );
+
+    const handleSearchInputChange = (event) => {
+        debouncedSetSearchQuery(event.target.value);
+    };
+
+    const fetchInvoices = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get(`${GET_INVOICE_PO}`, {
+                params: {
+                    page,
+                    pageSize: rowsPerPage,
+                    search: searchQuery,
+                    month: selectedMonth,
+                    year: selectedYear
+                }
+            });
+            const filteredInvoices = response.data.invoices.map((invoice) => ({
+                ...invoice,
+                date: new Date(invoice.date).toLocaleDateString(),
+            }));
+            setInvoices(filteredInvoices);
+            setTotalInvoices(response.data.totalInvoices);
+            const paidInvoices = filteredInvoices.filter((invoice) => invoice.payment_status);
+            const totalSum = paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
+            setTotalAmount(totalSum);
+            const filteredTotal = filteredInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
+            setFilteredTotalAmount(filteredTotal);
+        } catch (error) {
+            console.error(error.message);
+        }
+        setLoading(false);
+    };
+
     useEffect(() => {
-        const fetchAllInvoices = async () => {
-            setLoading(true);
-            try {
-                const response = await axios.get(`${GET_INVOICE_PO}`, {
-                    params: { page, limit: rowsPerPage }
-                });
-                setGrandTotal(response.data.grandTotal || 0);
-                const invoicesWithAdjustedNumbers = response.data.invoices.map((invoice, index) => {
-                    if (invoice.PO_Invoice_date) {
-                        return { ...invoice };
-                    }
-                    return invoice;
-                });
+        fetchInvoices();
+    }, [page, selectedYear, selectedMonth, searchQuery]);
 
-                const sortedInvoices = invoicesWithAdjustedNumbers
-                    .map((invoice) => ({
-                        ...invoice,
-                        date: new Date(invoice.date),
-                    }))
-                    .sort((a, b) => b.date - a.date);
-
-                const filteredInvoices = sortedInvoices.filter((invoice) => {
-                    const yearFromPODate = new Date(invoice.PO_Invoice_date).getFullYear();
-                    const monthFromPODate = new Date(invoice.PO_Invoice_date).getMonth();
-                    const yearMatches = selectedYear === "" || yearFromPODate.toString() === selectedYear;
-                    const monthMatches = selectedMonth === "" || monthFromPODate === months.indexOf(selectedMonth);
-                    return yearMatches && monthMatches;
-                });
-
-                const searchedInvoices = filteredInvoices.filter((invoice) => {
-                    const searchString = searchWords.map((word) => word.toLowerCase());
-                    return (
-                        searchString.some(
-                            (word) =>
-                                invoice.bill_to.join(", ").toLowerCase().includes(word) ||
-                                invoice.job_site_name.toLowerCase().includes(word) ||
-                                invoice.invoice_num.toString().includes(word)
-                        ) ||
-                        searchString.every(
-                            (word) =>
-                                invoice.bill_to.join(", ").toLowerCase().includes(word) ||
-                                invoice.job_site_name.toLowerCase().includes(word) ||
-                                invoice.invoice_num.toString().includes(word)
-                        )
-                    );
-                });
-
-                const uncreatedInvoices = searchedInvoices.filter((invoice) => invoice.PO_Invoice_date);
-                setInvoices(showUncreatedInvoices ? uncreatedInvoices : searchedInvoices);
-                setTotalInvoices(response.data.totalInvoices);
-
-                // Calculate filtered total and total of paid invoices for current search
-                const paidInvoices = searchedInvoices.filter((invoice) => invoice.payment_status);
-                const totalSum = paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
-                setTotalAmount(totalSum);
-
-                const filteredTotal = searchedInvoices.reduce((sum, invoice) => {
-                    return invoice.payment_status ? sum + invoice.total_amount : sum;
-                }, 0);
-                setFilteredTotalAmount(filteredTotal);
-            } catch (error) {
-                console.error(error.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchAllInvoices();
-    }, [selectedYear, selectedMonth, searchQuery, showUncreatedInvoices, page]);
+    useEffect(() => {
+        setPage(1);
+    }, [searchQuery, selectedYear, selectedMonth]);
 
     const columns = [
         { id: "invoice_num", label: "Invoice No.", minWidth: 100 },
@@ -141,6 +117,11 @@ export default function UncreatedInvoice() {
         const workBook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workBook, workSheet, "Invoices");
         XLSX.writeFile(workBook, "InvoiceReport.xlsx");
+    };
+
+    const handleSearchClick = () => {
+        setIsExpanded(!isExpanded);
+        setSearchQuery("");
     };
 
     const handlePageChange = (event, newPage) => setPage(newPage);
@@ -179,14 +160,19 @@ export default function UncreatedInvoice() {
                         <Toolbar className="toolbar-search" style={{ marginBottom: "-55px" }}>
                             <form className="d-flex search-form" role="search">
                                 <div className={`search-container ${isExpanded ? "expanded" : ""}`}>
-                                    <button onClick={() => setIsExpanded(!isExpanded)} className="search-button">
+                                    <button
+                                        onClick={handleSearchClick}
+                                        className="search-button"
+                                    >
                                         <i className="fa fa-search"></i>
                                     </button>
                                     <input
                                         className="search-input"
                                         type="text"
                                         placeholder="Search here..."
-                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onClick={handleSearchClick}
+                                        onBlur={() => setIsExpanded(false)}
+                                        onChange={handleSearchInputChange}
                                     />
                                 </div>
                             </form>
@@ -242,62 +228,72 @@ export default function UncreatedInvoice() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {invoices.map((invoice) => {
-                                        const displayedInvoiceNum = invoice.PO_Invoice_date
-                                            ? invoice.newInvoiceNum
-                                            : invoice.invoice_num;
-                                        return (
-                                            <TableRow
-                                                key={invoice.invoice_num}
-                                                onClick={() => {
-                                                    setInvoiceDetails(invoice.invoice_num);
-                                                    navigate(`/edit_invoice`, { state: { displayedInvoiceNum, invoiceNum: invoice.invoice_num } });
-                                                }}
-                                                style={{
-                                                    cursor: "pointer",
-                                                    backgroundColor: invoice.PO_Invoice_date ? "orange" : "white"
-                                                }}
-                                            >
-                                                {columns.map((column) => (
-                                                    <TableCell key={column.id} align="left">
-                                                        {column.id === "invoice_num" ? (
-                                                            displayedInvoiceNum
-                                                        ) : column.id === "date" ? (
-                                                            new Date(invoice.date).toLocaleDateString()
-                                                        ) : column.id === "bill_to" ? (
-                                                            invoice.bill_to.length > 0 ? invoice.bill_to[0] : "-"
-                                                        ) : column.id === "payment_status" ? (
-                                                            invoice.payment_status.toString()
-                                                        ) : column.id === "total_amount" ? (
-                                                            `${invoice.total_amount.toLocaleString('en-US', {
-                                                                style: 'currency',
-                                                                currency: 'USD',
-                                                                minimumFractionDigits: 2,
-                                                                maximumFractionDigits: 2
-                                                            }) || '$0.00'}`
-                                                        ) : column.id === "PO_Invoice_date" ? (
-                                                            new Date(invoice.PO_Invoice_date).toLocaleDateString("en-US", {
-                                                                year: "2-digit",
-                                                                month: "2-digit",
-                                                                day: "2-digit",
-                                                            })
-                                                        ) : (
-                                                            invoice[column.id]
-                                                        )}
-
-                                                    </TableCell>
-                                                ))}
-                                            </TableRow>
-                                        );
-                                    })}
+                                    {invoices.length > 0 ? (
+                                        invoices.map((invoice) => {
+                                            const displayedInvoiceNum = invoice.PO_Invoice_date
+                                                ? invoice.newInvoiceNum
+                                                : invoice.invoice_num;
+                                            return (
+                                                <TableRow
+                                                    key={invoice.invoice_num}
+                                                    onClick={() => {
+                                                        setInvoiceDetails(invoice.invoice_num);
+                                                        navigate(`/edit_invoice`, {
+                                                            state: { displayedInvoiceNum, invoiceNum: invoice.invoice_num },
+                                                        });
+                                                    }}
+                                                    style={{
+                                                        cursor: "pointer",
+                                                        backgroundColor: invoice.PO_Invoice_date ? "orange" : "white",
+                                                    }}
+                                                >
+                                                    {columns.map((column) => (
+                                                        <TableCell key={column.id} align="left">
+                                                            {column.id === "invoice_num" ? (
+                                                                displayedInvoiceNum
+                                                            ) : column.id === "date" ? (
+                                                                new Date(invoice.date).toLocaleDateString()
+                                                            ) : column.id === "bill_to" ? (
+                                                                invoice.bill_to.length > 0 ? invoice.bill_to[0] : "-"
+                                                            ) : column.id === "payment_status" ? (
+                                                                invoice.payment_status.toString()
+                                                            ) : column.id === "total_amount" ? (
+                                                                `${invoice.total_amount.toLocaleString("en-US", {
+                                                                    style: "currency",
+                                                                    currency: "USD",
+                                                                    minimumFractionDigits: 2,
+                                                                    maximumFractionDigits: 2,
+                                                                }) || "$0.00"}`
+                                                            ) : column.id === "PO_Invoice_date" ? (
+                                                                new Date(invoice.PO_Invoice_date).toLocaleDateString("en-US", {
+                                                                    year: "2-digit",
+                                                                    month: "2-digit",
+                                                                    day: "2-digit",
+                                                                })
+                                                            ) : (
+                                                                invoice[column.id]
+                                                            )}
+                                                        </TableCell>
+                                                    ))}
+                                                </TableRow>
+                                            );
+                                        })
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={columns.length} align="center">
+                                                No record found
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
                                 </TableBody>
+
                             </Table>
                         </TableContainer>
                         <div className="amount-container">
                             <div className="total_amount_invoices">
                                 <p className="py-1">
                                     Grand Total: &nbsp; &nbsp;
-                                    {grandTotal?.toLocaleString("en-US", {
+                                    {filteredTotalAmount?.toLocaleString("en-US", {
                                         style: "currency",
                                         currency: "USD",
                                         minimumFractionDigits: 2,

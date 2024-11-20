@@ -5,10 +5,14 @@ import TextField from "@mui/material/TextField";
 import { useLocation, useNavigate } from "react-router";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { EDIT_INVOICE, FETCH_BILL_TO, FETCH_DESCRIPPTION, GET_INVOICE } from "../../Auth_API";
+import {
+  EDIT_INVOICE, FETCH_BILL_TO,
+  FETCH_DESCRIPPTION, GET_INVOICE
+} from "../../Auth_API";
 import generatePDF from "react-to-pdf";
 import Autocomplete from '@mui/material/Autocomplete';
 import { divideArrayIntoChunks } from "../../utils";
+import { debounce } from "@mui/material";
 
 const CHUNK_SIZE = 31;
 
@@ -17,40 +21,33 @@ function EditInvoice() {
   const targetRef = useRef();
   const { state } = useLocation();
   const { invoiceNum } = state;
-  const { formUpdateData, setFormUpdateData, addresses, descriptions, setAddresses, setDescriptions } = UserLogin();
+  const { formUpdateData, setFormUpdateData, addresses,
+    descriptions, setAddresses, setDescriptions } = UserLogin();
   const [visibleBillToFields, setVisibleBillToFields] = useState(3);
   const [draggingIndex, setDraggingIndex] = useState(null);
 
-  useEffect(() => {
-    const fetchAddresses = async () => {
-      try {
-        const response = await axios.get(FETCH_BILL_TO);
-        setAddresses(response.data);
-      } catch (error) {
-        console.error('Failed to fetch addresses:', error);
+  const fetchAddresses = debounce(async (query) => {
+    try {
+      const response = await axios.get(`${FETCH_BILL_TO}?q=${query}`);
+      if (response.data) {
+        setAddresses(response.data.map((item) => ({ label: item })));
+      } else {
+        setAddresses([]);
       }
-    };
+    } catch (error) {
+      setAddresses([]);
+    }
+  });
 
-    fetchAddresses();
-  }, [setAddresses, addresses]);
-
-  useEffect(() => {
-    const fetchDescriptions = async () => {
-      try {
-        const response = await axios.get(FETCH_DESCRIPPTION);
-        if (response.data) {
-          setDescriptions(response.data.map(item => ({ label: item })));  // Example transformation
-        } else {
-          setDescriptions([]);
-        }
-      } catch (error) {
-        console.error('Failed to fetch descriptions:', error);
-        setDescriptions([]);
-      }
-    };
-
-    fetchDescriptions();
-  }, []);
+  const fetchDescriptions = debounce(async (query) => {
+    try {
+      const response = await axios.get(`${FETCH_DESCRIPPTION}?q=${query}`);
+      setDescriptions(response.data.map((item) => ({ label: item })));
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      setDescriptions([]);
+    }
+  }, 300);
 
   const createDefaultUpdateItems = (numItems = 31) => {
     return Array.from({ length: numItems }, () => ({
@@ -72,14 +69,14 @@ function EditInvoice() {
   const inputRefs = useRef([]);
 
   const formatDateInput = (value) => {
-    let numbers = value.replace(/[^\d]/g, '');  // Remove non-digit characters
+    let numbers = value.replace(/[^\d]/g, '');
     if (numbers.length > 8) {
-      numbers = numbers.slice(0, 8);  // Limit to MMDDYYYY
+      numbers = numbers.slice(0, 8);
     }
     if (numbers.length > 4) {
-      return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4)}`;  // Format as MM/DD/YYYY
+      return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4)}`;
     } else if (numbers.length > 2) {
-      return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;  // Format as MM/DD
+      return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
     }
     return numbers;
   };
@@ -225,12 +222,9 @@ function EditInvoice() {
         const response = await axios.get(`${GET_INVOICE}/${invoiceNum}`);
         if (response.data.success) {
           const invoiceData = response.data.invoice;
-          console.log(invoiceData, "invoice data")
-          // const validDate = invoiceData.PO_date ? new Date(invoiceData.PO_date) : null;
           setFormUpdateData({
             ...formUpdateData,
             ...invoiceData,
-            // PO_date: validDate
           });
         } else {
           console.error(response.data.message);
@@ -563,7 +557,7 @@ function EditInvoice() {
                       }
                     >
                       <div className="row" style={{ marginTop: "-20px" }}>
-                        <div className="invoice-first-div col-9 px-5">
+                        <div className="invoice-first-div col-9">
                           <img src={logo} alt="logo tub" />
                           <address className="mt-3 px-3">
                             <b style={{ fontSize: "28px" }}>Tub Pro's, Inc. </b>
@@ -602,22 +596,31 @@ function EditInvoice() {
                               fieldIndex <= visibleBillToFields && (
                                 <React.Fragment key={`bill_to_${fieldIndex}`}>
                                   <Autocomplete
+                                    id={`billTo_${fieldIndex}`}
                                     freeSolo
-                                    options={addresses}
+                                    options={addresses || []}
                                     value={formUpdateData.bill_to[fieldIndex - 1] || ''}
+                                    onFocus={() => {
+                                      setAddresses([]);
+                                    }}
                                     onChange={(event, newValue) => {
                                       updateBillToField(fieldIndex - 1, newValue);
                                     }}
-                                    onInputChange={(event, newInputValue) => {
-                                      updateBillToField(fieldIndex - 1, newInputValue);
+                                    onInputChange={(event, newInputValue, reason) => {
+                                      if (reason === 'input' && newInputValue.trim() !== '') {
+                                        fetchAddresses(newInputValue);
+                                        updateBillToField(fieldIndex - 1, newInputValue);
+                                      } else if (reason === 'clear') {
+                                        setAddresses([]);
+                                      }
                                     }}
                                     renderInput={(params) => (
                                       <TextField
                                         {...params}
                                         variant="standard"
-                                        inputRef={el => fieldRefs.current[fieldIndex] = el}
+                                        inputRef={(el) => (fieldRefs.current[fieldIndex] = el)}
                                         onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
-                                        style={{ marginTop: "-20px", width: "100%", }}
+                                        style={{ marginTop: '-20px', width: '100%' }}
                                       />
                                     )}
                                   />
@@ -845,6 +848,9 @@ function EditInvoice() {
                                 getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
                                 ref={(el) => (inputRefs.current[actualIndex] = el)}
                                 value={item.description || ''}
+                                onFocus={() => {
+                                  setDescriptions([]);
+                                }}
                                 onChange={(event, newValue) => {
                                   const descriptionValue = newValue ? (typeof newValue === 'string' ? newValue : newValue.label) : '';
                                   handleInputChange(actualIndex, {
@@ -855,23 +861,26 @@ function EditInvoice() {
                                   });
                                 }}
                                 onInputChange={(event, newInputValue, reason) => {
-                                  if (reason === 'input') {
+                                  if (reason === 'input' && newInputValue.trim() !== '') {
+                                    fetchDescriptions(newInputValue);
                                     handleInputChange(actualIndex, {
                                       target: {
                                         name: 'description',
                                         value: newInputValue,
                                       },
                                     });
+                                  } else if (reason === 'clear') {
+                                    setDescriptions([]);
                                   }
                                 }}
                                 renderInput={(params) => (
                                   <TextField
                                     {...params}
-                                    variant='standard'
+                                    variant="standard"
                                     style={{
                                       marginTop: actualIndex === 0 ? '-8px' : '-13px',
                                       width: '100%',
-                                      marginLeft: "120px"
+                                      marginLeft: '120px',
                                     }}
                                     onKeyDown={(event) => handleNavigationKeyPress(event, 'description', actualIndex)}
                                   />
@@ -1018,7 +1027,6 @@ function EditInvoice() {
               </div>
             </div>
           </form>
-
         </div>
       </div>
     </div>

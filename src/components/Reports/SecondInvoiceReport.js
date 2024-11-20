@@ -10,16 +10,15 @@ export default function SecondInvoiceReport() {
     const [invoices, setInvoices] = useState([]);
     const [totalAmount, setTotalAmount] = useState(0);
     const [searchQuery, setSearchQuery] = useState("");
-    const searchWords = searchQuery.split(" ");
     const [selectedYear, setSelectedYear] = useState("");
     const [selectedMonth, setSelectedMonth] = useState("");
     const [filteredTotalAmount, setFilteredTotalAmount] = useState(0);
     const [showUncreatedInvoices, setShowUncreatedInvoices] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [page, setPage] = useState(1); // Current page state
+    const [page, setPage] = useState(1); // Page starts at 1
     const rowsPerPage = 10;
     const [totalInvoices, setTotalInvoices] = useState(0);
-    const [grandTotal, setGrandTotal] = useState(0); // New state for grand total
+    const [grandTotal, setGrandTotal] = useState(0);
 
     const months = [
         "January", "February", "March", "April", "May", "June", "July",
@@ -31,72 +30,33 @@ export default function SecondInvoiceReport() {
             setLoading(true);
             try {
                 const response = await axios.get(`${GET_ALL_INVOICES}`, {
-                    params: { page, limit: rowsPerPage }
+                    params: {
+                        page,
+                        limit: rowsPerPage,
+                        search: searchQuery,
+                        year: selectedYear,
+                        month: selectedMonth,
+                        showUncreatedInvoices: showUncreatedInvoices ? 1 : 0,
+                    },
                 });
-
+                setInvoices(response.data.invoices);
                 setGrandTotal(response.data.grandTotal || 0);
-                const invoicesWithAdjustedNumbers = response.data.invoices.map((invoice, index) => {
-                    if (invoice.PO_Invoice_date) {
-                        return { ...invoice };
-                    }
-                    return invoice;
-                });
-
-                const sortedInvoices = invoicesWithAdjustedNumbers
-                    .map((invoice) => ({
-                        ...invoice,
-                        date: new Date(invoice.date),
-                    }))
-                    .sort((a, b) => b.date - a.date);
-
-                const filteredInvoices = sortedInvoices.filter((invoice) => {
-                    const yearFromPODate = new Date(invoice.PO_Invoice_date).getFullYear();
-                    const monthFromPODate = new Date(invoice.PO_Invoice_date).getMonth();
-                    const yearMatches = selectedYear === "" || yearFromPODate.toString() === selectedYear;
-                    const monthMatches = selectedMonth === "" || monthFromPODate === months.indexOf(selectedMonth);
-                    return yearMatches && monthMatches;
-                });
-
-                const searchedInvoices = filteredInvoices.filter((invoice) => {
-                    const searchString = searchWords.map((word) => word.toLowerCase());
-                    return (
-                        searchString.some(
-                            (word) =>
-                                invoice.bill_to.join(", ").toLowerCase().includes(word) ||
-                                invoice.job_site_name.toLowerCase().includes(word) ||
-                                invoice.invoice_num.toString().includes(word)
-                        ) ||
-                        searchString.every(
-                            (word) =>
-                                invoice.bill_to.join(", ").toLowerCase().includes(word) ||
-                                invoice.job_site_name.toLowerCase().includes(word) ||
-                                invoice.invoice_num.toString().includes(word)
-                        )
-                    );
-                });
-
-                const uncreatedInvoices = searchedInvoices.filter((invoice) => invoice.PO_Invoice_date);
-                setInvoices(showUncreatedInvoices ? uncreatedInvoices : searchedInvoices);
                 setTotalInvoices(response.data.totalInvoices);
-                const paidInvoices = searchedInvoices.filter((invoice) => invoice.payment_status);
-                const totalSum = paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0);
-                setTotalAmount(totalAmount + totalSum);
-                const filteredTotal = searchedInvoices.reduce((sum, invoice) => {
-                    return invoice.payment_status ? sum + invoice.total_amount : sum;
-                }, 0);
-                setFilteredTotalAmount(filteredTotal);
             } catch (error) {
                 console.error(error.message);
             } finally {
-                setLoading(false); // Ensures loading stops regardless of success or error
+                setLoading(false);
             }
         };
-
         fetchAllInvoices();
-    }, [selectedYear, selectedMonth, searchQuery, showUncreatedInvoices, page]); // `page` added as a dependency
+    }, [page, rowsPerPage, searchQuery, selectedYear, selectedMonth, showUncreatedInvoices]);
+
+    useEffect(() => {
+        setPage(1); 
+    }, [searchQuery, selectedYear, selectedMonth, showUncreatedInvoices]);
 
     const handlePageChange = (event, newPage) => {
-        setPage(newPage); // Updates page and triggers re-fetch through useEffect
+        setPage(newPage);
     };
 
     return (

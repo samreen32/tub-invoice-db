@@ -9,6 +9,7 @@ import generatePDF from "react-to-pdf";
 import Autocomplete from '@mui/material/Autocomplete';
 import { divideArrayIntoChunks } from "../../utils";
 import logo from "../../assets/img/logo.png";
+import { debounce } from "@mui/material";
 
 const CHUNK_SIZE = 31;
 
@@ -23,36 +24,29 @@ function EditSecondInvoice() {
   const [visibleBillToFields, setVisibleBillToFields] = useState(3);
   const [draggingIndex, setDraggingIndex] = useState(null);
 
-  useEffect(() => {
-    const fetchAddresses = async () => {
-      try {
-        const response = await axios.get(FETCH_BILL_TO);
-        setAddresses(response.data);
-      } catch (error) {
-        console.error('Failed to fetch addresses:', error);
+  const fetchAddresses = debounce(async (query) => {
+    try {
+      const response = await axios.get(`${FETCH_BILL_TO}?q=${query}`);
+      if (response.data) {
+        setAddresses(response.data.map((item) => ({ label: item })));
+      } else {
+        setAddresses([]);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      setAddresses([]);
+    }
+  });
 
-    fetchAddresses();
-  }, [setAddresses, addresses]);
-
-  useEffect(() => {
-    const fetchDescriptions = async () => {
-      try {
-        const response = await axios.get(FETCH_DESCRIPPTION);
-        if (response.data) {
-          setDescriptions(response.data.map(item => ({ label: item })));
-        } else {
-          setDescriptions([]);
-        }
-      } catch (error) {
-        console.error('Failed to fetch descriptions:', error);
-        setDescriptions([]);
-      }
-    };
-
-    fetchDescriptions();
-  }, []);
+  const fetchDescriptions = debounce(async (query) => {
+    try {
+      const response = await axios.get(`${FETCH_DESCRIPPTION}?q=${query}`);
+      setDescriptions(response.data.map((item) => ({ label: item })));
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      setDescriptions([]);
+    }
+  });
 
   const createDefaultUpdateItems = (numItems = 31) => {
     return Array.from({ length: numItems }, () => ({
@@ -222,7 +216,6 @@ function EditSecondInvoice() {
       }, 0);
     }
   };
-
 
   const updateBillToField = (index, value) => {
     setFormUpdateData((prevData) => {
@@ -557,7 +550,6 @@ function EditSecondInvoice() {
           </div>
         </div>
 
-
         {/* Right side */}
         <div
           className="col-6 offset-3"
@@ -599,7 +591,7 @@ function EditSecondInvoice() {
                       }
                     >
                       <div className="row" style={{ marginTop: "-20px" }}>
-                        <div className="invoice-first-div col-9 px-5">
+                        <div className="invoice-first-div col-9">
                           <img src={logo} alt="logo tub" />
                           <address className="mt-3 px-3">
                             <b style={{ fontSize: "28px" }}>Tub Pro's, Inc. </b>
@@ -649,22 +641,31 @@ function EditSecondInvoice() {
                               fieldIndex <= visibleBillToFields && (
                                 <React.Fragment key={`bill_to_${fieldIndex}`}>
                                   <Autocomplete
+                                    id={`billTo_${fieldIndex}`}
                                     freeSolo
-                                    options={addresses}
+                                    options={addresses || []}
                                     value={formUpdateData.bill_to[fieldIndex - 1] || ''}
+                                    onFocus={() => {
+                                      setAddresses([]);
+                                    }}
                                     onChange={(event, newValue) => {
                                       updateBillToField(fieldIndex - 1, newValue);
                                     }}
-                                    onInputChange={(event, newInputValue) => {
-                                      updateBillToField(fieldIndex - 1, newInputValue);
+                                    onInputChange={(event, newInputValue, reason) => {
+                                      if (reason === 'input' && newInputValue.trim() !== '') {
+                                        fetchAddresses(newInputValue);
+                                        updateBillToField(fieldIndex - 1, newInputValue);
+                                      } else if (reason === 'clear') {
+                                        setAddresses([]);
+                                      }
                                     }}
                                     renderInput={(params) => (
                                       <TextField
                                         {...params}
                                         variant="standard"
-                                        inputRef={el => fieldRefs.current[fieldIndex] = el}
+                                        inputRef={(el) => (fieldRefs.current[fieldIndex] = el)}
                                         onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
-                                        style={{ marginTop: "-20px", width: "100%", }}
+                                        style={{ marginTop: '-20px', width: '100%' }}
                                       />
                                     )}
                                   />
@@ -679,7 +680,6 @@ function EditSecondInvoice() {
                     </div>
 
                     <div className='last-row' style={{ marginLeft: "-25px" }}>
-
                       <div className="row po_details_div">
                         <div className="col-md-1 text-center">
                           <span style={{ fontWeight: "700", marginLeft: "9px" }}>PO No.</span>
@@ -880,6 +880,9 @@ function EditSecondInvoice() {
                                 getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
                                 ref={(el) => (inputRefs.current[actualIndex] = el)}
                                 value={item.description || ''}
+                                onFocus={() => {
+                                  setDescriptions([]);
+                                }}
                                 onChange={(event, newValue) => {
                                   const descriptionValue = newValue ? (typeof newValue === 'string' ? newValue : newValue.label) : '';
                                   handleInputChange(actualIndex, {
@@ -890,23 +893,26 @@ function EditSecondInvoice() {
                                   });
                                 }}
                                 onInputChange={(event, newInputValue, reason) => {
-                                  if (reason === 'input') {
+                                  if (reason === 'input' && newInputValue.trim() !== '') {
+                                    fetchDescriptions(newInputValue);
                                     handleInputChange(actualIndex, {
                                       target: {
                                         name: 'description',
                                         value: newInputValue,
                                       },
                                     });
+                                  } else if (reason === 'clear') {
+                                    setDescriptions([]);
                                   }
                                 }}
                                 renderInput={(params) => (
                                   <TextField
                                     {...params}
-                                    variant='standard'
+                                    variant="standard"
                                     style={{
                                       marginTop: actualIndex === 0 ? '-8px' : '-13px',
                                       width: '100%',
-                                      marginLeft: "120px"
+                                      marginLeft: '120px',
                                     }}
                                     onKeyDown={(event) => handleNavigationKeyPress(event, 'description', actualIndex)}
                                   />

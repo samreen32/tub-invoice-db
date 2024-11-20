@@ -8,12 +8,11 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import * as XLSX from 'xlsx';
 
 function SearchBar({
-    months, invoices, selectedYear, selectedMonth, showUncreatedInvoices,
+    months, selectedYear, selectedMonth, showUncreatedInvoices, invoices,
     setSelectedMonth, setSelectedYear, setSearchQuery, setShowUncreatedInvoices
 }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
-    // Debounce the search query input to reduce unnecessary renders
     const debouncedSetSearchQuery = useCallback(
         debounce((query) => {
             setSearchQuery(query);
@@ -27,7 +26,7 @@ function SearchBar({
 
     const handleSearchClick = () => {
         setIsExpanded(!isExpanded);
-        setSearchQuery("");
+        setSearchQuery(""); // Reset search when expanding
     };
 
     const handleMonthChange = useCallback((event) => {
@@ -41,6 +40,7 @@ function SearchBar({
     const handleToggleUncreatedInvoices = useCallback((event, newAlignment) => {
         setShowUncreatedInvoices(newAlignment);
     }, [setShowUncreatedInvoices]);
+
 
     const downloadExcel = useCallback(() => {
         const filteredData = invoices.map(invoice => ({
@@ -141,7 +141,7 @@ function SearchBar({
                     }}
                     displayEmpty
                 >
-                    <MenuItem value="">All Years... </MenuItem>
+                    <MenuItem value="">All Years...</MenuItem>
                     {Array.from(
                         { length: 10 },
                         (_, index) => new Date().getFullYear() - index
@@ -158,7 +158,7 @@ function SearchBar({
                     style={{ marginRight: "20px", marginTop: "20px" }}
                     displayEmpty
                 >
-                    <MenuItem value="">All Months... </MenuItem>
+                    <MenuItem value="">All Months...</MenuItem>
                     {months.map((month) => (
                         <MenuItem key={month} value={month}>
                             {month}
