@@ -29,6 +29,7 @@ function EditInvoice() {
   const fetchAddresses = debounce(async (query) => {
     try {
       const response = await axios.get(`${FETCH_BILL_TO}?q=${query}`);
+      console.log(response.data, "res")
       if (response.data) {
         setAddresses(response.data.map((item) => ({ label: item })));
       } else {
@@ -208,12 +209,13 @@ function EditInvoice() {
   };
 
   const updateBillToField = (index, value) => {
+    const newValue = typeof value === 'object' ? value?.label : value || '';
     setFormUpdateData((prevData) => {
-      const updatedBillTo = [...prevData.bill_to];
-      updatedBillTo[index] = value || '';
+      const updatedBillTo = [...prevData?.bill_to];
+      updatedBillTo[index] = newValue;
       return { ...prevData, bill_to: updatedBillTo };
     });
-  };
+  }; 
 
   /* Endpoint integration */
   useEffect(() => {

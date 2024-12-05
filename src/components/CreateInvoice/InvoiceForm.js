@@ -9,6 +9,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import 'react-datepicker/dist/react-datepicker.css';
 import { divideArrayIntoChunks } from "../../utils";
 import logo from "../../assets/img/logo.png";
+import { debounce } from "@mui/material";
 
 const CHUNK_SIZE = 31;
 
@@ -18,36 +19,30 @@ function InvoiceForm() {
   const [visibleBillToFields, setVisibleBillToFields] = useState(1);
   const [draggingIndex, setDraggingIndex] = useState(null);
 
-  useEffect(() => {
-    const fetchAddresses = async () => {
-      try {
-        const response = await axios.get(FETCH_BILL_TO);
-        setAddresses(response.data);
-      } catch (error) {
-        console.error('Failed to fetch addresses:', error);
+
+  const fetchAddresses = debounce(async (query) => {
+    try {
+      const response = await axios.get(`${FETCH_BILL_TO}?q=${query}`);
+      if (response.data) {
+        setAddresses(response.data.map((item) => ({ label: item })));
+      } else {
+        setAddresses([]);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      setAddresses([]);
+    }
+  });
 
-    fetchAddresses();
-  }, [setAddresses, addresses]);
-
-  useEffect(() => {
-    const fetchDescriptions = async () => {
-      try {
-        const response = await axios.get(FETCH_DESCRIPPTION);
-        if (response.data) {
-          setDescriptions(response.data.map(item => ({ label: item })));
-        } else {
-          setDescriptions([]);
-        }
-      } catch (error) {
-        console.error('Failed to fetch descriptions:', error);
-        setDescriptions([]);
-      }
-    };
-
-    fetchDescriptions();
-  }, []);
+  const fetchDescriptions = debounce(async (query) => {
+    try {
+      const response = await axios.get(`${FETCH_DESCRIPPTION}?q=${query}`);
+      setDescriptions(response.data.map((item) => ({ label: item })));
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      setDescriptions([]);
+    }
+  });
 
   const createDefaultItems = (numItems = 31) => {
     return Array.from({ length: numItems }, () => ({
@@ -189,12 +184,13 @@ function InvoiceForm() {
   };
 
   const updateBillToField = (index, value) => {
+    const newValue = typeof value === 'object' ? value?.label : value || '';
     setFormData((prevData) => {
-      const updatedBillTo = [...prevData.bill_to];
-      updatedBillTo[index] = value || '';
+      const updatedBillTo = [...prevData?.bill_to];
+      updatedBillTo[index] = newValue;
       return { ...prevData, bill_to: updatedBillTo };
     });
-  };
+  };  
 
   const handleGenerateNew = () => {
     setFormData({
@@ -384,10 +380,11 @@ function InvoiceForm() {
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${INVOICE}`,
-        formData
-      );
-      console.log(response, "response")
+      const transformedFormData = {
+        ...formData,
+        bill_to: formData.bill_to.map((item) => (typeof item === 'object' ? item.label : item)),
+      };
+      const response = await axios.post(`${INVOICE}`, transformedFormData);
       navigate(`/estimate_generated`);
       setFormData((prevData) => ({
         ...prevData,
@@ -398,14 +395,11 @@ function InvoiceForm() {
           total_amount: response.data.invoice.total_amount,
         },
       }));
-      {
-        Swal.fire({
-          icon: "success",
-          title: "Success...",
-          text: "Estimate Generated!",
-        });
-        return;
-      }
+      Swal.fire({
+        icon: "success",
+        title: "Success...",
+        text: "Estimate Generated!",
+      });
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -414,7 +408,7 @@ function InvoiceForm() {
       });
       console.error("Failed to create estimate:", error.message);
     }
-  };
+  };  
 
   return (
     <div id="invoice-generated">
@@ -433,7 +427,7 @@ function InvoiceForm() {
       </div>
 
       <div
-        className="container px-5 py-5 mt-4"
+        className="container px-5 py-5"
         style={{ width: "100%" }}
       // ref={targetRef}
       >
@@ -490,32 +484,42 @@ function InvoiceForm() {
                       <div className="col-md-9">
                         <p>
                           <span style={{ fontWeight: "700", marginLeft: "0px" }}>Bill To</span>
-                          {[1, 2, 3].map((fieldIndex) => (
-                            fieldIndex <= visibleBillToFields && (
-                              <React.Fragment key={`bill_to_${fieldIndex}`}>
-                                <Autocomplete
-                                  freeSolo
-                                  options={addresses}
-                                  value={formData.bill_to[fieldIndex - 1] || ''}
-                                  onChange={(event, newValue) => {
-                                    updateBillToField(fieldIndex - 1, newValue);
-                                  }}
-                                  onInputChange={(event, newInputValue) => {
-                                    updateBillToField(fieldIndex - 1, newInputValue);
-                                  }}
-                                  renderInput={(params) => (
-                                    <TextField
-                                      {...params}
-                                      variant="standard"
-                                      inputRef={el => fieldRefs.current[fieldIndex] = el}
-                                      onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
-                                      style={{ marginTop: "-20px", width: "100%", }}
-                                    />
-                                  )}
-                                />
-                              </React.Fragment>
-                            )
-                          ))}
+                          {[1, 2, 3].map(
+                            (fieldIndex) =>
+                              fieldIndex <= visibleBillToFields && (
+                                <React.Fragment key={`bill_to_${fieldIndex}`}>
+                                  <Autocomplete
+                                    id={`billTo_${fieldIndex}`}
+                                    freeSolo
+                                    options={addresses || []}
+                                    value={formData.bill_to[fieldIndex - 1] || ''}
+                                    onFocus={() => {
+                                      setAddresses([]);
+                                    }}
+                                    onChange={(event, newValue) => {
+                                      updateBillToField(fieldIndex - 1, newValue);
+                                    }}
+                                    onInputChange={(event, newInputValue, reason) => {
+                                      if (reason === 'input' && newInputValue.trim() !== '') {
+                                        fetchAddresses(newInputValue);
+                                        updateBillToField(fieldIndex - 1, newInputValue);
+                                      } else if (reason === 'clear') {
+                                        setAddresses([]);
+                                      }
+                                    }}
+                                    renderInput={(params) => (
+                                      <TextField
+                                        {...params}
+                                        variant="standard"
+                                        inputRef={(el) => (fieldRefs.current[fieldIndex] = el)}
+                                        onKeyDown={(e) => handleBillToEnterKey(e, fieldIndex)}
+                                        style={{ marginTop: '-20px', width: '100%' }}
+                                      />
+                                    )}
+                                  />
+                                </React.Fragment>
+                              )
+                          )}
                         </p>
                       </div>
                       <div className="col-md-3">
@@ -773,9 +777,12 @@ function InvoiceForm() {
                                 id={`description_${actualIndex}`}
                                 freeSolo
                                 options={descriptions || []}
-                                getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                                getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
                                 ref={(el) => (inputRefs.current[actualIndex] = el)}
                                 value={item.description || ''}
+                                onFocus={() => {
+                                  setDescriptions([]);
+                                }}
                                 onChange={(event, newValue) => {
                                   const descriptionValue = newValue ? (typeof newValue === 'string' ? newValue : newValue.label) : '';
                                   handleInputChange(actualIndex, {
@@ -786,23 +793,26 @@ function InvoiceForm() {
                                   });
                                 }}
                                 onInputChange={(event, newInputValue, reason) => {
-                                  if (reason === 'input') {
+                                  if (reason === 'input' && newInputValue.trim() !== '') {
+                                    fetchDescriptions(newInputValue);
                                     handleInputChange(actualIndex, {
                                       target: {
                                         name: 'description',
                                         value: newInputValue,
                                       },
                                     });
+                                  } else if (reason === 'clear') {
+                                    setDescriptions([]);
                                   }
                                 }}
                                 renderInput={(params) => (
                                   <TextField
                                     {...params}
-                                    variant='standard'
+                                    variant="standard"
                                     style={{
-                                      marginTop: actualIndex === 0 ? '-8px' : '-9px',
+                                      marginTop: actualIndex === 0 ? '-8px' : '-13px',
                                       width: '100%',
-                                      marginLeft: "120px"
+                                      marginLeft: '120px',
                                     }}
                                     onKeyDown={(event) => handleNavigationKeyPress(event, 'description', actualIndex)}
                                   />

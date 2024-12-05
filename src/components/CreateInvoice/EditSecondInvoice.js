@@ -18,7 +18,6 @@ function EditSecondInvoice() {
   const targetRef = useRef();
   const { state } = useLocation();
   const { invoiceNum, displayedInvoiceNum } = state;
-  console.log(invoiceNum)
   const { formUpdateData, setFormUpdateData, addresses, descriptions, setAddresses,
     setDescriptions } = UserLogin();
   const [visibleBillToFields, setVisibleBillToFields] = useState(3);
@@ -33,11 +32,10 @@ function EditSecondInvoice() {
         setAddresses([]);
       }
     } catch (error) {
-      console.error('Error fetching suggestions:', error);
       setAddresses([]);
     }
   });
-
+  
   const fetchDescriptions = debounce(async (query) => {
     try {
       const response = await axios.get(`${FETCH_DESCRIPPTION}?q=${query}`);
@@ -218,12 +216,13 @@ function EditSecondInvoice() {
   };
 
   const updateBillToField = (index, value) => {
+    const newValue = typeof value === 'object' ? value?.label : value || '';
     setFormUpdateData((prevData) => {
-      const updatedBillTo = [...prevData.bill_to];
-      updatedBillTo[index] = value || '';
+      const updatedBillTo = [...prevData?.bill_to];
+      updatedBillTo[index] = newValue;
       return { ...prevData, bill_to: updatedBillTo };
     });
-  };
+  }; 
 
   /* Endpoint integration */
   useEffect(() => {
